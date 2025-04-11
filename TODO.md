@@ -141,7 +141,7 @@
     - **Action:** Calculate `start.elapsed()` at the end of both streaming and non-streaming success paths. Record `duration.as_millis()` using `span.record()`. Log the duration.
     - **Depends On:** Implement Basic Proxy Handler Skeleton, Implement Non-Streaming Response Forwarding, Implement Streaming Response Forwarding (Headers/Status)
     - **AC Ref:** [AC23]
-- [ ] **Integrate Handler with Router:** Ensure `create_router` uses the fully implemented `proxy_handler`.
+- [x] **Integrate Handler with Router:** Ensure `create_router` uses the fully implemented `proxy_handler`.
     - **Action:** Verify the `any(move |req| proxy_handler(req, client.clone(), config))` call in `create_router` is correct.
     - **Depends On:** Implement Basic Router Creation, Implement Request Duration Logging (or last handler step)
     - **AC Ref:** [AC1], [AC2]
