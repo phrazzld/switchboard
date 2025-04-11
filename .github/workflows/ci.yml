@@ -4,9 +4,9 @@ name: Rust CI
 # Controls when the workflow will run
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 # Environment variables available to all jobs and steps
 env:
