@@ -101,7 +101,7 @@
     - **Action:** Add `match forward_resp_result { Ok(resp) => {...}, Err(e) => {...} }`. Log errors and return `BAD_GATEWAY`. In the `Ok` arm, get `resp_status` and `resp_headers`. Log basic info and record `http.status_code`.
     - **Depends On:** Execute Forwarded Request
     - **AC Ref:** [AC10], [AC11] (Foundation for this), [AC17]
-- [ ] **Implement Non-Streaming Response Handling:** Inside the `Ok` arm, if the response is *not* streaming, read the full response body (`Bytes`). Handle body reading errors.
+- [x] **Implement Non-Streaming Response Handling:** Inside the `Ok` arm, if the response is *not* streaming, read the full response body (`Bytes`). Handle body reading errors.
     - **Action:** Add logic to check `Content-Type` for `text/event-stream`. In the `else` block (non-streaming), call `forward_resp.bytes().await`. Handle the `Result`, logging errors and returning `BAD_GATEWAY`.
     - **Depends On:** Implement Basic Response Handling
     - **AC Ref:** [AC19]

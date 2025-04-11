@@ -280,14 +280,70 @@ pub async fn proxy_handler(
         "Response headers from Anthropic API"
     );
     
-    // For now, return a placeholder response until the next task is implemented
-    // The actual streaming/non-streaming response handling will be implemented in subsequent tasks
-    warn!(
-        request_id = %req_id,
-        status = %resp_status,
-        "Basic response handling complete, but streaming/non-streaming handling not yet implemented"
-    );
-    Err(StatusCode::NOT_IMPLEMENTED)
+    // Check if this is a streaming response by examining Content-Type header
+    let is_streaming = resp_headers
+        .get(header::CONTENT_TYPE)
+        .map(|ct| ct.to_str().unwrap_or("").contains("text/event-stream"))
+        .unwrap_or(false);
+    
+    if is_streaming {
+        // Streaming response handling will be implemented in a future task
+        info!(
+            request_id = %req_id,
+            "Detected streaming response from Anthropic API"
+        );
+        
+        warn!(
+            request_id = %req_id,
+            status = %resp_status,
+            "Streaming response detected, but streaming handling not yet implemented"
+        );
+        Err(StatusCode::NOT_IMPLEMENTED)
+    } else {
+        // Handle non-streaming response by reading the full body
+        info!(
+            request_id = %req_id,
+            "Handling non-streaming response from Anthropic API"
+        );
+        
+        // Read the full response body
+        let resp_body_bytes_result = forward_resp.bytes().await;
+        
+        // Handle any errors that might occur during body extraction
+        let resp_body_bytes = match resp_body_bytes_result {
+            Ok(bytes) => {
+                info!(
+                    request_id = %req_id,
+                    body_size = bytes.len(),
+                    "Response body read successfully"
+                );
+                bytes
+            },
+            Err(e) => {
+                // Log the error with context
+                error!(
+                    request_id = %req_id,
+                    error = %e,
+                    "Failed to read response body from Anthropic API"
+                );
+                
+                // Record the error status in the span
+                span.record("http.status_code", StatusCode::BAD_GATEWAY.as_u16());
+                
+                return Err(StatusCode::BAD_GATEWAY);
+            }
+        };
+        
+        // For now, return a placeholder response until the next task is implemented
+        // The actual response logging and forwarding will be implemented in subsequent tasks
+        warn!(
+            request_id = %req_id,
+            status = %resp_status,
+            body_size = resp_body_bytes.len(),
+            "Non-streaming response handling complete, but response logging and forwarding not yet implemented"
+        );
+        Err(StatusCode::NOT_IMPLEMENTED)
+    }
 }
 
 /// Maximum length of request/response bodies that will be logged in full
