@@ -151,7 +151,7 @@
     - **Action:** Create the `README.md` file following the structure in `DOCUMENTATION_APPROACH.md` (Section 2) adapted for this project. Include environment variable setup.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** None (Documentation)
-- [ ] **Create Dockerfile:** Implement the multi-stage `Dockerfile` provided in `PLAN.md` Section 8.3.
+- [x] **Create Dockerfile:** Implement the multi-stage `Dockerfile` provided in `PLAN.md` Section 8.3.
     - **Action:** Create the `Dockerfile` using a builder stage for compilation and a minimal final stage (e.g., `debian:12-slim`) with `ca-certificates`. Copy the binary and set the `ENTRYPOINT`.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** [AC28]
