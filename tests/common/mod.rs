@@ -45,6 +45,15 @@ pub async fn setup_test_environment() -> TestSetup {
         log_format: "pretty".to_string(),  // Use pretty format for readability in tests
     };
     
+    // Create a reqwest client with appropriate timeouts for testing
+    // Using shorter timeouts than production to avoid long-running tests
+    let client = Client::builder()
+        .timeout(Duration::from_secs(5))         // Overall request timeout
+        .connect_timeout(Duration::from_secs(2))  // Connection establishment timeout
+        .pool_idle_timeout(Duration::from_secs(10)) // Keep idle connections for reuse
+        .build()
+        .expect("Failed to build test reqwest client");
+    
     // The rest of the implementation will be added in subsequent tasks
     unimplemented!("The rest of this function will be implemented in future tasks")
 }

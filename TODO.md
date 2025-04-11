@@ -32,7 +32,7 @@
     - **Depends On:** Integrate `wiremock::MockServer` Startup into `setup_test_environment`
     - **AC Ref:** AC9
 
-- [ ] **Task Title:** Build Test `reqwest::Client` in `setup_test_environment`
+- [x] **Task Title:** Build Test `reqwest::Client` in `setup_test_environment`
     - **Action:** Within the `setup_test_environment` function, create a `reqwest::Client` instance using `Client::builder()` with suitable timeouts for testing.
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
     - **AC Ref:** AC10
