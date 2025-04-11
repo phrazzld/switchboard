@@ -43,7 +43,7 @@
     - **Action:** Define the basic structure of the `main` function in `src/main.rs`.
     - **Depends On:** Define Project Structure
     - **AC Ref:** [AC27] (Foundation for this)
-- [ ] **Integrate Config and Logging:** Call `load_config` and `init_tracing` at the start of `main`.
+- [x] **Integrate Config and Logging:** Call `load_config` and `init_tracing` at the start of `main`.
     - **Action:** Add calls to `config::load_config()` and `logger::init_tracing()` in `main`.
     - **Depends On:** Implement Config Loading Function, Implement Tracing Initialization
     - **AC Ref:** [AC21], [AC22]
