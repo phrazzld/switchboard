@@ -5,7 +5,7 @@
     - **Action:** Run `cargo new --bin anthropic-visibility-proxy` and navigate into the directory.
     - **Depends On:** None
     - **AC Ref:** [AC26]
-- [ ] **Add Core Dependencies:** Add `tokio`, `axum`, `reqwest`, `serde`, `serde_json`, `tracing`, `tracing-subscriber`, `http`, `hyper`, `bytes`, `futures-util`, `uuid` to `Cargo.toml`.
+- [x] **Add Core Dependencies:** Add `tokio`, `axum`, `reqwest`, `serde`, `serde_json`, `tracing`, `tracing-subscriber`, `http`, `hyper`, `bytes`, `futures-util`, `uuid` to `Cargo.toml`.
     - **Action:** Edit `Cargo.toml` to include the specified dependencies with appropriate versions and features as listed in `PLAN.md` Section 4.2. Ensure `reqwest` uses `rustls-tls`.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** [AC26]
