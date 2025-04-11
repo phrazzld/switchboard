@@ -51,7 +51,7 @@
     - **Action:** Use `reqwest::Client::builder()` to configure and build the HTTP client as shown in `PLAN.md` Section 6 (`main.rs`). Handle potential build errors.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** None (Internal setup)
-- [ ] **Implement Graceful Shutdown Logic:** Create the `shutdown_signal` async function to handle SIGTERM/Ctrl+C.
+- [x] **Implement Graceful Shutdown Logic:** Create the `shutdown_signal` async function to handle SIGTERM/Ctrl+C.
     - **Action:** Implement `shutdown_signal` using `tokio::signal` as shown in `PLAN.md` Section 6 (`main.rs`).
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC25]

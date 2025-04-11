@@ -2,6 +2,7 @@ mod config;
 mod proxy_handler;
 mod logger;
 
+use tokio::signal;
 use tracing::info;
 use std::time::Duration;
 
@@ -34,4 +35,39 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("HTTP client created with rustls TLS support");
     
     Ok(())
+}
+
+/// Handles graceful shutdown signals by waiting for either Ctrl+C or SIGTERM
+/// This allows the application to properly close resources and finish ongoing requests
+/// before shutting down.
+async fn shutdown_signal() {
+    // Set up Ctrl+C handler for interactive use
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+    
+    // Set up SIGTERM handler for container environments
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+    
+    // On non-unix platforms, create a future that never resolves
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+    
+    // Wait for either signal
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+    
+    info!("Shutdown signal received, starting graceful shutdown...");
+    // No explicit cleanup needed here, as the server uses this signal
+    // to start its graceful shutdown process automatically
 }
