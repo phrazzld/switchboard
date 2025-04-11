@@ -23,7 +23,7 @@
     - **AC Ref:** None (Project hygiene)
 
 ## Configuration Module (`src/config.rs`)
-- [ ] **Define Config Struct:** Create the `Config` struct holding `port`, `anthropic_api_key`, `anthropic_target_url`, `log_level`, `log_format`.
+- [x] **Define Config Struct:** Create the `Config` struct holding `port`, `anthropic_api_key`, `anthropic_target_url`, `log_level`, `log_format`.
     - **Action:** Implement the `Config` struct with `Debug` and `Clone` derived traits in `src/config.rs`.
     - **Depends On:** Define Project Structure
     - **AC Ref:** None (Internal structure)
