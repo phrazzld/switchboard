@@ -69,7 +69,7 @@
     - **Action:** Implement `create_router` taking `Client` and `Config` and returning a `Router` as shown in `PLAN.md` Section 6.
     - **Depends On:** Define Project Structure, Create Reqwest Client, Define Config Struct
     - **AC Ref:** [AC1], [AC2] (Foundation for these)
-- [ ] **Implement Basic Proxy Handler Skeleton:** Create the `proxy_handler` async function signature with `#[instrument]` macro and basic setup (start time, req_id generation, span recording).
+- [x] **Implement Basic Proxy Handler Skeleton:** Create the `proxy_handler` async function signature with `#[instrument]` macro and basic setup (start time, req_id generation, span recording).
     - **Action:** Define the `proxy_handler` function signature, add the `instrument` macro with initial fields, generate `req_id` using `uuid`, get the current span, and record `req_id`.
     - **Depends On:** Add Core Dependencies, Define Config Struct
     - **AC Ref:** [AC4]
