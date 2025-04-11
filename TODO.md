@@ -12,7 +12,7 @@
     - **Depends On:** None
     - **AC Ref:** AC5
 
-- [ ] **Task Title:** Define `TestSetup` Struct in `tests/common/mod.rs`
+- [x] **Task Title:** Define `TestSetup` Struct in `tests/common/mod.rs`
     - **Action:** Define the `TestSetup` struct within `switchboard/tests/common/mod.rs` containing fields for `client: Client`, `config: Config`, `mock_server: MockServer`, and `app: Router`. Include necessary imports (`wiremock::MockServer`, `switchboard::config::Config`, `reqwest::Client`, `axum::Router`).
     - **Depends On:** Create Test Directory Structure
     - **AC Ref:** AC6
