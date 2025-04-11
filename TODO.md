@@ -52,7 +52,7 @@
     - **Depends On:** Create Test Directory Structure, Add Dev Dependencies to `Cargo.toml`, Instantiate Test `axum::Router` in `setup_test_environment`, Declare `common` Module in `proxy_integration_tests.rs`
     - **AC Ref:** AC12, AC13
 
-- [ ] **Task Title:** Define `wiremock::Mock` Expectation in Basic Test
+- [x] **Task Title:** Define `wiremock::Mock` Expectation in Basic Test
     - **Action:** Inside the `test_simple_post_forward_success` function, use `wiremock::Mock::given(...)` with appropriate matchers (`method`, `path`) to define an expectation on the mock server for a POST request to `/v1/messages`. Use `respond_with` to return a sample JSON success response (e.g., `200 OK` with `{"status": "ok"}`). Mount the mock onto the server instance from `TestSetup`. Import `wiremock::{Mock, ResponseTemplate, matchers::{method, path}}`.
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
     - **AC Ref:** AC14
