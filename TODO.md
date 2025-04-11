@@ -1,165 +1,82 @@
 # TODO
 
-## Project Setup
-- [x] **Initialize Rust Project:** Create a new binary Rust project using `cargo new`.
-    - **Action:** Run `cargo new --bin anthropic-visibility-proxy` and navigate into the directory.
+## Setup Testing Infrastructure
+
+- [x] **Task Title:** Create Test Directory Structure
+    - **Action:** Create the `tests/` directory at the project root (`switchboard/tests/`) and a `common/` subdirectory within it (`switchboard/tests/common/`). Create empty files `switchboard/tests/common/mod.rs` and `switchboard/tests/proxy_integration_tests.rs`.
     - **Depends On:** None
-    - **AC Ref:** [AC26]
-- [x] **Add Core Dependencies:** Add `tokio`, `axum`, `reqwest`, `serde`, `serde_json`, `tracing`, `tracing-subscriber`, `http`, `hyper`, `bytes`, `futures-util`, `uuid` to `Cargo.toml`.
-    - **Action:** Edit `Cargo.toml` to include the specified dependencies with appropriate versions and features as listed in `PLAN.md` Section 4.2. Ensure `reqwest` uses `rustls-tls`.
-    - **Depends On:** Initialize Rust Project
-    - **AC Ref:** [AC26]
-- [x] **Add Optional Dependencies:** Add `dotenvy` to `Cargo.toml` for `.env` file support.
-    - **Action:** Edit `Cargo.toml` to include `dotenvy`.
-    - **Depends On:** Initialize Rust Project
-    - **AC Ref:** [AC26]
-- [x] **Define Project Structure:** Create the necessary source files (`main.rs`, `config.rs`, `proxy_handler.rs`, `logger.rs`) and directories (`/src`).
-    - **Action:** Create the files and directory structure as outlined in `PLAN.md` Section 4.3. Add placeholder content if needed.
-    - **Depends On:** Initialize Rust Project
-    - **AC Ref:** None (Structural setup)
-- [x] **Setup .gitignore:** Create a `.gitignore` file to exclude common Rust build artifacts and potentially `.env`.
-    - **Action:** Create `.gitignore` with entries like `/target`, `Cargo.lock` (if not committed), `.env`.
-    - **Depends On:** Initialize Rust Project
-    - **AC Ref:** None (Project hygiene)
+    - **AC Ref:** AC1, AC2, AC3 (file existence), AC4 (file existence)
 
-## Configuration Module (`src/config.rs`)
-- [x] **Define Config Struct:** Create the `Config` struct holding `port`, `anthropic_api_key`, `anthropic_target_url`, `log_level`, `log_format`.
-    - **Action:** Implement the `Config` struct with `Debug` and `Clone` derived traits in `src/config.rs`.
-    - **Depends On:** Define Project Structure
-    - **AC Ref:** None (Internal structure)
-- [x] **Implement Config Loading Function:** Create the `load_config` function using `std::env::var`, `dotenvy`, and `OnceLock` to load configuration from environment variables (with defaults) and `.env` file.
-    - **Action:** Implement `load_config` as shown in `PLAN.md` Section 6. Ensure `ANTHROPIC_API_KEY` is mandatory. Log loaded config values (excluding the key).
-    - **Depends On:** Define Config Struct
-    - **AC Ref:** [AC21], [AC22] (Foundation for these)
+- [ ] **Task Title:** Add Dev Dependencies to `Cargo.toml`
+    - **Action:** Add a `[dev-dependencies]` section to `switchboard/Cargo.toml` (if not present) and include the specified testing crates: `tokio`, `wiremock`, `serde_json`, `axum` (with `test-helpers` feature if needed), `tower` (with `util` feature), `http-body-util`, and `uuid`. Ensure `tokio` features align with main dependencies and include `rt-multi-thread`.
+    - **Depends On:** None
+    - **AC Ref:** AC5
 
-## Logging Module (`src/logger.rs`)
-- [x] **Implement Tracing Initialization:** Create the `init_tracing` function to set up `tracing-subscriber` based on the `Config`.
-    - **Action:** Implement `init_tracing` using `EnvFilter` (from env or config), and configure either JSON or pretty formatting based on `config.log_format`. Initialize the subscriber.
-    - **Depends On:** Define Config Struct
-    - **AC Ref:** [AC21], [AC22]
+- [ ] **Task Title:** Define `TestSetup` Struct in `tests/common/mod.rs`
+    - **Action:** Define the `TestSetup` struct within `switchboard/tests/common/mod.rs` containing fields for `client: Client`, `config: Config`, `mock_server: MockServer`, and `app: Router`. Include necessary imports (`wiremock::MockServer`, `switchboard::config::Config`, `reqwest::Client`, `axum::Router`).
+    - **Depends On:** Create Test Directory Structure
+    - **AC Ref:** AC6
 
-## Main Application (`src/main.rs`)
-- [x] **Setup Basic main Function:** Create the `#[tokio::main]` async `main` function.
-    - **Action:** Define the basic structure of the `main` function in `src/main.rs`.
-    - **Depends On:** Define Project Structure
-    - **AC Ref:** [AC27] (Foundation for this)
-- [x] **Integrate Config and Logging:** Call `load_config` and `init_tracing` at the start of `main`.
-    - **Action:** Add calls to `config::load_config()` and `logger::init_tracing()` in `main`.
-    - **Depends On:** Implement Config Loading Function, Implement Tracing Initialization
-    - **AC Ref:** [AC21], [AC22]
-- [x] **Create Reqwest Client:** Build a `reqwest::Client` instance with appropriate settings (rustls, timeouts).
-    - **Action:** Use `reqwest::Client::builder()` to configure and build the HTTP client as shown in `PLAN.md` Section 6 (`main.rs`). Handle potential build errors.
-    - **Depends On:** Add Core Dependencies
-    - **AC Ref:** None (Internal setup)
-- [x] **Implement Graceful Shutdown Logic:** Create the `shutdown_signal` async function to handle SIGTERM/Ctrl+C.
-    - **Action:** Implement `shutdown_signal` using `tokio::signal` as shown in `PLAN.md` Section 6 (`main.rs`).
-    - **Depends On:** Add Core Dependencies
-    - **AC Ref:** [AC25]
-- [x] **Setup Axum Server:** Parse listen address, bind `TcpListener`, create the Axum router (initially basic), and run the server using `axum::serve` with graceful shutdown.
-    - **Action:** Implement the server startup logic in `main`, including address parsing, listener binding, calling `proxy_handler::create_router` (initially returning a placeholder router), and integrating `shutdown_signal`. Handle bind/serve errors.
-    - **Depends On:** Setup Basic main Function, Integrate Config and Logging, Implement Graceful Shutdown Logic, Create Reqwest Client
-    - **AC Ref:** [AC1], [AC25]
+- [ ] **Task Title:** Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
+    - **Action:** Define an `async fn setup_test_environment() -> TestSetup` function within `switchboard/tests/common/mod.rs`. Include necessary imports (`std::time::Duration`).
+    - **Depends On:** Create Test Directory Structure, Define `TestSetup` Struct in `tests/common/mod.rs`
+    - **AC Ref:** AC7 (partially - function signature)
 
-## Proxy Handler Module (`src/proxy_handler.rs`)
-- [x] **Define API Structs:** Define the minimal `AnthropicMessagesRequestMinimal` struct (optional, for logging context).
-    - **Action:** Add the struct definition with `serde::Deserialize` as shown in `PLAN.md` Section 5.
-    - **Depends On:** Add Core Dependencies
-    - **AC Ref:** None (Helper for logging)
-- [x] **Implement Basic Router Creation:** Create the `create_router` function that sets up an Axum `Router` with a catch-all `any` route (`/*path`) pointing to `proxy_handler`.
-    - **Action:** Implement `create_router` taking `Client` and `Config` and returning a `Router` as shown in `PLAN.md` Section 6.
-    - **Depends On:** Define Project Structure, Create Reqwest Client, Define Config Struct
-    - **AC Ref:** [AC1], [AC2] (Foundation for these)
-- [x] **Implement Basic Proxy Handler Skeleton:** Create the `proxy_handler` async function signature with `#[instrument]` macro and basic setup (start time, req_id generation, span recording).
-    - **Action:** Define the `proxy_handler` function signature, add the `instrument` macro with initial fields, generate `req_id` using `uuid`, get the current span, and record `req_id`.
-    - **Depends On:** Add Core Dependencies, Define Config Struct
-    - **AC Ref:** [AC4]
-- [x] **Implement Request Parsing:** Extract method, URI, headers, and read the request body (`Bytes`) from the incoming Axum `Request`. Handle body reading errors.
-    - **Action:** Get `method`, `uri`, `headers` from the `Request`. Use `axum::body::to_bytes` to read the body. Log and return `StatusCode::BAD_REQUEST` on error. Record method/path/query in the span.
-    - **Depends On:** Implement Basic Proxy Handler Skeleton
-    - **AC Ref:** [AC2], [AC18]
-- [x] **Implement Target URL Construction:** Construct the target Anthropic API URL based on the configuration and the incoming request path/query. Handle parsing errors.
-    - **Action:** Combine `config.anthropic_target_url` with the request's `path_and_query`. Parse into a `Uri`. Log and return `StatusCode::INTERNAL_SERVER_ERROR` on error.
-    - **Depends On:** Implement Request Parsing
-    - **AC Ref:** [AC5]
-- [x] **Implement Request Logging Helper:** Create `log_request_details` function to log method, URI, headers (masked), and body (truncated, formatted).
-    - **Action:** Implement the helper function as specified in `PLAN.md` Section 6. Use `info!` for basic info, `debug!` for headers/body. Implement header masking for `Authorization`/`x-api-key`. Implement body truncation (`MAX_LOG_BODY_LEN`) and JSON pretty-printing attempt.
-    - **Depends On:** Add Core Dependencies
-    - **AC Ref:** [AC3], [AC24]
-- [x] **Call Request Logging:** Call `log_request_details` from `proxy_handler` after parsing the request.
-    - **Action:** Add the call `log_request_details(&method, &original_uri, &original_headers, &body_bytes);` inside `proxy_handler`.
-    - **Depends On:** Implement Request Parsing, Implement Request Logging Helper
-    - **AC Ref:** [AC3], [AC24]
-- [x] **Implement Request Forwarding Setup:** Build the `reqwest::Request` builder, copy method, target URL, filter/copy headers (remove hop-by-hop, set `Host`, set `x-api-key`, remove `Authorization`), and add the request body. Handle API key header errors.
-    - **Action:** Create the `reqwest` builder. Iterate over original headers, copying valid ones to a new `HeaderMap`. Set `Host` based on `target_url`. Set `x-api-key` from config, removing `Authorization`. Handle `HeaderValue` creation errors. Add headers and body to the builder.
-    - **Depends On:** Implement Target URL Construction, Implement Request Parsing
-    - **AC Ref:** [AC5], [AC6], [AC7], [AC8], [AC9]
-- [x] **Execute Forwarded Request:** Send the request using the `reqwest::Client` and await the response.
-    - **Action:** Call `forward_req_builder.send().await`.
-    - **Depends On:** Implement Request Forwarding Setup, Create Reqwest Client
-    - **AC Ref:** [AC10] (Foundation for this)
-- [x] **Implement Basic Response Handling:** Handle the `Result` from `send()`. On error, log and return `StatusCode::BAD_GATEWAY`. On success, extract status and headers. Log basic response info and record status code in span.
-    - **Action:** Add `match forward_resp_result { Ok(resp) => {...}, Err(e) => {...} }`. Log errors and return `BAD_GATEWAY`. In the `Ok` arm, get `resp_status` and `resp_headers`. Log basic info and record `http.status_code`.
-    - **Depends On:** Execute Forwarded Request
-    - **AC Ref:** [AC10], [AC11] (Foundation for this), [AC17]
-- [x] **Implement Non-Streaming Response Handling:** Inside the `Ok` arm, if the response is *not* streaming, read the full response body (`Bytes`). Handle body reading errors.
-    - **Action:** Add logic to check `Content-Type` for `text/event-stream`. In the `else` block (non-streaming), call `forward_resp.bytes().await`. Handle the `Result`, logging errors and returning `BAD_GATEWAY`.
-    - **Depends On:** Implement Basic Response Handling
-    - **AC Ref:** [AC19]
-- [x] **Implement Non-Streaming Response Logging Helper:** Create `log_response_details` function to log status, headers, and body (truncated, formatted).
-    - **Action:** Implement the helper function similar to `log_request_details` but for responses, logging status code and response headers/body.
-    - **Depends On:** Add Core Dependencies
-    - **AC Ref:** [AC11], [AC12], [AC24] (partially)
-- [x] **Call Non-Streaming Response Logging:** Call `log_response_details` after successfully reading the non-streaming response body.
-    - **Action:** Add the call `log_response_details(resp_status, &resp_headers, &resp_body_bytes);` inside the non-streaming success path.
-    - **Depends On:** Implement Non-Streaming Response Handling, Implement Non-Streaming Response Logging Helper
-    - **AC Ref:** [AC11], [AC12]
-- [x] **Implement Non-Streaming Response Forwarding:** Build the Axum `Response`, copying status, filtered headers (remove hop-by-hop, add `Content-Length`), and the response body.
-    - **Action:** Create `Response::builder()`, set status, copy headers from `resp_headers` (filtering), set `Content-Length`, set body using `Body::from(resp_body_bytes)`. Handle builder errors.
-    - **Depends On:** Implement Non-Streaming Response Handling
-    - **AC Ref:** [AC13]
-- [x] **Implement Streaming Response Detection:** Check the `Content-Type` header of the upstream response for `text/event-stream`.
-    - **Action:** Add the `is_streaming` check based on `resp_headers.get(header::CONTENT_TYPE)` inside the `Ok(forward_resp)` block.
-    - **Depends On:** Implement Basic Response Handling
-    - **AC Ref:** [AC15], [AC16] (Foundation for these)
-- [x] **Implement Streaming Response Header Logging Helper:** Create `log_response_headers` function to log status and headers only.
-    - **Action:** Implement the helper function to log status code and response headers (similar to `log_response_details` but without the body part). Add an info message indicating streaming started.
-    - **Depends On:** Add Core Dependencies
-    - **AC Ref:** [AC14], [AC24] (partially)
-- [x] **Call Streaming Response Header Logging:** Call `log_response_headers` when a streaming response is detected.
-    - **Action:** Add the call `log_response_headers(resp_status, &resp_headers);` inside the `if is_streaming` block.
-    - **Depends On:** Implement Streaming Response Detection, Implement Streaming Response Header Logging Helper
-    - **AC Ref:** [AC14]
-- [x] **Implement Streaming Response Body Forwarding:** Map the `reqwest` `bytes_stream` to an Axum `Body` stream, handling potential errors during chunk reading.
-    - **Action:** Use `forward_resp.bytes_stream().map(|result| ...)` to wrap the stream. Inside the map, handle `Err(e)` by logging the error and converting it to `axum::BoxError`. Create `Body::from_stream(stream)`.
-    - **Depends On:** Implement Streaming Response Detection
-    - **AC Ref:** [AC15], [AC20]
-- [x] **Implement Streaming Response Forwarding (Headers/Status):** Build the Axum `Response` for streaming, copying status and filtered headers (remove hop-by-hop, *do not* add `Content-Length`). Attach the streaming body.
-    - **Action:** Create `Response::builder()`, set status, copy headers from `resp_headers` (filtering hop-by-hop, connection, transfer-encoding, content-length). Set the body to the `axum_body` created from the stream. Handle builder errors.
-    - **Depends On:** Implement Streaming Response Body Forwarding
-    - **AC Ref:** [AC16]
-- [x] **Implement Request Duration Logging:** Calculate elapsed time and record `duration_ms` in the main handler span before returning `Ok(response)`.
-    - **Action:** Calculate `start.elapsed()` at the end of both streaming and non-streaming success paths. Record `duration.as_millis()` using `span.record()`. Log the duration.
-    - **Depends On:** Implement Basic Proxy Handler Skeleton, Implement Non-Streaming Response Forwarding, Implement Streaming Response Forwarding (Headers/Status)
-    - **AC Ref:** [AC23]
-- [x] **Integrate Handler with Router:** Ensure `create_router` uses the fully implemented `proxy_handler`.
-    - **Action:** Verify the `any(move |req| proxy_handler(req, client.clone(), config))` call in `create_router` is correct.
-    - **Depends On:** Implement Basic Router Creation, Implement Request Duration Logging (or last handler step)
-    - **AC Ref:** [AC1], [AC2]
+- [ ] **Task Title:** Integrate `wiremock::MockServer` Startup into `setup_test_environment`
+    - **Action:** Within the `setup_test_environment` function, add code to start a `wiremock::MockServer` instance using `MockServer::start().await` and store it.
+    - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
+    - **AC Ref:** AC8
 
-## Build & Deployment
-- [x] **Add Basic README.md:** Create a `README.md` with project description, setup, run, and test instructions.
-    - **Action:** Create the `README.md` file following the structure in `DOCUMENTATION_APPROACH.md` (Section 2) adapted for this project. Include environment variable setup.
-    - **Depends On:** Initialize Rust Project
-    - **AC Ref:** None (Documentation)
-- [x] **Create Dockerfile:** Implement the multi-stage `Dockerfile` provided in `PLAN.md` Section 8.3.
-    - **Action:** Create the `Dockerfile` using a builder stage for compilation and a minimal final stage (e.g., `debian:12-slim`) with `ca-certificates`. Copy the binary and set the `ENTRYPOINT`.
-    - **Depends On:** Initialize Rust Project
-    - **AC Ref:** [AC28]
-- [x] **Verify Build:** Ensure the project builds successfully using `cargo build` and `cargo build --release`.
-    - **Action:** Run the build commands.
-    - **Depends On:** All implementation tasks.
-    - **AC Ref:** [AC26]
-- [x] **Verify Run:** Ensure the application runs correctly using the compiled binary or `cargo run`, with necessary environment variables set.
-    - **Action:** Set `PORT`, `ANTHROPIC_API_KEY`, `RUST_LOG`, `LOG_FORMAT` and run the application. Check logs for startup messages.
-    - **Depends On:** Verify Build
-    - **AC Ref:** [AC27]
+- [ ] **Task Title:** Create Test-Specific `Config` in `setup_test_environment`
+    - **Action:** Within the `setup_test_environment` function, create an instance of `switchboard::config::Config`, setting `anthropic_target_url` to the `mock_server.uri()` and using appropriate dummy values for other fields (e.g., `port`, `anthropic_api_key`, `log_level`).
+    - **Depends On:** Integrate `wiremock::MockServer` Startup into `setup_test_environment`
+    - **AC Ref:** AC9
+
+- [ ] **Task Title:** Build Test `reqwest::Client` in `setup_test_environment`
+    - **Action:** Within the `setup_test_environment` function, create a `reqwest::Client` instance using `Client::builder()` with suitable timeouts for testing.
+    - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
+    - **AC Ref:** AC10
+
+- [ ] **Task Title:** Instantiate Test `axum::Router` in `setup_test_environment`
+    - **Action:** Within the `setup_test_environment` function, call `switchboard::proxy_handler::create_router`, passing the test `reqwest::Client` and the test `Config`. Use `Box::leak` for the config as a temporary measure as shown in the plan, acknowledging the need for future refinement. Populate the `TestSetup` struct with the client, config, mock server, and router, and return it.
+    - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Create Test-Specific `Config` in `setup_test_environment`, Build Test `reqwest::Client` in `setup_test_environment`
+    - **AC Ref:** AC11, AC7 (fully)
+
+- [ ] **Task Title:** Declare `common` Module in `proxy_integration_tests.rs`
+    - **Action:** Add `mod common;` at the top of `switchboard/tests/proxy_integration_tests.rs` to make the shared utilities accessible.
+    - **Depends On:** Create Test Directory Structure
+    - **AC Ref:** Implicit requirement for AC12
+
+- [ ] **Task Title:** Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
+    - **Action:** Create an `async fn test_simple_post_forward_success()` test function annotated with `#[tokio::test]` in `switchboard/tests/proxy_integration_tests.rs`. Import and call `common::setup_test_environment().await` to get the `TestSetup` instance. Import necessary types (`axum::body::Body`, `axum::http::{Request, StatusCode}`, `tower::ServiceExt`, `http_body_util::BodyExt`).
+    - **Depends On:** Create Test Directory Structure, Add Dev Dependencies to `Cargo.toml`, Instantiate Test `axum::Router` in `setup_test_environment`, Declare `common` Module in `proxy_integration_tests.rs`
+    - **AC Ref:** AC12, AC13
+
+- [ ] **Task Title:** Define `wiremock::Mock` Expectation in Basic Test
+    - **Action:** Inside the `test_simple_post_forward_success` function, use `wiremock::Mock::given(...)` with appropriate matchers (`method`, `path`) to define an expectation on the mock server for a POST request to `/v1/messages`. Use `respond_with` to return a sample JSON success response (e.g., `200 OK` with `{"status": "ok"}`). Mount the mock onto the server instance from `TestSetup`. Import `wiremock::{Mock, ResponseTemplate, matchers::{method, path}}`.
+    - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
+    - **AC Ref:** AC14
+
+- [ ] **Task Title:** Send Test Request using `tower::ServiceExt::oneshot` in Basic Test
+    - **Action:** Inside the `test_simple_post_forward_success` function, construct an `http::Request` with method POST, URI `/v1/messages`, appropriate headers (e.g., `content-type: application/json`), and a sample JSON body. Use `app.oneshot(request).await` to send the request to the test router instance obtained from `TestSetup`.
+    - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
+    - **AC Ref:** AC15
+
+- [ ] **Task Title:** Assert Response Status and Body in Basic Test
+    - **Action:** Inside the `test_simple_post_forward_success` function, after receiving the response from `oneshot`, assert that the response status code is `StatusCode::OK`. Extract the response body bytes, deserialize it as `serde_json::Value`, and assert that it matches the expected JSON (`{"status": "ok"}`). Import `serde_json`.
+    - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Send Test Request using `tower::ServiceExt::oneshot` in Basic Test
+    - **AC Ref:** AC16, AC17, AC18 (implicitly tested when running `cargo test`)
+
+## [!] CLARIFICATIONS NEEDED / ASSUMPTIONS
+
+- [ ] **Issue/Assumption:** Assumed `switchboard::proxy_handler::create_router` function exists and accepts `reqwest::Client` and `&'static Config` as arguments.
+    - **Context:** PLAN.md Step 3 (`Implement Shared Test Utilities`) and Step 4 (`Write Basic Integration Test`) rely on this function signature. Existing code snippets (`src/main.rs`, `src/proxy_handler.rs`) confirm this signature.
+
+- [ ] **Issue/Assumption:** Acknowledged use of `Box::leak` for passing `Config` to `create_router` in tests is a temporary simplification as noted in PLAN.md Step 3 Self-Correction.
+    - **Context:** PLAN.md Step 3 notes this is not ideal and suggests future refinement (e.g., using `Arc<Config>`). This initial setup proceeds with the leak for simplicity as planned.
+
+- [ ] **Issue/Assumption:** Assumed project root directory is named `switchboard`.
+    - **Context:** PLAN.md Step 1 specifies paths relative to `switchboard/`.
+
+- [ ] **Issue/Assumption:** Assumed the specified dev-dependency versions in PLAN.md Step 2 are compatible with the project's current Rust toolchain version.
+    - **Context:** PLAN.md Step 2 lists specific versions. Compatibility might require adjustments or toolchain updates.
