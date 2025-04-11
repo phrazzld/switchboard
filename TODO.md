@@ -77,7 +77,7 @@
     - **Action:** Get `method`, `uri`, `headers` from the `Request`. Use `axum::body::to_bytes` to read the body. Log and return `StatusCode::BAD_REQUEST` on error. Record method/path/query in the span.
     - **Depends On:** Implement Basic Proxy Handler Skeleton
     - **AC Ref:** [AC2], [AC18]
-- [ ] **Implement Target URL Construction:** Construct the target Anthropic API URL based on the configuration and the incoming request path/query. Handle parsing errors.
+- [x] **Implement Target URL Construction:** Construct the target Anthropic API URL based on the configuration and the incoming request path/query. Handle parsing errors.
     - **Action:** Combine `config.anthropic_target_url` with the request's `path_and_query`. Parse into a `Uri`. Log and return `StatusCode::INTERNAL_SERVER_ERROR` on error.
     - **Depends On:** Implement Request Parsing
     - **AC Ref:** [AC5]

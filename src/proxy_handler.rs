@@ -9,7 +9,7 @@ use axum::{
     response::Response,
 };
 // bytes::Bytes will be used in future implementations
-use hyper::Request;
+use hyper::{Request, Uri};
 use reqwest::Client;
 use serde::Deserialize;
 use std::time::Instant;
@@ -106,8 +106,7 @@ pub async fn proxy_handler(
     }
     
     // Extract the path and query, defaulting to "/" if none
-    // Will be used in future implementations for constructing the target URL
-    let _path_and_query = original_uri
+    let path_and_query = original_uri
         .path_and_query()
         .map(|pq| pq.as_str())
         .unwrap_or("/");
@@ -118,6 +117,30 @@ pub async fn proxy_handler(
         query = %original_uri.query().unwrap_or(""),
         "Processing request"
     );
+    
+    // Construct the target Anthropic API URL
+    let target_url_str = format!("{}{}", _config.anthropic_target_url, path_and_query);
+    
+    // Parse the constructed URL into a Uri
+    let _target_url = match target_url_str.parse::<Uri>() {
+        Ok(uri) => {
+            info!(target_url = %uri, "Target URL constructed successfully");
+            uri
+        },
+        Err(e) => {
+            // Log the error with context and return an error status
+            error!(
+                error = %e, 
+                attempted_url = %target_url_str, 
+                "Failed to parse target URL"
+            );
+            
+            // Record the error status in the span
+            span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+            
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
     
     // Convert the request body to bytes for processing
     // The usize::MAX parameter means we'll read the entire body, no matter how large
