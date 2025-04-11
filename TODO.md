@@ -47,7 +47,7 @@
     - **Action:** Add calls to `config::load_config()` and `logger::init_tracing()` in `main`.
     - **Depends On:** Implement Config Loading Function, Implement Tracing Initialization
     - **AC Ref:** [AC21], [AC22]
-- [ ] **Create Reqwest Client:** Build a `reqwest::Client` instance with appropriate settings (rustls, timeouts).
+- [x] **Create Reqwest Client:** Build a `reqwest::Client` instance with appropriate settings (rustls, timeouts).
     - **Action:** Use `reqwest::Client::builder()` to configure and build the HTTP client as shown in `PLAN.md` Section 6 (`main.rs`). Handle potential build errors.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** None (Internal setup)
