@@ -1,13 +1,13 @@
 mod config;
-mod proxy_handler;
 mod logger;
+mod proxy_handler;
 
+use axum::Server;
 use std::net::SocketAddr;
 use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::signal;
-use tracing::{info, error};
-use axum::Server;
+use tracing::{error, info};
 
 use proxy_handler::create_router;
 
@@ -15,15 +15,15 @@ use proxy_handler::create_router;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Main application entry point
     println!("Starting Anthropic visibility proxy...");
-    
+
     // Load configuration from environment variables and .env file
     let config = config::load_config();
-    
+
     // Initialize tracing for structured logging
     logger::init_tracing(config);
-    
+
     info!("Anthropic visibility proxy initialized");
-    
+
     // Create HTTP client with appropriate settings
     // Using rustls (instead of native-tls) for TLS implementation
     let client = reqwest::Client::builder()
@@ -36,12 +36,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             error!("Failed to build reqwest client: {}", e);
             e
         })?;
-    
+
     info!("HTTP client created with rustls TLS support");
-    
+
     // Create the router with the HTTP client and config
     let app = create_router(client, config);
-    
+
     // Parse and bind to the configured address
     let addr_str = format!("0.0.0.0:{}", config.port);
     let addr: SocketAddr = match addr_str.parse() {
@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err(e.into());
         }
     };
-    
+
     // Bind to the configured port
     info!("Binding server to {}", addr);
     let listener = match TcpListener::bind(addr).await {
@@ -61,11 +61,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Err(e.into());
         }
     };
-    
+
     // Start the server with graceful shutdown
     info!("Starting Axum server, listening for requests");
     let server = Server::from_tcp(listener.into_std()?)?;
-    
+
     if let Err(e) = server
         .serve(app.into_make_service())
         .with_graceful_shutdown(shutdown_signal())
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         error!(error = %e, "Server error");
         return Err(e.into());
     }
-    
+
     info!("Server shutdown complete");
     Ok(())
 }
@@ -89,7 +89,7 @@ async fn shutdown_signal() {
             .await
             .expect("failed to install Ctrl+C handler");
     };
-    
+
     // Set up SIGTERM handler for container environments
     #[cfg(unix)]
     let terminate = async {
@@ -98,17 +98,17 @@ async fn shutdown_signal() {
             .recv()
             .await;
     };
-    
+
     // On non-unix platforms, create a future that never resolves
     #[cfg(not(unix))]
     let terminate = std::future::pending::<()>();
-    
+
     // Wait for either signal
     tokio::select! {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
-    
+
     info!("Shutdown signal received, starting graceful shutdown...");
     // No explicit cleanup needed here, as the server uses this signal
     // to start its graceful shutdown process automatically

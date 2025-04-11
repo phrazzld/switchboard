@@ -2,37 +2,36 @@
 // Core proxy functionality for intercepting and forwarding API requests
 
 use axum::{
-    Router,
-    routing::any,
+    body::{boxed, Body, Full},
     http::StatusCode,
-    body::{Body, boxed, Full},
     response::Response,
+    routing::any,
+    Router,
 };
 use bytes::Bytes;
 use futures_util::StreamExt;
-use hyper::{Request, Uri, header, HeaderMap};
-use reqwest::{Client, header::HeaderValue as ReqHeaderValue};
+use hyper::{header, HeaderMap, Request, Uri};
+use reqwest::{header::HeaderValue as ReqHeaderValue, Client};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Instant;
-use tracing::{info, warn, error, debug, info_span, instrument, field, Span};
+use tracing::{debug, error, field, info, info_span, instrument, warn, Span};
 use uuid::Uuid;
 
 use crate::config::Config;
 
 /// Minimal representation of an Anthropic Messages API request
-/// 
+///
 /// This struct is used only for logging context, not for processing.
 /// It extracts only the essential fields needed for logging identification.
 #[derive(Deserialize, Debug)]
 struct AnthropicMessagesRequestMinimal {
     /// The model being requested (claude-3-opus, claude-3-sonnet, etc.)
     model: Option<String>,
-    
+
     /// Whether the request is for a streaming response
     stream: Option<bool>,
-    
     // Other fields could be added if needed for better logging context
     // For example, the number of messages in the conversation
     // messages: Option<Vec<Value>>, // Not included by default as it would be verbose
@@ -45,7 +44,7 @@ struct AnthropicMessagesRequestMinimal {
 /// HTTP method (GET, POST, etc.)
 pub fn create_router(client: Client, config: &'static Config) -> Router {
     info!("Creating Axum router with catch-all route to proxy_handler");
-    
+
     Router::new().route(
         "/*path", // Catch-all route
         any(move |req: Request<Body>| proxy_handler(req, client.clone(), config)),
@@ -82,101 +81,104 @@ pub async fn proxy_handler(
 ) -> Result<Response, StatusCode> {
     // Start timing the request processing
     let start = Instant::now();
-    
+
     // Generate a unique ID for this request
     let req_id = Uuid::new_v4();
-    
+
     // Get the current span created by the #[instrument] macro
     let span = Span::current();
-    
+
     // Record the request ID in the span
     span.record("req_id", &req_id.to_string());
-    
+
     info!(request_id = %req_id, "Starting request processing");
-    
+
     // Extract and clone the essential request information
     let original_uri = req.uri().clone();
     let method = req.method().clone();
     let original_headers = req.headers().clone();
-    
+
     // Record basic request information in the tracing span
     span.record("http.method", &method.to_string());
     span.record("url.path", original_uri.path());
-    
+
     // If there's a query string, record it in the span
     if let Some(query) = original_uri.query() {
         span.record("url.query", query);
     }
-    
+
     // Extract the path and query, defaulting to "/" if none
     let path_and_query = original_uri
         .path_and_query()
         .map(|pq| pq.as_str())
         .unwrap_or("/");
-    
+
     info!(
         method = %method,
         path = %original_uri.path(),
         query = %original_uri.query().unwrap_or(""),
         "Processing request"
     );
-    
+
     // Construct the target Anthropic API URL
     let target_url_str = format!("{}{}", config.anthropic_target_url, path_and_query);
-    
+
     // Parse the constructed URL into a Uri
     let target_url = match target_url_str.parse::<Uri>() {
         Ok(uri) => {
             info!(target_url = %uri, "Target URL constructed successfully");
             uri
-        },
+        }
         Err(e) => {
             // Log the error with context and return an error status
             error!(
-                error = %e, 
-                attempted_url = %target_url_str, 
+                error = %e,
+                attempted_url = %target_url_str,
                 "Failed to parse target URL"
             );
-            
+
             // Record the error status in the span
-            span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-            
+            span.record(
+                "http.status_code",
+                StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            );
+
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     };
-    
+
     // Convert the request body to bytes for processing
     // The usize::MAX parameter means we'll read the entire body, no matter how large
     let body_bytes_result = hyper::body::to_bytes(req.into_body()).await;
-    
+
     // Handle any errors that might occur during body extraction
     // The extracted body bytes will be used in future implementations
     let body_bytes = match body_bytes_result {
         Ok(bytes) => {
             info!(body_size = bytes.len(), "Request body read successfully");
             bytes
-        },
+        }
         Err(e) => {
             // Log the error and return a BAD_REQUEST status
             error!(error = %e, "Failed to read request body");
-            
+
             // Record the error status in the span
             span.record("http.status_code", StatusCode::BAD_REQUEST.as_u16());
-            
+
             return Err(StatusCode::BAD_REQUEST);
         }
     };
-    
+
     // Log detailed request information including headers and body
     log_request_details(&method, &original_uri, &original_headers, &body_bytes);
-    
+
     // Create the request builder for forwarding to Anthropic API
     info!("Setting up request forwarding to Anthropic API");
     let mut forward_req_builder = client.request(method.clone(), target_url.to_string());
-    
+
     // Create new headers for the forwarded request
     let mut forward_headers = HeaderMap::new();
-    
+
     // Copy original headers, filtering out hop-by-hop headers
     for (name, value) in original_headers.iter() {
         // Filter out hop-by-hop headers that shouldn't be forwarded
@@ -192,49 +194,52 @@ pub async fn proxy_handler(
             forward_headers.insert(name.clone(), value.clone());
         }
     }
-    
+
     // Set the Host header based on the target URL
     if let Some(host) = target_url.host() {
         match ReqHeaderValue::from_str(host) {
             Ok(host_value) => {
                 forward_headers.insert(header::HOST, host_value);
-            },
+            }
             Err(e) => {
                 error!(error = %e, host = %host, "Failed to create Host header value");
                 // Continue without setting Host header - reqwest will handle it
             }
         }
     }
-    
+
     // Set the Anthropic API key as x-api-key header
     match ReqHeaderValue::from_str(&config.anthropic_api_key) {
         Ok(api_key_value) => {
             // Add the API key header
             forward_headers.insert(header::HeaderName::from_static("x-api-key"), api_key_value);
-            
+
             // Remove Authorization header if it exists (x-api-key is preferred by Anthropic)
             forward_headers.remove(header::AUTHORIZATION);
-        },
+        }
         Err(e) => {
             error!(error = %e, "Failed to create header value for Anthropic API key");
-            span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+            span.record(
+                "http.status_code",
+                StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            );
             return Err(StatusCode::INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     // Add the headers to the request builder
     forward_req_builder = forward_req_builder.headers(forward_headers);
-    
+
     // Add the request body to the builder
     forward_req_builder = forward_req_builder.body(body_bytes);
-    
+
     // Store the builder for the next step (actually sending the request)
     info!("Request forwarding setup complete");
-    
+
     // Send the request to the Anthropic API
     info!("Sending request to Anthropic API");
     let forward_resp_result = forward_req_builder.send().await;
-    
+
     // Check if the request was successful
     let forward_resp = match forward_resp_result {
         Ok(resp) => {
@@ -243,28 +248,28 @@ pub async fn proxy_handler(
                 "Received response from Anthropic API"
             );
             resp
-        },
+        }
         Err(e) => {
             // Log the error with context
             error!(
                 error = %e,
                 "Failed to send request to Anthropic API"
             );
-            
+
             // Record the error status in the span
             span.record("http.status_code", StatusCode::BAD_GATEWAY.as_u16());
-            
+
             return Err(StatusCode::BAD_GATEWAY);
         }
     };
-    
+
     // Extract the status code and headers from the response
     let resp_status = forward_resp.status();
     let resp_headers = forward_resp.headers().clone();
-    
+
     // Record the response status code in the span for observability
     span.record("http.status_code", resp_status.as_u16());
-    
+
     // Log detailed information about the response
     info!(
         request_id = %req_id,
@@ -272,7 +277,7 @@ pub async fn proxy_handler(
         headers_count = resp_headers.len(),
         "Received response from Anthropic API with status {}", resp_status
     );
-    
+
     // Log headers at debug level (won't show in normal operation)
     debug!(
         request_id = %req_id,
@@ -280,32 +285,32 @@ pub async fn proxy_handler(
         headers = ?resp_headers,
         "Response headers from Anthropic API"
     );
-    
+
     // Check if this is a streaming response by examining Content-Type header
     let is_streaming = resp_headers
         .get(header::CONTENT_TYPE)
         .map(|ct| ct.to_str().unwrap_or("").contains("text/event-stream"))
         .unwrap_or(false);
-    
+
     if is_streaming {
         // Log headers for streaming response
         info!(
             request_id = %req_id,
             "Detected streaming response from Anthropic API"
         );
-        
+
         // Call the header logging helper to log status and headers
         log_response_headers(&resp_status, &resp_headers);
-        
+
         // Create a stream from the reqwest response
         info!(
             request_id = %req_id,
             "Creating stream from Anthropic API response"
         );
-        
+
         // Get the bytes stream from the reqwest response
         let reqwest_stream = forward_resp.bytes_stream();
-        
+
         // Convert reqwest stream to axum stream by mapping each chunk
         // and handling errors appropriately
         let axum_stream = reqwest_stream.map(move |result| match result {
@@ -317,7 +322,7 @@ pub async fn proxy_handler(
                     "Received stream chunk from Anthropic API"
                 );
                 Ok::<_, axum::BoxError>(bytes)
-            },
+            }
             Err(e) => {
                 // On error, log it and convert to axum::BoxError
                 error!(
@@ -328,26 +333,25 @@ pub async fn proxy_handler(
                 Err(axum::BoxError::from(format!("Stream error: {}", e)))
             }
         });
-        
+
         // Create the Axum body from the stream
         let stream_body = Body::wrap_stream(axum_stream);
-        
+
         info!(
             request_id = %req_id,
             "Successfully created streaming body for client response"
         );
-        
+
         // Start building the streaming response with the original status code
         info!(
             request_id = %req_id,
             status = %resp_status,
             "Forwarding streaming response to client"
         );
-        
+
         // Start building the response with the same status code
-        let mut response_builder = Response::builder()
-            .status(resp_status);
-        
+        let mut response_builder = Response::builder().status(resp_status);
+
         // Copy the headers from the Anthropic API response, excluding hop-by-hop headers
         // For streaming responses, we also exclude Content-Length as it's not applicable
         for (name, value) in resp_headers.iter() {
@@ -367,32 +371,29 @@ pub async fn proxy_handler(
                 response_builder = response_builder.header(name.clone(), value.clone());
             }
         }
-        
+
         // For streaming responses, we ensure the correct Content-Type is set
         // This is critical for the client to recognize it as a stream
         if !resp_headers.contains_key(header::CONTENT_TYPE) {
-            response_builder = response_builder.header(
-                header::CONTENT_TYPE, 
-                "text/event-stream"
-            );
+            response_builder = response_builder.header(header::CONTENT_TYPE, "text/event-stream");
         }
-        
+
         // Build the final streaming response with the body
         match response_builder.body(boxed(stream_body)) {
             Ok(response) => {
                 // Calculate the elapsed time since the request started
                 let duration = start.elapsed();
-                
+
                 // Record the duration in milliseconds in the span for observability
                 span.record("duration_ms", duration.as_millis());
-                
+
                 info!(
                     request_id = %req_id,
                     duration_ms = %duration.as_millis(),
                     "Successfully built streaming client response"
                 );
                 Ok(response)
-            },
+            }
             Err(e) => {
                 // This is unlikely to happen but we should handle it
                 error!(
@@ -400,10 +401,13 @@ pub async fn proxy_handler(
                     error = %e,
                     "Failed to build streaming response"
                 );
-                
+
                 // Record the error status in the span
-                span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-                
+                span.record(
+                    "http.status_code",
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                );
+
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
@@ -413,10 +417,10 @@ pub async fn proxy_handler(
             request_id = %req_id,
             "Handling non-streaming response from Anthropic API"
         );
-        
+
         // Read the full response body
         let resp_body_bytes_result = forward_resp.bytes().await;
-        
+
         // Handle any errors that might occur during body extraction
         let resp_body_bytes = match resp_body_bytes_result {
             Ok(bytes) => {
@@ -426,7 +430,7 @@ pub async fn proxy_handler(
                     "Response body read successfully"
                 );
                 bytes
-            },
+            }
             Err(e) => {
                 // Log the error with context
                 error!(
@@ -434,17 +438,17 @@ pub async fn proxy_handler(
                     error = %e,
                     "Failed to read response body from Anthropic API"
                 );
-                
+
                 // Record the error status in the span
                 span.record("http.status_code", StatusCode::BAD_GATEWAY.as_u16());
-                
+
                 return Err(StatusCode::BAD_GATEWAY);
             }
         };
-        
+
         // Log detailed response information including headers and body
         log_response_details(&resp_status, &resp_headers, &resp_body_bytes);
-        
+
         // Build the response to return to the client
         info!(
             request_id = %req_id,
@@ -452,11 +456,10 @@ pub async fn proxy_handler(
             body_size = resp_body_bytes.len(),
             "Forwarding non-streaming response to client"
         );
-        
+
         // Start building the response with the same status code
-        let mut response_builder = Response::builder()
-            .status(resp_status);
-        
+        let mut response_builder = Response::builder().status(resp_status);
+
         // Copy the headers from the Anthropic API response, excluding hop-by-hop headers
         for (name, value) in resp_headers.iter() {
             // Filter out hop-by-hop headers that shouldn't be forwarded back
@@ -474,30 +477,28 @@ pub async fn proxy_handler(
                 response_builder = response_builder.header(name.clone(), value.clone());
             }
         }
-        
+
         // Explicitly set the Content-Length header based on the response body size
-        response_builder = response_builder.header(
-            header::CONTENT_LENGTH,
-            resp_body_bytes.len().to_string()
-        );
-        
+        response_builder =
+            response_builder.header(header::CONTENT_LENGTH, resp_body_bytes.len().to_string());
+
         // Build the final response with the body
         // Converting the body to a boxed body to make it compatible with axum's expectations
         match response_builder.body(boxed(Full::from(resp_body_bytes))) {
             Ok(response) => {
                 // Calculate the elapsed time since the request started
                 let duration = start.elapsed();
-                
+
                 // Record the duration in milliseconds in the span for observability
                 span.record("duration_ms", duration.as_millis());
-                
+
                 info!(
                     request_id = %req_id,
                     duration_ms = %duration.as_millis(),
                     "Successfully built client response"
                 );
                 Ok(response)
-            },
+            }
             Err(e) => {
                 // This is unlikely to happen but we should handle it
                 error!(
@@ -505,10 +506,13 @@ pub async fn proxy_handler(
                     error = %e,
                     "Failed to build response"
                 );
-                
+
                 // Record the error status in the span
-                span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
-                
+                span.record(
+                    "http.status_code",
+                    StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                );
+
                 Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
@@ -551,13 +555,13 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
         };
         headers_log.insert(name_str, value_str);
     }
-    
+
     // Log all headers at debug level (won't show in normal operation)
     debug!(http.request.headers = ?headers_log);
 
     // Log the request body with appropriate handling based on size
     let body_len = body.len();
-    
+
     if body_len == 0 {
         // Empty body
         info!("Request body empty");
@@ -573,7 +577,7 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
                     http.request.body.content = %pretty_json,
                     http.request.body.size = body_len
                 );
-            },
+            }
             Err(_) => {
                 // Not valid JSON, log as regular string
                 debug!(
@@ -584,14 +588,17 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
         }
     } else {
         // Body too large to log fully
-        info!(http.request.body.size = body_len, "Request body too large to log fully");
+        info!(
+            http.request.body.size = body_len,
+            "Request body too large to log fully"
+        );
     }
 }
 
 /// Logs details of an API response in a structured format
 ///
 /// This function creates a new logging span and records comprehensive information about
-/// the response, including status code, headers, and the response body (with size limits 
+/// the response, including status code, headers, and the response body (with size limits
 /// and JSON formatting).
 ///
 /// # Arguments
@@ -619,13 +626,13 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
         };
         headers_log.insert(name_str, value_str);
     }
-    
+
     // Log all headers at debug level (won't show in normal operation)
     debug!(http.response.headers = ?headers_log);
 
     // Log the response body with appropriate handling based on size
     let body_len = body.len();
-    
+
     if body_len == 0 {
         // Empty body
         info!("Response body empty");
@@ -641,7 +648,7 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
                     http.response.body.content = %pretty_json,
                     http.response.body.size = body_len
                 );
-            },
+            }
             Err(_) => {
                 // Not valid JSON, log as regular string
                 debug!(
@@ -652,7 +659,10 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
         }
     } else {
         // Body too large to log fully
-        info!(http.response.body.size = body_len, "Response body too large to log fully");
+        info!(
+            http.response.body.size = body_len,
+            "Response body too large to log fully"
+        );
     }
 }
 
@@ -691,10 +701,10 @@ pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap) {
         };
         headers_log.insert(name_str, value_str);
     }
-    
+
     // Log all headers at debug level (won't show in normal operation)
     debug!(http.response.headers = ?headers_log);
-    
+
     // Log a message indicating that we're about to start streaming
     info!("Headers logged, beginning to stream response body");
 }

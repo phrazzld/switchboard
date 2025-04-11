@@ -3,8 +3,8 @@
 //! This module handles the initialization and configuration of the tracing system
 //! used for structured logging throughout the application.
 
-use tracing_subscriber::{fmt, prelude::*, EnvFilter, registry};
 use crate::config::Config;
+use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 
 /// Initialize the tracing system for structured logging
 ///
@@ -25,7 +25,10 @@ pub fn init_tracing(config: &Config) {
     let filter = EnvFilter::try_from_default_env()
         .or_else(|_| EnvFilter::try_new(&config.log_level))
         .unwrap_or_else(|e| {
-            eprintln!("Failed to parse log level filter: {}, using default 'info'", e);
+            eprintln!(
+                "Failed to parse log level filter: {}, using default 'info'",
+                e
+            );
             EnvFilter::new("info") // Fallback to info
         });
 
