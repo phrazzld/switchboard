@@ -2,9 +2,14 @@ mod config;
 mod proxy_handler;
 mod logger;
 
-use tokio::signal;
-use tracing::info;
+use std::net::SocketAddr;
 use std::time::Duration;
+use tokio::net::TcpListener;
+use tokio::signal;
+use tracing::{info, error};
+use axum::Server;
+
+use proxy_handler::create_router;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -28,12 +33,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .pool_idle_timeout(Duration::from_secs(90)) // Keep connections in the pool for reuse
         .build()
         .map_err(|e| {
-            tracing::error!("Failed to build reqwest client: {}", e);
+            error!("Failed to build reqwest client: {}", e);
             e
         })?;
     
     info!("HTTP client created with rustls TLS support");
     
+    // Create the router with the HTTP client and config
+    let app = create_router(client, config);
+    
+    // Parse and bind to the configured address
+    let addr_str = format!("0.0.0.0:{}", config.port);
+    let addr: SocketAddr = match addr_str.parse() {
+        Ok(addr) => addr,
+        Err(e) => {
+            error!(error = %e, addr = %addr_str, "Invalid listen address/port");
+            return Err(e.into());
+        }
+    };
+    
+    // Bind to the configured port
+    info!("Binding server to {}", addr);
+    let listener = match TcpListener::bind(addr).await {
+        Ok(listener) => listener,
+        Err(e) => {
+            error!(error = %e, addr = %addr, "Failed to bind to address");
+            return Err(e.into());
+        }
+    };
+    
+    // Start the server with graceful shutdown
+    info!("Starting Axum server, listening for requests");
+    let server = Server::from_tcp(listener.into_std()?)?;
+    
+    if let Err(e) = server
+        .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+    {
+        error!(error = %e, "Server error");
+        return Err(e.into());
+    }
+    
+    info!("Server shutdown complete");
     Ok(())
 }
 

@@ -55,7 +55,7 @@
     - **Action:** Implement `shutdown_signal` using `tokio::signal` as shown in `PLAN.md` Section 6 (`main.rs`).
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC25]
-- [ ] **Setup Axum Server:** Parse listen address, bind `TcpListener`, create the Axum router (initially basic), and run the server using `axum::serve` with graceful shutdown.
+- [x] **Setup Axum Server:** Parse listen address, bind `TcpListener`, create the Axum router (initially basic), and run the server using `axum::serve` with graceful shutdown.
     - **Action:** Implement the server startup logic in `main`, including address parsing, listener binding, calling `proxy_handler::create_router` (initially returning a placeholder router), and integrating `shutdown_signal`. Handle bind/serve errors.
     - **Depends On:** Setup Basic main Function, Integrate Config and Logging, Implement Graceful Shutdown Logic, Create Reqwest Client
     - **AC Ref:** [AC1], [AC25]

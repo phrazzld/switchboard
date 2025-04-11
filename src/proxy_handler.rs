@@ -1,12 +1,39 @@
 // This module will contain the proxy handler implementation
-// Actual implementation will be added in later tasks
+// Placeholder implementation to be expanded in future tasks
 
-// Router creation function (to be implemented)
-pub fn create_router() {
-    todo!("Router creation will be implemented in a later task")
+use axum::{
+    Router,
+    routing::any,
+    http::StatusCode,
+    response::IntoResponse,
+    body::Body,
+};
+use hyper::Request;
+use reqwest::Client;
+use tracing::info;
+
+use crate::config::Config;
+
+/// Creates the Axum router with routes for the application
+///
+/// This is a minimal implementation that will be expanded in future tasks.
+/// Currently, it just creates a basic router with a catch-all route that returns
+/// a placeholder message.
+pub fn create_router(_client: Client, _config: &'static Config) -> Router {
+    info!("Creating Axum router with catch-all route");
+    
+    Router::new().route(
+        "/*path", // Catch-all route
+        any(move |_: Request<Body>| async { 
+            // This is a placeholder that will be replaced with the actual proxy_handler
+            "Anthropic Visibility Proxy - Placeholder Response" 
+        }),
+    )
 }
 
-// Proxy handler function (to be implemented)
-async fn proxy_handler() {
-    todo!("Proxy handler will be implemented in a later task")
+/// Placeholder for the proxy handler function
+/// Will be fully implemented in a future task
+#[allow(dead_code)]
+async fn proxy_handler() -> impl IntoResponse {
+    (StatusCode::OK, "Proxy handler not yet implemented")
 }
