@@ -27,7 +27,7 @@
     - **Action:** Implement the `Config` struct with `Debug` and `Clone` derived traits in `src/config.rs`.
     - **Depends On:** Define Project Structure
     - **AC Ref:** None (Internal structure)
-- [ ] **Implement Config Loading Function:** Create the `load_config` function using `std::env::var`, `dotenvy`, and `OnceLock` to load configuration from environment variables (with defaults) and `.env` file.
+- [x] **Implement Config Loading Function:** Create the `load_config` function using `std::env::var`, `dotenvy`, and `OnceLock` to load configuration from environment variables (with defaults) and `.env` file.
     - **Action:** Implement `load_config` as shown in `PLAN.md` Section 6. Ensure `ANTHROPIC_API_KEY` is mandatory. Log loaded config values (excluding the key).
     - **Depends On:** Define Config Struct
     - **AC Ref:** [AC21], [AC22] (Foundation for these)
