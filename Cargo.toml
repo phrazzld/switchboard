@@ -23,3 +23,13 @@ hyper = { version = "0.14.27", features = ["server", "http1", "http2"] }
 bytes = "1.4.0"
 futures-util = "0.3.28"
 dotenvy = "0.15.7"
+
+[dev-dependencies]
+# Testing dependencies for integration tests
+tokio = { version = "1.32.0", features = ["macros", "rt-multi-thread"] }
+wiremock = "0.6"
+serde_json = "1.0.107"  # Match the version used in main dependencies
+axum = { version = "0.6.20" }  # Match the version used in main dependencies
+tower = { version = "0.4", features = ["util"] }
+http-body-util = "0.1"
+uuid = { version = "1.4.1", features = ["v4"] }  # Match the version used in main dependencies

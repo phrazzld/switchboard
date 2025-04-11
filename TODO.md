@@ -7,7 +7,7 @@
     - **Depends On:** None
     - **AC Ref:** AC1, AC2, AC3 (file existence), AC4 (file existence)
 
-- [ ] **Task Title:** Add Dev Dependencies to `Cargo.toml`
+- [x] **Task Title:** Add Dev Dependencies to `Cargo.toml`
     - **Action:** Add a `[dev-dependencies]` section to `switchboard/Cargo.toml` (if not present) and include the specified testing crates: `tokio`, `wiremock`, `serde_json`, `axum` (with `test-helpers` feature if needed), `tower` (with `util` feature), `http-body-util`, and `uuid`. Ensure `tokio` features align with main dependencies and include `rt-multi-thread`.
     - **Depends On:** None
     - **AC Ref:** AC5
