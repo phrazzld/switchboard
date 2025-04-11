@@ -287,11 +287,14 @@ pub async fn proxy_handler(
         .unwrap_or(false);
     
     if is_streaming {
-        // Streaming response handling will be implemented in a future task
+        // Log headers for streaming response
         info!(
             request_id = %req_id,
             "Detected streaming response from Anthropic API"
         );
+        
+        // Call the header logging helper to log status and headers
+        log_response_headers(&resp_status, &resp_headers);
         
         warn!(
             request_id = %req_id,

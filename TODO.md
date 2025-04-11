@@ -125,7 +125,7 @@
     - **Action:** Implement the helper function to log status code and response headers (similar to `log_response_details` but without the body part). Add an info message indicating streaming started.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC14], [AC24] (partially)
-- [ ] **Call Streaming Response Header Logging:** Call `log_response_headers` when a streaming response is detected.
+- [x] **Call Streaming Response Header Logging:** Call `log_response_headers` when a streaming response is detected.
     - **Action:** Add the call `log_response_headers(resp_status, &resp_headers);` inside the `if is_streaming` block.
     - **Depends On:** Implement Streaming Response Detection, Implement Streaming Response Header Logging Helper
     - **AC Ref:** [AC14]
