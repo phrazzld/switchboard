@@ -65,7 +65,7 @@
     - **Action:** Add the struct definition with `serde::Deserialize` as shown in `PLAN.md` Section 5.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** None (Helper for logging)
-- [ ] **Implement Basic Router Creation:** Create the `create_router` function that sets up an Axum `Router` with a catch-all `any` route (`/*path`) pointing to `proxy_handler`.
+- [x] **Implement Basic Router Creation:** Create the `create_router` function that sets up an Axum `Router` with a catch-all `any` route (`/*path`) pointing to `proxy_handler`.
     - **Action:** Implement `create_router` taking `Client` and `Config` and returning a `Router` as shown in `PLAN.md` Section 6.
     - **Depends On:** Define Project Structure, Create Reqwest Client, Define Config Struct
     - **AC Ref:** [AC1], [AC2] (Foundation for these)

@@ -37,18 +37,15 @@ struct AnthropicMessagesRequestMinimal {
 
 /// Creates the Axum router with routes for the application
 ///
-/// This is a minimal implementation that will be expanded in future tasks.
-/// Currently, it just creates a basic router with a catch-all route that returns
-/// a placeholder message.
-pub fn create_router(_client: Client, _config: &'static Config) -> Router {
-    info!("Creating Axum router with catch-all route");
+/// Sets up an Axum router with a catch-all route that forwards all
+/// incoming requests to the proxy_handler function regardless of
+/// HTTP method (GET, POST, etc.)
+pub fn create_router(client: Client, config: &'static Config) -> Router {
+    info!("Creating Axum router with catch-all route to proxy_handler");
     
     Router::new().route(
         "/*path", // Catch-all route
-        any(move |_: Request<Body>| async { 
-            // This is a placeholder that will be replaced with the actual proxy_handler
-            "Anthropic Visibility Proxy - Placeholder Response" 
-        }),
+        any(move |req: Request<Body>| proxy_handler(req, client.clone(), config)),
     )
 }
 
@@ -75,7 +72,7 @@ pub fn create_router(_client: Client, _config: &'static Config) -> Router {
         duration_ms = field::Empty             // Total request duration
     )
 )]
-async fn proxy_handler(
+pub async fn proxy_handler(
     req: Request<Body>,
     _client: Client,
     _config: &'static Config,
