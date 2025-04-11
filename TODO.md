@@ -62,7 +62,7 @@
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
     - **AC Ref:** AC15
 
-- [ ] **Task Title:** Assert Response Status and Body in Basic Test
+- [x] **Task Title:** Assert Response Status and Body in Basic Test
     - **Action:** Inside the `test_simple_post_forward_success` function, after receiving the response from `oneshot`, assert that the response status code is `StatusCode::OK`. Extract the response body bytes, deserialize it as `serde_json::Value`, and assert that it matches the expected JSON (`{"status": "ok"}`). Import `serde_json`.
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Send Test Request using `tower::ServiceExt::oneshot` in Basic Test
     - **AC Ref:** AC16, AC17, AC18 (implicitly tested when running `cargo test`)
