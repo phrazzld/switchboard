@@ -337,21 +337,69 @@ pub async fn proxy_handler(
             "Successfully created streaming body for client response"
         );
         
-        // Build a basic response with the stream body
-        // (The full response handling with headers will be implemented in the next task)
-        let stream_response = Response::builder()
-            .status(StatusCode::OK)
-            .body(boxed(stream_body))
-            .map_err(|e| {
+        // Start building the streaming response with the original status code
+        info!(
+            request_id = %req_id,
+            status = %resp_status,
+            "Forwarding streaming response to client"
+        );
+        
+        // Start building the response with the same status code
+        let mut response_builder = Response::builder()
+            .status(resp_status);
+        
+        // Copy the headers from the Anthropic API response, excluding hop-by-hop headers
+        // For streaming responses, we also exclude Content-Length as it's not applicable
+        for (name, value) in resp_headers.iter() {
+            // Filter out hop-by-hop headers that shouldn't be forwarded back
+            // and Content-Length which doesn't apply to streaming responses
+            if name != header::CONNECTION
+                && name != header::PROXY_AUTHENTICATE
+                && name != header::PROXY_AUTHORIZATION
+                && name != header::TE
+                && name != header::TRAILER
+                && name != header::TRANSFER_ENCODING
+                && name != header::UPGRADE
+                && name != header::HOST
+                && name != header::CONTENT_LENGTH
+            {
+                // Add the header to our response
+                response_builder = response_builder.header(name.clone(), value.clone());
+            }
+        }
+        
+        // For streaming responses, we ensure the correct Content-Type is set
+        // This is critical for the client to recognize it as a stream
+        if !resp_headers.contains_key(header::CONTENT_TYPE) {
+            response_builder = response_builder.header(
+                header::CONTENT_TYPE, 
+                "text/event-stream"
+            );
+        }
+        
+        // Build the final streaming response with the body
+        match response_builder.body(boxed(stream_body)) {
+            Ok(response) => {
+                info!(
+                    request_id = %req_id,
+                    "Successfully built streaming client response"
+                );
+                Ok(response)
+            },
+            Err(e) => {
+                // This is unlikely to happen but we should handle it
                 error!(
                     request_id = %req_id,
                     error = %e,
                     "Failed to build streaming response"
                 );
-                StatusCode::INTERNAL_SERVER_ERROR
-            })?;
-            
-        Ok(stream_response)
+                
+                // Record the error status in the span
+                span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+                
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
     } else {
         // Handle non-streaming response by reading the full body
         info!(

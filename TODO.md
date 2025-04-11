@@ -133,7 +133,7 @@
     - **Action:** Use `forward_resp.bytes_stream().map(|result| ...)` to wrap the stream. Inside the map, handle `Err(e)` by logging the error and converting it to `axum::BoxError`. Create `Body::from_stream(stream)`.
     - **Depends On:** Implement Streaming Response Detection
     - **AC Ref:** [AC15], [AC20]
-- [ ] **Implement Streaming Response Forwarding (Headers/Status):** Build the Axum `Response` for streaming, copying status and filtered headers (remove hop-by-hop, *do not* add `Content-Length`). Attach the streaming body.
+- [x] **Implement Streaming Response Forwarding (Headers/Status):** Build the Axum `Response` for streaming, copying status and filtered headers (remove hop-by-hop, *do not* add `Content-Length`). Attach the streaming body.
     - **Action:** Create `Response::builder()`, set status, copy headers from `resp_headers` (filtering hop-by-hop, connection, transfer-encoding, content-length). Set the body to the `axum_body` created from the stream. Handle builder errors.
     - **Depends On:** Implement Streaming Response Body Forwarding
     - **AC Ref:** [AC16]
