@@ -9,7 +9,7 @@
     - **Action:** Edit `Cargo.toml` to include the specified dependencies with appropriate versions and features as listed in `PLAN.md` Section 4.2. Ensure `reqwest` uses `rustls-tls`.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** [AC26]
-- [ ] **Add Optional Dependencies:** Add `dotenvy` to `Cargo.toml` for `.env` file support.
+- [x] **Add Optional Dependencies:** Add `dotenvy` to `Cargo.toml` for `.env` file support.
     - **Action:** Edit `Cargo.toml` to include `dotenvy`.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** [AC26]
