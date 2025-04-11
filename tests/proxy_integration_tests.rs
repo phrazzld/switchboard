@@ -7,6 +7,7 @@ use tower::ServiceExt;
 use wiremock::{Mock, ResponseTemplate};
 use wiremock::matchers::{method, path};
 use serde_json::{json, Value};
+use futures_util::StreamExt;
 
 /// Tests that a simple POST request to /v1/messages is correctly forwarded
 /// to the Anthropic API and the response is returned to the client.
@@ -66,4 +67,19 @@ async fn test_simple_post_forward_success() {
     // Assert that the response body matches our expected JSON
     assert_eq!(body_json, expected_json, 
         "Response body should match expected JSON. Got: {}", body_json);
+}
+
+/// Tests that streaming responses from the Anthropic API are correctly
+/// processed and forwarded to the client with proper streaming semantics.
+#[tokio::test]
+async fn test_streaming_response_forward_success() {
+    // Set up the test environment with mock server, client, config, and router
+    let test_setup = common::setup_test_environment().await;
+    
+    // The streaming response setup and mock server configuration will be added in the next task
+    
+    // The streaming request construction and sending will be added after that
+    
+    // Finally, the streaming response verification will be implemented
+    // This will involve processing chunks as they arrive and validating the streaming behavior
 }
