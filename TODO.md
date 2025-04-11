@@ -17,7 +17,7 @@
     - **Action:** Create the files and directory structure as outlined in `PLAN.md` Section 4.3. Add placeholder content if needed.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** None (Structural setup)
-- [ ] **Setup .gitignore:** Create a `.gitignore` file to exclude common Rust build artifacts and potentially `.env`.
+- [x] **Setup .gitignore:** Create a `.gitignore` file to exclude common Rust build artifacts and potentially `.env`.
     - **Action:** Create `.gitignore` with entries like `/target`, `Cargo.lock` (if not committed), `.env`.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** None (Project hygiene)
