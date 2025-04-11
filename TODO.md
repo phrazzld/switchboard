@@ -81,7 +81,7 @@
     - **Action:** Combine `config.anthropic_target_url` with the request's `path_and_query`. Parse into a `Uri`. Log and return `StatusCode::INTERNAL_SERVER_ERROR` on error.
     - **Depends On:** Implement Request Parsing
     - **AC Ref:** [AC5]
-- [ ] **Implement Request Logging Helper:** Create `log_request_details` function to log method, URI, headers (masked), and body (truncated, formatted).
+- [x] **Implement Request Logging Helper:** Create `log_request_details` function to log method, URI, headers (masked), and body (truncated, formatted).
     - **Action:** Implement the helper function as specified in `PLAN.md` Section 6. Use `info!` for basic info, `debug!` for headers/body. Implement header masking for `Authorization`/`x-api-key`. Implement body truncation (`MAX_LOG_BODY_LEN`) and JSON pretty-printing attempt.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC3], [AC24]

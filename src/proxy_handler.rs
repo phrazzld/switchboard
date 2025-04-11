@@ -8,12 +8,14 @@ use axum::{
     body::Body,
     response::Response,
 };
-// bytes::Bytes will be used in future implementations
-use hyper::{Request, Uri};
+use bytes::Bytes;
+use hyper::{Request, Uri, header, HeaderMap};
 use reqwest::Client;
 use serde::Deserialize;
+use serde_json::Value;
+use std::collections::HashMap;
 use std::time::Instant;
-use tracing::{info, warn, error, instrument, field, Span};
+use tracing::{info, warn, error, debug, info_span, instrument, field, Span};
 use uuid::Uuid;
 
 use crate::config::Config;
@@ -168,4 +170,77 @@ pub async fn proxy_handler(
     // This will be replaced with actual forwarding logic in subsequent tasks
     warn!(request_id = %req_id, "Request parsed successfully, but forwarding not yet implemented");
     Err(StatusCode::NOT_IMPLEMENTED)
+}
+
+/// Maximum length of request/response bodies that will be logged in full
+/// Bodies larger than this will only have their size logged to avoid excessive logging
+pub const MAX_LOG_BODY_LEN: usize = 10 * 1024; // 10KB
+
+/// Logs details of an incoming request in a structured format
+///
+/// This function creates a new logging span and records comprehensive information about
+/// the request, including method, URI, headers (with sensitive values masked), and the
+/// request body (with size limits and JSON formatting).
+///
+/// # Arguments
+/// * `method` - The HTTP method (GET, POST, etc.)
+/// * `uri` - The request URI including path and query
+/// * `headers` - The request headers map
+/// * `body` - The request body as bytes
+pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMap, body: &Bytes) {
+    // Create a new span for the request details to keep them separate from the main request span
+    let span = info_span!("request_details");
+    let _enter = span.enter();
+
+    // Log basic request information at the info level
+    info!(http.method = %method, url.full = %uri);
+
+    // Build a map of header names to values, masking sensitive headers
+    let mut headers_log: HashMap<String, String> = HashMap::new();
+    for (name, value) in headers.iter() {
+        let name_str = name.to_string();
+        // Mask sensitive authentication headers
+        let value_str = if name == header::AUTHORIZATION || name == "x-api-key" {
+            "[REDACTED]".to_string()
+        } else {
+            // Convert header value to string (lossy UTF-8 conversion if needed)
+            String::from_utf8_lossy(value.as_bytes()).to_string()
+        };
+        headers_log.insert(name_str, value_str);
+    }
+    
+    // Log all headers at debug level (won't show in normal operation)
+    debug!(http.request.headers = ?headers_log);
+
+    // Log the request body with appropriate handling based on size
+    let body_len = body.len();
+    
+    if body_len == 0 {
+        // Empty body
+        info!("Request body empty");
+    } else if body_len <= MAX_LOG_BODY_LEN {
+        // Body is small enough to log fully
+        // Try to parse as JSON first for pretty formatting
+        match serde_json::from_slice::<Value>(body) {
+            Ok(json_val) => {
+                // Successfully parsed as JSON, pretty print it
+                let pretty_json = serde_json::to_string_pretty(&json_val)
+                    .unwrap_or_else(|_| String::from_utf8_lossy(body).to_string());
+                debug!(
+                    http.request.body.content = %pretty_json,
+                    http.request.body.size = body_len
+                );
+            },
+            Err(_) => {
+                // Not valid JSON, log as regular string
+                debug!(
+                    http.request.body.content = %String::from_utf8_lossy(body),
+                    http.request.body.size = body_len
+                );
+            }
+        }
+    } else {
+        // Body too large to log fully
+        info!(http.request.body.size = body_len, "Request body too large to log fully");
+    }
 }
