@@ -42,7 +42,7 @@
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Create Test-Specific `Config` in `setup_test_environment`, Build Test `reqwest::Client` in `setup_test_environment`
     - **AC Ref:** AC11, AC7 (fully)
 
-- [ ] **Task Title:** Declare `common` Module in `proxy_integration_tests.rs`
+- [x] **Task Title:** Declare `common` Module in `proxy_integration_tests.rs`
     - **Action:** Add `mod common;` at the top of `switchboard/tests/proxy_integration_tests.rs` to make the shared utilities accessible.
     - **Depends On:** Create Test Directory Structure
     - **AC Ref:** Implicit requirement for AC12
