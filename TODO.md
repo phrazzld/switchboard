@@ -113,7 +113,7 @@
     - **Action:** Add the call `log_response_details(resp_status, &resp_headers, &resp_body_bytes);` inside the non-streaming success path.
     - **Depends On:** Implement Non-Streaming Response Handling, Implement Non-Streaming Response Logging Helper
     - **AC Ref:** [AC11], [AC12]
-- [ ] **Implement Non-Streaming Response Forwarding:** Build the Axum `Response`, copying status, filtered headers (remove hop-by-hop, add `Content-Length`), and the response body.
+- [x] **Implement Non-Streaming Response Forwarding:** Build the Axum `Response`, copying status, filtered headers (remove hop-by-hop, add `Content-Length`), and the response body.
     - **Action:** Create `Response::builder()`, set status, copy headers from `resp_headers` (filtering), set `Content-Length`, set body using `Body::from(resp_body_bytes)`. Handle builder errors.
     - **Depends On:** Implement Non-Streaming Response Handling
     - **AC Ref:** [AC13]

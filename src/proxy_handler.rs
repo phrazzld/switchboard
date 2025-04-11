@@ -5,7 +5,7 @@ use axum::{
     Router,
     routing::any,
     http::StatusCode,
-    body::Body,
+    body::{Body, boxed, Full},
     response::Response,
 };
 use bytes::Bytes;
@@ -337,15 +337,66 @@ pub async fn proxy_handler(
         // Log detailed response information including headers and body
         log_response_details(&resp_status, &resp_headers, &resp_body_bytes);
         
-        // For now, return a placeholder response until the next task is implemented
-        // The actual response forwarding will be implemented in subsequent tasks
-        warn!(
+        // Build the response to return to the client
+        info!(
             request_id = %req_id,
             status = %resp_status,
             body_size = resp_body_bytes.len(),
-            "Non-streaming response handling and logging complete, but response forwarding not yet implemented"
+            "Forwarding non-streaming response to client"
         );
-        Err(StatusCode::NOT_IMPLEMENTED)
+        
+        // Start building the response with the same status code
+        let mut response_builder = Response::builder()
+            .status(resp_status);
+        
+        // Copy the headers from the Anthropic API response, excluding hop-by-hop headers
+        for (name, value) in resp_headers.iter() {
+            // Filter out hop-by-hop headers that shouldn't be forwarded back
+            if name != header::CONNECTION
+                && name != header::PROXY_AUTHENTICATE
+                && name != header::PROXY_AUTHORIZATION
+                && name != header::TE
+                && name != header::TRAILER
+                && name != header::TRANSFER_ENCODING
+                && name != header::UPGRADE
+                // Also don't forward the host header in the response
+                && name != header::HOST
+            {
+                // Add the header to our response
+                response_builder = response_builder.header(name.clone(), value.clone());
+            }
+        }
+        
+        // Explicitly set the Content-Length header based on the response body size
+        response_builder = response_builder.header(
+            header::CONTENT_LENGTH,
+            resp_body_bytes.len().to_string()
+        );
+        
+        // Build the final response with the body
+        // Converting the body to a boxed body to make it compatible with axum's expectations
+        match response_builder.body(boxed(Full::from(resp_body_bytes))) {
+            Ok(response) => {
+                info!(
+                    request_id = %req_id,
+                    "Successfully built client response"
+                );
+                Ok(response)
+            },
+            Err(e) => {
+                // This is unlikely to happen but we should handle it
+                error!(
+                    request_id = %req_id,
+                    error = %e,
+                    "Failed to build response"
+                );
+                
+                // Record the error status in the span
+                span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+                
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
     }
 }
 
