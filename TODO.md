@@ -33,7 +33,7 @@
     - **AC Ref:** [AC21], [AC22] (Foundation for these)
 
 ## Logging Module (`src/logger.rs`)
-- [ ] **Implement Tracing Initialization:** Create the `init_tracing` function to set up `tracing-subscriber` based on the `Config`.
+- [x] **Implement Tracing Initialization:** Create the `init_tracing` function to set up `tracing-subscriber` based on the `Config`.
     - **Action:** Implement `init_tracing` using `EnvFilter` (from env or config), and configure either JSON or pretty formatting based on `config.log_format`. Initialize the subscriber.
     - **Depends On:** Define Config Struct
     - **AC Ref:** [AC21], [AC22]
