@@ -380,8 +380,15 @@ pub async fn proxy_handler(
         // Build the final streaming response with the body
         match response_builder.body(boxed(stream_body)) {
             Ok(response) => {
+                // Calculate the elapsed time since the request started
+                let duration = start.elapsed();
+                
+                // Record the duration in milliseconds in the span for observability
+                span.record("duration_ms", duration.as_millis());
+                
                 info!(
                     request_id = %req_id,
+                    duration_ms = %duration.as_millis(),
                     "Successfully built streaming client response"
                 );
                 Ok(response)
@@ -478,8 +485,15 @@ pub async fn proxy_handler(
         // Converting the body to a boxed body to make it compatible with axum's expectations
         match response_builder.body(boxed(Full::from(resp_body_bytes))) {
             Ok(response) => {
+                // Calculate the elapsed time since the request started
+                let duration = start.elapsed();
+                
+                // Record the duration in milliseconds in the span for observability
+                span.record("duration_ms", duration.as_millis());
+                
                 info!(
                     request_id = %req_id,
+                    duration_ms = %duration.as_millis(),
                     "Successfully built client response"
                 );
                 Ok(response)

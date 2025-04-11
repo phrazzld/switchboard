@@ -137,7 +137,7 @@
     - **Action:** Create `Response::builder()`, set status, copy headers from `resp_headers` (filtering hop-by-hop, connection, transfer-encoding, content-length). Set the body to the `axum_body` created from the stream. Handle builder errors.
     - **Depends On:** Implement Streaming Response Body Forwarding
     - **AC Ref:** [AC16]
-- [ ] **Implement Request Duration Logging:** Calculate elapsed time and record `duration_ms` in the main handler span before returning `Ok(response)`.
+- [x] **Implement Request Duration Logging:** Calculate elapsed time and record `duration_ms` in the main handler span before returning `Ok(response)`.
     - **Action:** Calculate `start.elapsed()` at the end of both streaming and non-streaming success paths. Record `duration.as_millis()` using `span.record()`. Log the duration.
     - **Depends On:** Implement Basic Proxy Handler Skeleton, Implement Non-Streaming Response Forwarding, Implement Streaming Response Forwarding (Headers/Status)
     - **AC Ref:** [AC23]
