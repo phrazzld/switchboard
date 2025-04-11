@@ -37,7 +37,7 @@
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
     - **AC Ref:** AC10
 
-- [ ] **Task Title:** Instantiate Test `axum::Router` in `setup_test_environment`
+- [x] **Task Title:** Instantiate Test `axum::Router` in `setup_test_environment`
     - **Action:** Within the `setup_test_environment` function, call `switchboard::proxy_handler::create_router`, passing the test `reqwest::Client` and the test `Config`. Use `Box::leak` for the config as a temporary measure as shown in the plan, acknowledging the need for future refinement. Populate the `TestSetup` struct with the client, config, mock server, and router, and return it.
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Create Test-Specific `Config` in `setup_test_environment`, Build Test `reqwest::Client` in `setup_test_environment`
     - **AC Ref:** AC11, AC7 (fully)

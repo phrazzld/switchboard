@@ -5,6 +5,7 @@ use switchboard::config::Config;
 use reqwest::Client;
 use axum::Router;
 use std::time::Duration;
+use switchboard::proxy_handler::create_router;
 
 /// Represents the setup needed for integration tests.
 pub struct TestSetup {
@@ -54,6 +55,19 @@ pub async fn setup_test_environment() -> TestSetup {
         .build()
         .expect("Failed to build test reqwest client");
     
-    // The rest of the implementation will be added in subsequent tasks
-    unimplemented!("The rest of this function will be implemented in future tasks")
+    // Use Box::leak to create a 'static reference to the config
+    // Note: This is a temporary simplification for testing purposes
+    // A future refinement might use Arc<Config> instead to avoid the leak
+    let static_config = Box::leak(Box::new(config.clone()));
+    
+    // Create the application router with our test client and config
+    let app = create_router(client.clone(), static_config);
+    
+    // Return the complete TestSetup with all components
+    TestSetup {
+        client,
+        config,
+        mock_server,
+        app,
+    }
 }
