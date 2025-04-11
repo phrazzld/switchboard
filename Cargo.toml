@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "switchboard"
+path = "src/lib.rs"
+
+[[bin]]
+name = "switchboard"
+path = "src/main.rs"
+
 [dependencies]
 # NOTE: These versions are specified based on PLAN.md Section 4.2
 # The exact versions may need adjustment based on the actual Rust version used for building.

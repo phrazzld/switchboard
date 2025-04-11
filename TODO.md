@@ -47,7 +47,7 @@
     - **Depends On:** Create Test Directory Structure
     - **AC Ref:** Implicit requirement for AC12
 
-- [ ] **Task Title:** Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
+- [x] **Task Title:** Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
     - **Action:** Create an `async fn test_simple_post_forward_success()` test function annotated with `#[tokio::test]` in `switchboard/tests/proxy_integration_tests.rs`. Import and call `common::setup_test_environment().await` to get the `TestSetup` instance. Import necessary types (`axum::body::Body`, `axum::http::{Request, StatusCode}`, `tower::ServiceExt`, `http_body_util::BodyExt`).
     - **Depends On:** Create Test Directory Structure, Add Dev Dependencies to `Cargo.toml`, Instantiate Test `axum::Router` in `setup_test_environment`, Declare `common` Module in `proxy_integration_tests.rs`
     - **AC Ref:** AC12, AC13
