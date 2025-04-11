@@ -73,7 +73,7 @@
     - **Action:** Define the `proxy_handler` function signature, add the `instrument` macro with initial fields, generate `req_id` using `uuid`, get the current span, and record `req_id`.
     - **Depends On:** Add Core Dependencies, Define Config Struct
     - **AC Ref:** [AC4]
-- [ ] **Implement Request Parsing:** Extract method, URI, headers, and read the request body (`Bytes`) from the incoming Axum `Request`. Handle body reading errors.
+- [x] **Implement Request Parsing:** Extract method, URI, headers, and read the request body (`Bytes`) from the incoming Axum `Request`. Handle body reading errors.
     - **Action:** Get `method`, `uri`, `headers` from the `Request`. Use `axum::body::to_bytes` to read the body. Log and return `StatusCode::BAD_REQUEST` on error. Record method/path/query in the span.
     - **Depends On:** Implement Basic Proxy Handler Skeleton
     - **AC Ref:** [AC2], [AC18]

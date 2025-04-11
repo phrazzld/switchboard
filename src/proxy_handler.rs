@@ -8,11 +8,12 @@ use axum::{
     body::Body,
     response::Response,
 };
+// bytes::Bytes will be used in future implementations
 use hyper::Request;
 use reqwest::Client;
 use serde::Deserialize;
 use std::time::Instant;
-use tracing::{info, instrument, field, Span};
+use tracing::{info, warn, error, instrument, field, Span};
 use uuid::Uuid;
 
 use crate::config::Config;
@@ -75,7 +76,7 @@ pub fn create_router(_client: Client, _config: &'static Config) -> Router {
     )
 )]
 async fn proxy_handler(
-    _req: Request<Body>,
+    req: Request<Body>,
     _client: Client,
     _config: &'static Config,
 ) -> Result<Response, StatusCode> {
@@ -93,7 +94,58 @@ async fn proxy_handler(
     
     info!(request_id = %req_id, "Starting request processing");
     
-    // For now, return a placeholder response
-    // This will be replaced with actual implementation in future tasks
+    // Extract and clone the essential request information
+    let original_uri = req.uri().clone();
+    let method = req.method().clone();
+    let _original_headers = req.headers().clone(); // Will be used in future implementations
+    
+    // Record basic request information in the tracing span
+    span.record("http.method", &method.to_string());
+    span.record("url.path", original_uri.path());
+    
+    // If there's a query string, record it in the span
+    if let Some(query) = original_uri.query() {
+        span.record("url.query", query);
+    }
+    
+    // Extract the path and query, defaulting to "/" if none
+    // Will be used in future implementations for constructing the target URL
+    let _path_and_query = original_uri
+        .path_and_query()
+        .map(|pq| pq.as_str())
+        .unwrap_or("/");
+    
+    info!(
+        method = %method,
+        path = %original_uri.path(),
+        query = %original_uri.query().unwrap_or(""),
+        "Processing request"
+    );
+    
+    // Convert the request body to bytes for processing
+    // The usize::MAX parameter means we'll read the entire body, no matter how large
+    let body_bytes_result = hyper::body::to_bytes(req.into_body()).await;
+    
+    // Handle any errors that might occur during body extraction
+    // The extracted body bytes will be used in future implementations
+    let _body_bytes = match body_bytes_result {
+        Ok(bytes) => {
+            info!(body_size = bytes.len(), "Request body read successfully");
+            bytes
+        },
+        Err(e) => {
+            // Log the error and return a BAD_REQUEST status
+            error!(error = %e, "Failed to read request body");
+            
+            // Record the error status in the span
+            span.record("http.status_code", StatusCode::BAD_REQUEST.as_u16());
+            
+            return Err(StatusCode::BAD_REQUEST);
+        }
+    };
+    
+    // For now, return a placeholder response while the rest of the handler is implemented
+    // This will be replaced with actual forwarding logic in subsequent tasks
+    warn!(request_id = %req_id, "Request parsed successfully, but forwarding not yet implemented");
     Err(StatusCode::NOT_IMPLEMENTED)
 }
