@@ -27,7 +27,7 @@
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
     - **AC Ref:** AC8
 
-- [ ] **Task Title:** Create Test-Specific `Config` in `setup_test_environment`
+- [x] **Task Title:** Create Test-Specific `Config` in `setup_test_environment`
     - **Action:** Within the `setup_test_environment` function, create an instance of `switchboard::config::Config`, setting `anthropic_target_url` to the `mock_server.uri()` and using appropriate dummy values for other fields (e.g., `port`, `anthropic_api_key`, `log_level`).
     - **Depends On:** Integrate `wiremock::MockServer` Startup into `setup_test_environment`
     - **AC Ref:** AC9

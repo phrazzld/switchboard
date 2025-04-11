@@ -35,6 +35,16 @@ pub async fn setup_test_environment() -> TestSetup {
     // This will be used to mock the Anthropic API during tests
     let mock_server = MockServer::start().await;
     
+    // Create a test-specific configuration pointing to the mock server
+    // Use dummy values for fields that are suitable for testing
+    let config = Config {
+        port: "0".to_string(),  // Use 0 to let OS assign a random port if needed
+        anthropic_api_key: "test-api-key".to_string(),  // Dummy API key for testing
+        anthropic_target_url: mock_server.uri(),  // Point to the mock server
+        log_level: "debug".to_string(),  // Use debug level for more verbose test logs
+        log_format: "pretty".to_string(),  // Use pretty format for readability in tests
+    };
+    
     // The rest of the implementation will be added in subsequent tasks
     unimplemented!("The rest of this function will be implemented in future tasks")
 }
