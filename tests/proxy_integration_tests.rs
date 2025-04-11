@@ -136,6 +136,39 @@ async fn test_streaming_response_forward_success() {
     assert_eq!(content_type, "text/event-stream", 
         "Content-Type should be text/event-stream, got {}", content_type.to_str().unwrap());
     
-    // The streaming response verification will be implemented in the next task
-    // This will involve processing chunks as they arrive and validating the streaming behavior
+    // Get the response body for processing
+    let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+    
+    // Convert the body to a string for validation
+    let body_str = String::from_utf8_lossy(&body).to_string();
+    
+    // Expected SSE event patterns (simplified for testing purposes)
+    // Note: In a real implementation, we'd need more sophisticated parsing
+    // to handle edge cases like events split across chunk boundaries
+    let expected_events = vec![
+        "{\"type\": \"message_start\"",
+        "{\"type\": \"content_block_start\"",
+        "{\"type\": \"content_block_delta\"", // Hello
+        "{\"type\": \"content_block_delta\"", // world
+        "{\"type\": \"content_block_delta\"", // !
+        "{\"type\": \"content_block_stop\"",
+        "{\"type\": \"message_stop\"",
+    ];
+    
+    // Make sure the body is not empty
+    assert!(!body_str.is_empty(), "Expected non-empty response body");
+    
+    // Verify each expected event appears in the body
+    for expected_event in expected_events {
+        assert!(
+            body_str.contains(expected_event),
+            "Missing expected event pattern '{}' in response body", 
+            expected_event
+        );
+    }
+    
+    // Verify the presence of each part of the assembled message
+    assert!(body_str.contains("\"text\": \"Hello\""), "Missing 'Hello' text in response");
+    assert!(body_str.contains("\"text\": \" world\""), "Missing ' world' text in response");
+    assert!(body_str.contains("\"text\": \"!\""), "Missing '!' text in response");
 }

@@ -17,7 +17,7 @@
     - **Depends On:** Set Up Mock Server for Streaming Response
     - **AC Ref:** Request sending
 
-- [ ] **Task Title:** Verify Streaming Response Processing
+- [x] **Task Title:** Verify Streaming Response Processing
     - **Action:** Extract and process the streaming response, verifying that each chunk is correctly handled and the overall response maintains the expected streaming behavior.
     - **Depends On:** Send Request Expecting Streaming Response
     - **AC Ref:** Response validation
