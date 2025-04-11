@@ -76,9 +76,34 @@ async fn test_streaming_response_forward_success() {
     // Set up the test environment with mock server, client, config, and router
     let test_setup = common::setup_test_environment().await;
     
-    // The streaming response setup and mock server configuration will be added in the next task
+    // Define a streaming response template
+    // This simulates how the Anthropic API would send a streaming response
+    // with multiple event chunks using Server-Sent Events (SSE) format
+    let streaming_response = ResponseTemplate::new(200)
+        // Set content type to text/event-stream which is standard for SSE
+        .insert_header("content-type", "text/event-stream")
+        // Disable content-length header to enable chunked transfer encoding
+        .insert_header("transfer-encoding", "chunked")
+        // Each chunk is formatted as SSE: "data: {...}\n\n"
+        .set_body_bytes(concat!(
+            "data: {\"type\": \"message_start\", \"message\": {\"id\": \"msg_123\", \"type\": \"message\"}}\n\n",
+            "data: {\"type\": \"content_block_start\", \"index\": 0, \"content_block\": {\"type\": \"text\"}}\n\n",
+            "data: {\"type\": \"content_block_delta\", \"index\": 0, \"delta\": {\"type\": \"text_delta\", \"text\": \"Hello\"}}\n\n",
+            "data: {\"type\": \"content_block_delta\", \"index\": 0, \"delta\": {\"type\": \"text_delta\", \"text\": \" world\"}}\n\n",
+            "data: {\"type\": \"content_block_delta\", \"index\": 0, \"delta\": {\"type\": \"text_delta\", \"text\": \"!\"}}\n\n",
+            "data: {\"type\": \"content_block_stop\", \"index\": 0}\n\n",
+            "data: {\"type\": \"message_stop\"}\n\n"
+        ));
     
-    // The streaming request construction and sending will be added after that
+    // Set up the mock to respond with our streaming response
+    // when receiving a POST request to /v1/messages
+    Mock::given(method("POST"))
+        .and(path("/v1/messages"))
+        .respond_with(streaming_response)
+        .mount(&test_setup.mock_server)
+        .await;
+    
+    // The streaming request construction and sending will be added in the next task
     
     // Finally, the streaming response verification will be implemented
     // This will involve processing chunks as they arrive and validating the streaming behavior

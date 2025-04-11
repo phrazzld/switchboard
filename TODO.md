@@ -7,7 +7,7 @@
     - **Depends On:** Basic integration test infrastructure (already complete)
     - **AC Ref:** Basic test structure
 
-- [ ] **Task Title:** Set Up Mock Server for Streaming Response
+- [x] **Task Title:** Set Up Mock Server for Streaming Response
     - **Action:** In the streaming test, configure the WireMock server to respond with a streaming response (using appropriate content-type header like `text/event-stream` and configuring a chunked response body).
     - **Depends On:** Create Streaming Response Test Skeleton
     - **AC Ref:** Mock server configuration
