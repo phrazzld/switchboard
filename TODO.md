@@ -17,7 +17,7 @@
     - **Depends On:** Create Test Directory Structure
     - **AC Ref:** AC6
 
-- [ ] **Task Title:** Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
+- [x] **Task Title:** Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
     - **Action:** Define an `async fn setup_test_environment() -> TestSetup` function within `switchboard/tests/common/mod.rs`. Include necessary imports (`std::time::Duration`).
     - **Depends On:** Create Test Directory Structure, Define `TestSetup` Struct in `tests/common/mod.rs`
     - **AC Ref:** AC7 (partially - function signature)
