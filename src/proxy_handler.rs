@@ -418,3 +418,71 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
         info!(http.request.body.size = body_len, "Request body too large to log fully");
     }
 }
+
+/// Logs details of an API response in a structured format
+///
+/// This function creates a new logging span and records comprehensive information about
+/// the response, including status code, headers, and the response body (with size limits 
+/// and JSON formatting).
+///
+/// # Arguments
+/// * `status` - The HTTP status code
+/// * `headers` - The response headers map
+/// * `body` - The response body as bytes
+pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, body: &Bytes) {
+    // Create a new span for the response details to keep them separate from the main request span
+    let span = info_span!("response_details");
+    let _enter = span.enter();
+
+    // Log basic response information at the info level
+    info!(http.status_code = %status.as_u16(), status_text = %status.canonical_reason().unwrap_or("Unknown"));
+
+    // Build a map of header names to values, masking sensitive headers
+    let mut headers_log: HashMap<String, String> = HashMap::new();
+    for (name, value) in headers.iter() {
+        let name_str = name.to_string();
+        // Mask sensitive headers if any (similar to request handling)
+        let value_str = if name == header::AUTHORIZATION || name == "x-api-key" {
+            "[REDACTED]".to_string()
+        } else {
+            // Convert header value to string (lossy UTF-8 conversion if needed)
+            String::from_utf8_lossy(value.as_bytes()).to_string()
+        };
+        headers_log.insert(name_str, value_str);
+    }
+    
+    // Log all headers at debug level (won't show in normal operation)
+    debug!(http.response.headers = ?headers_log);
+
+    // Log the response body with appropriate handling based on size
+    let body_len = body.len();
+    
+    if body_len == 0 {
+        // Empty body
+        info!("Response body empty");
+    } else if body_len <= MAX_LOG_BODY_LEN {
+        // Body is small enough to log fully
+        // Try to parse as JSON first for pretty formatting
+        match serde_json::from_slice::<Value>(body) {
+            Ok(json_val) => {
+                // Successfully parsed as JSON, pretty print it
+                let pretty_json = serde_json::to_string_pretty(&json_val)
+                    .unwrap_or_else(|_| String::from_utf8_lossy(body).to_string());
+                debug!(
+                    http.response.body.content = %pretty_json,
+                    http.response.body.size = body_len
+                );
+            },
+            Err(_) => {
+                // Not valid JSON, log as regular string
+                debug!(
+                    http.response.body.content = %String::from_utf8_lossy(body),
+                    http.response.body.size = body_len
+                );
+            }
+        }
+    } else {
+        // Body too large to log fully
+        info!(http.response.body.size = body_len, "Response body too large to log fully");
+    }
+}

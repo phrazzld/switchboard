@@ -105,7 +105,7 @@
     - **Action:** Add logic to check `Content-Type` for `text/event-stream`. In the `else` block (non-streaming), call `forward_resp.bytes().await`. Handle the `Result`, logging errors and returning `BAD_GATEWAY`.
     - **Depends On:** Implement Basic Response Handling
     - **AC Ref:** [AC19]
-- [ ] **Implement Non-Streaming Response Logging Helper:** Create `log_response_details` function to log status, headers, and body (truncated, formatted).
+- [x] **Implement Non-Streaming Response Logging Helper:** Create `log_response_details` function to log status, headers, and body (truncated, formatted).
     - **Action:** Implement the helper function similar to `log_request_details` but for responses, logging status code and response headers/body.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC11], [AC12], [AC24] (partially)
