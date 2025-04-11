@@ -334,13 +334,16 @@ pub async fn proxy_handler(
             }
         };
         
+        // Log detailed response information including headers and body
+        log_response_details(&resp_status, &resp_headers, &resp_body_bytes);
+        
         // For now, return a placeholder response until the next task is implemented
-        // The actual response logging and forwarding will be implemented in subsequent tasks
+        // The actual response forwarding will be implemented in subsequent tasks
         warn!(
             request_id = %req_id,
             status = %resp_status,
             body_size = resp_body_bytes.len(),
-            "Non-streaming response handling complete, but response logging and forwarding not yet implemented"
+            "Non-streaming response handling and logging complete, but response forwarding not yet implemented"
         );
         Err(StatusCode::NOT_IMPLEMENTED)
     }

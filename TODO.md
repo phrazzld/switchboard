@@ -109,7 +109,7 @@
     - **Action:** Implement the helper function similar to `log_request_details` but for responses, logging status code and response headers/body.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC11], [AC12], [AC24] (partially)
-- [ ] **Call Non-Streaming Response Logging:** Call `log_response_details` after successfully reading the non-streaming response body.
+- [x] **Call Non-Streaming Response Logging:** Call `log_response_details` after successfully reading the non-streaming response body.
     - **Action:** Add the call `log_response_details(resp_status, &resp_headers, &resp_body_bytes);` inside the non-streaming success path.
     - **Depends On:** Implement Non-Streaming Response Handling, Implement Non-Streaming Response Logging Helper
     - **AC Ref:** [AC11], [AC12]
