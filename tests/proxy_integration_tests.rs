@@ -103,8 +103,39 @@ async fn test_streaming_response_forward_success() {
         .mount(&test_setup.mock_server)
         .await;
     
-    // The streaming request construction and sending will be added in the next task
+    // Create a sample JSON request body for the Anthropic Messages API with streaming enabled
+    let request_body = json!({
+        "model": "claude-3-opus-20240229",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Hello, Claude!"
+            }
+        ],
+        "stream": true  // Enable streaming in the request
+    });
     
-    // Finally, the streaming response verification will be implemented
+    // Construct the HTTP request
+    let request = Request::builder()
+        .method("POST")
+        .uri("/v1/messages")
+        .header(header::CONTENT_TYPE, HeaderValue::from_static("application/json"))
+        .body(Body::from(serde_json::to_string(&request_body).unwrap()))
+        .unwrap();
+    
+    // Send the request to our test router instance using oneshot
+    let response = test_setup.app.oneshot(request).await.unwrap();
+    
+    // Assert that the response status code is 200 OK
+    assert_eq!(response.status(), StatusCode::OK, 
+        "Response status code should be 200 OK, got {}", response.status());
+    
+    // Verify the response has the correct content type for streaming responses
+    let content_type = response.headers().get(header::CONTENT_TYPE)
+        .expect("Response should have a Content-Type header");
+    assert_eq!(content_type, "text/event-stream", 
+        "Content-Type should be text/event-stream, got {}", content_type.to_str().unwrap());
+    
+    // The streaming response verification will be implemented in the next task
     // This will involve processing chunks as they arrive and validating the streaming behavior
 }

@@ -12,7 +12,7 @@
     - **Depends On:** Create Streaming Response Test Skeleton
     - **AC Ref:** Mock server configuration
 
-- [ ] **Task Title:** Send Request Expecting Streaming Response
+- [x] **Task Title:** Send Request Expecting Streaming Response
     - **Action:** Create and send a request with streaming expectations (e.g., including a `stream: true` parameter in the request JSON, if required by the API).
     - **Depends On:** Set Up Mock Server for Streaming Response
     - **AC Ref:** Request sending
