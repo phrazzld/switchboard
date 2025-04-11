@@ -16,6 +16,8 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 ///
 /// # Example
 /// ```
+/// # use switchboard::config;
+/// # use switchboard::logger;
 /// let config = config::load_config();
 /// logger::init_tracing(config);
 /// ```

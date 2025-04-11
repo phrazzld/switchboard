@@ -16,7 +16,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Instant;
-use tracing::{debug, error, field, info, info_span, instrument, warn, Span};
+use tracing::{debug, error, field, info, info_span, instrument, Span};
 use uuid::Uuid;
 
 use crate::config::Config;
@@ -89,7 +89,7 @@ pub async fn proxy_handler(
     let span = Span::current();
 
     // Record the request ID in the span
-    span.record("req_id", &req_id.to_string());
+    span.record("req_id", req_id.to_string());
 
     info!(request_id = %req_id, "Starting request processing");
 
@@ -99,7 +99,7 @@ pub async fn proxy_handler(
     let original_headers = req.headers().clone();
 
     // Record basic request information in the tracing span
-    span.record("http.method", &method.to_string());
+    span.record("http.method", method.to_string());
     span.record("url.path", original_uri.path());
 
     // If there's a query string, record it in the span
