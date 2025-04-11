@@ -31,6 +31,10 @@ pub struct TestSetup {
 /// 
 /// Returns a TestSetup instance containing all components needed for testing.
 pub async fn setup_test_environment() -> TestSetup {
-    // The full implementation will be added in subsequent tasks
-    unimplemented!("This function will be implemented in future tasks")
+    // Start a WireMock server on a random available port
+    // This will be used to mock the Anthropic API during tests
+    let mock_server = MockServer::start().await;
+    
+    // The rest of the implementation will be added in subsequent tasks
+    unimplemented!("The rest of this function will be implemented in future tasks")
 }

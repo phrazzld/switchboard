@@ -22,7 +22,7 @@
     - **Depends On:** Create Test Directory Structure, Define `TestSetup` Struct in `tests/common/mod.rs`
     - **AC Ref:** AC7 (partially - function signature)
 
-- [ ] **Task Title:** Integrate `wiremock::MockServer` Startup into `setup_test_environment`
+- [x] **Task Title:** Integrate `wiremock::MockServer` Startup into `setup_test_environment`
     - **Action:** Within the `setup_test_environment` function, add code to start a `wiremock::MockServer` instance using `MockServer::start().await` and store it.
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Implement `setup_test_environment` Function Skeleton in `tests/common/mod.rs`
     - **AC Ref:** AC8
