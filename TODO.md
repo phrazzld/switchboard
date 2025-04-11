@@ -147,7 +147,7 @@
     - **AC Ref:** [AC1], [AC2]
 
 ## Build & Deployment
-- [ ] **Add Basic README.md:** Create a `README.md` with project description, setup, run, and test instructions.
+- [x] **Add Basic README.md:** Create a `README.md` with project description, setup, run, and test instructions.
     - **Action:** Create the `README.md` file following the structure in `DOCUMENTATION_APPROACH.md` (Section 2) adapted for this project. Include environment variable setup.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** None (Documentation)
