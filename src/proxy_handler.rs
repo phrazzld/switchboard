@@ -257,12 +257,35 @@ pub async fn proxy_handler(
         }
     };
     
+    // Extract the status code and headers from the response
+    let resp_status = forward_resp.status();
+    let resp_headers = forward_resp.headers().clone();
+    
+    // Record the response status code in the span for observability
+    span.record("http.status_code", resp_status.as_u16());
+    
+    // Log detailed information about the response
+    info!(
+        request_id = %req_id,
+        status = %resp_status,
+        headers_count = resp_headers.len(),
+        "Received response from Anthropic API with status {}", resp_status
+    );
+    
+    // Log headers at debug level (won't show in normal operation)
+    debug!(
+        request_id = %req_id,
+        status = %resp_status,
+        headers = ?resp_headers,
+        "Response headers from Anthropic API"
+    );
+    
     // For now, return a placeholder response until the next task is implemented
-    // The actual response handling will be implemented in subsequent tasks
+    // The actual streaming/non-streaming response handling will be implemented in subsequent tasks
     warn!(
         request_id = %req_id,
-        status = %forward_resp.status(),
-        "Request forwarded successfully, but response handling not yet implemented"
+        status = %resp_status,
+        "Basic response handling complete, but streaming/non-streaming handling not yet implemented"
     );
     Err(StatusCode::NOT_IMPLEMENTED)
 }

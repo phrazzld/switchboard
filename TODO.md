@@ -97,7 +97,7 @@
     - **Action:** Call `forward_req_builder.send().await`.
     - **Depends On:** Implement Request Forwarding Setup, Create Reqwest Client
     - **AC Ref:** [AC10] (Foundation for this)
-- [ ] **Implement Basic Response Handling:** Handle the `Result` from `send()`. On error, log and return `StatusCode::BAD_GATEWAY`. On success, extract status and headers. Log basic response info and record status code in span.
+- [x] **Implement Basic Response Handling:** Handle the `Result` from `send()`. On error, log and return `StatusCode::BAD_GATEWAY`. On success, extract status and headers. Log basic response info and record status code in span.
     - **Action:** Add `match forward_resp_result { Ok(resp) => {...}, Err(e) => {...} }`. Log errors and return `BAD_GATEWAY`. In the `Ok` arm, get `resp_status` and `resp_headers`. Log basic info and record `http.status_code`.
     - **Depends On:** Execute Forwarded Request
     - **AC Ref:** [AC10], [AC11] (Foundation for this), [AC17]
