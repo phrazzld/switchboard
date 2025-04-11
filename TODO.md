@@ -117,7 +117,7 @@
     - **Action:** Create `Response::builder()`, set status, copy headers from `resp_headers` (filtering), set `Content-Length`, set body using `Body::from(resp_body_bytes)`. Handle builder errors.
     - **Depends On:** Implement Non-Streaming Response Handling
     - **AC Ref:** [AC13]
-- [ ] **Implement Streaming Response Detection:** Check the `Content-Type` header of the upstream response for `text/event-stream`.
+- [x] **Implement Streaming Response Detection:** Check the `Content-Type` header of the upstream response for `text/event-stream`.
     - **Action:** Add the `is_streaming` check based on `resp_headers.get(header::CONTENT_TYPE)` inside the `Ok(forward_resp)` block.
     - **Depends On:** Implement Basic Response Handling
     - **AC Ref:** [AC15], [AC16] (Foundation for these)
