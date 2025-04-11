@@ -10,16 +10,16 @@ edition = "2021"
 # The exact versions may need adjustment based on the actual Rust version used for building.
 # Current specified versions target compatibility with rustc 1.68.1 but some transitive dependencies
 # require newer Rust versions. Further version adjustments or a Rust update may be needed.
-tokio = { version = "=1.25.0", features = ["full"] }
-axum = { version = "0.6.0", features = ["http2", "json", "macros"] }
-reqwest = { version = "=0.11.14", features = ["json", "stream", "rustls-tls"], default-features = false }
-serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.93"
+tokio = { version = "1.32.0", features = ["full"] }
+axum = { version = "0.6.20", features = ["http2", "json", "macros"] }
+reqwest = { version = "0.11.20", features = ["json", "stream", "rustls-tls"], default-features = false }
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.107"
 tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.11", features = ["env-filter", "json"] }
-uuid = { version = "1.2.2", features = ["v4"] }
+tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
+uuid = { version = "1.4.1", features = ["v4"] }
 http = "0.2.9"
-hyper = { version = "0.14.25", features = ["server", "http1", "http2"] }
+hyper = { version = "0.14.27", features = ["server", "http1", "http2"] }
 bytes = "1.4.0"
-futures-util = "0.3.27"
+futures-util = "0.3.28"
 dotenvy = "0.15.7"

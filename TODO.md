@@ -39,7 +39,7 @@
     - **AC Ref:** [AC21], [AC22]
 
 ## Main Application (`src/main.rs`)
-- [ ] **Setup Basic main Function:** Create the `#[tokio::main]` async `main` function.
+- [x] **Setup Basic main Function:** Create the `#[tokio::main]` async `main` function.
     - **Action:** Define the basic structure of the `main` function in `src/main.rs`.
     - **Depends On:** Define Project Structure
     - **AC Ref:** [AC27] (Foundation for this)
