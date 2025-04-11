@@ -9,6 +9,7 @@ use axum::{
     response::Response,
 };
 use bytes::Bytes;
+use futures_util::StreamExt;
 use hyper::{Request, Uri, header, HeaderMap};
 use reqwest::{Client, header::HeaderValue as ReqHeaderValue};
 use serde::Deserialize;
@@ -296,12 +297,61 @@ pub async fn proxy_handler(
         // Call the header logging helper to log status and headers
         log_response_headers(&resp_status, &resp_headers);
         
-        warn!(
+        // Create a stream from the reqwest response
+        info!(
             request_id = %req_id,
-            status = %resp_status,
-            "Streaming response detected, but streaming handling not yet implemented"
+            "Creating stream from Anthropic API response"
         );
-        Err(StatusCode::NOT_IMPLEMENTED)
+        
+        // Get the bytes stream from the reqwest response
+        let reqwest_stream = forward_resp.bytes_stream();
+        
+        // Convert reqwest stream to axum stream by mapping each chunk
+        // and handling errors appropriately
+        let axum_stream = reqwest_stream.map(move |result| match result {
+            Ok(bytes) => {
+                // On success, log the chunk size and return the bytes
+                debug!(
+                    request_id = %req_id,
+                    chunk_size = bytes.len(),
+                    "Received stream chunk from Anthropic API"
+                );
+                Ok::<_, axum::BoxError>(bytes)
+            },
+            Err(e) => {
+                // On error, log it and convert to axum::BoxError
+                error!(
+                    request_id = %req_id,
+                    error = %e,
+                    "Error reading streaming response chunk from Anthropic API"
+                );
+                Err(axum::BoxError::from(format!("Stream error: {}", e)))
+            }
+        });
+        
+        // Create the Axum body from the stream
+        let stream_body = Body::wrap_stream(axum_stream);
+        
+        info!(
+            request_id = %req_id,
+            "Successfully created streaming body for client response"
+        );
+        
+        // Build a basic response with the stream body
+        // (The full response handling with headers will be implemented in the next task)
+        let stream_response = Response::builder()
+            .status(StatusCode::OK)
+            .body(boxed(stream_body))
+            .map_err(|e| {
+                error!(
+                    request_id = %req_id,
+                    error = %e,
+                    "Failed to build streaming response"
+                );
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
+            
+        Ok(stream_response)
     } else {
         // Handle non-streaming response by reading the full body
         info!(

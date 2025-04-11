@@ -129,7 +129,7 @@
     - **Action:** Add the call `log_response_headers(resp_status, &resp_headers);` inside the `if is_streaming` block.
     - **Depends On:** Implement Streaming Response Detection, Implement Streaming Response Header Logging Helper
     - **AC Ref:** [AC14]
-- [ ] **Implement Streaming Response Body Forwarding:** Map the `reqwest` `bytes_stream` to an Axum `Body` stream, handling potential errors during chunk reading.
+- [x] **Implement Streaming Response Body Forwarding:** Map the `reqwest` `bytes_stream` to an Axum `Body` stream, handling potential errors during chunk reading.
     - **Action:** Use `forward_resp.bytes_stream().map(|result| ...)` to wrap the stream. Inside the map, handle `Err(e)` by logging the error and converting it to `axum::BoxError`. Create `Body::from_stream(stream)`.
     - **Depends On:** Implement Streaming Response Detection
     - **AC Ref:** [AC15], [AC20]
