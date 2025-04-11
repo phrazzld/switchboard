@@ -540,3 +540,46 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
         info!(http.response.body.size = body_len, "Response body too large to log fully");
     }
 }
+
+/// Logs details of response headers for streaming responses
+///
+/// This function creates a new logging span and records the response status and headers,
+/// without attempting to log the body (since the body will be streamed). This is specifically
+/// designed for streaming responses where we want to log headers immediately before
+/// starting to stream the response body.
+///
+/// # Arguments
+/// * `status` - The HTTP status code of the response
+/// * `headers` - The response headers map
+pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap) {
+    // Create a new span for the streaming response details
+    let span = info_span!("streaming_response_details");
+    let _enter = span.enter();
+
+    // Log that streaming is starting
+    info!(
+        http.status_code = %status.as_u16(),
+        status_text = %status.canonical_reason().unwrap_or("Unknown"),
+        "Starting streaming response"
+    );
+
+    // Build a map of header names to values, masking sensitive headers
+    let mut headers_log: HashMap<String, String> = HashMap::new();
+    for (name, value) in headers.iter() {
+        let name_str = name.to_string();
+        // Mask sensitive authentication headers
+        let value_str = if name == header::AUTHORIZATION || name == "x-api-key" {
+            "[REDACTED]".to_string()
+        } else {
+            // Convert header value to string (lossy UTF-8 conversion if needed)
+            String::from_utf8_lossy(value.as_bytes()).to_string()
+        };
+        headers_log.insert(name_str, value_str);
+    }
+    
+    // Log all headers at debug level (won't show in normal operation)
+    debug!(http.response.headers = ?headers_log);
+    
+    // Log a message indicating that we're about to start streaming
+    info!("Headers logged, beginning to stream response body");
+}

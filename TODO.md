@@ -121,7 +121,7 @@
     - **Action:** Add the `is_streaming` check based on `resp_headers.get(header::CONTENT_TYPE)` inside the `Ok(forward_resp)` block.
     - **Depends On:** Implement Basic Response Handling
     - **AC Ref:** [AC15], [AC16] (Foundation for these)
-- [ ] **Implement Streaming Response Header Logging Helper:** Create `log_response_headers` function to log status and headers only.
+- [x] **Implement Streaming Response Header Logging Helper:** Create `log_response_headers` function to log status and headers only.
     - **Action:** Implement the helper function to log status code and response headers (similar to `log_response_details` but without the body part). Add an info message indicating streaming started.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC14], [AC24] (partially)
