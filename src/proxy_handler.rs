@@ -230,8 +230,40 @@ pub async fn proxy_handler(
     // Store the builder for the next step (actually sending the request)
     info!("Request forwarding setup complete");
     
+    // Send the request to the Anthropic API
+    info!("Sending request to Anthropic API");
+    let forward_resp_result = forward_req_builder.send().await;
+    
+    // Check if the request was successful
+    let forward_resp = match forward_resp_result {
+        Ok(resp) => {
+            info!(
+                status = %resp.status(),
+                "Received response from Anthropic API"
+            );
+            resp
+        },
+        Err(e) => {
+            // Log the error with context
+            error!(
+                error = %e,
+                "Failed to send request to Anthropic API"
+            );
+            
+            // Record the error status in the span
+            span.record("http.status_code", StatusCode::BAD_GATEWAY.as_u16());
+            
+            return Err(StatusCode::BAD_GATEWAY);
+        }
+    };
+    
     // For now, return a placeholder response until the next task is implemented
-    warn!(request_id = %req_id, "Request forwarding setup complete, but sending not yet implemented");
+    // The actual response handling will be implemented in subsequent tasks
+    warn!(
+        request_id = %req_id,
+        status = %forward_resp.status(),
+        "Request forwarded successfully, but response handling not yet implemented"
+    );
     Err(StatusCode::NOT_IMPLEMENTED)
 }
 

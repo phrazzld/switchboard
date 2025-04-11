@@ -93,7 +93,7 @@
     - **Action:** Create the `reqwest` builder. Iterate over original headers, copying valid ones to a new `HeaderMap`. Set `Host` based on `target_url`. Set `x-api-key` from config, removing `Authorization`. Handle `HeaderValue` creation errors. Add headers and body to the builder.
     - **Depends On:** Implement Target URL Construction, Implement Request Parsing
     - **AC Ref:** [AC5], [AC6], [AC7], [AC8], [AC9]
-- [ ] **Execute Forwarded Request:** Send the request using the `reqwest::Client` and await the response.
+- [x] **Execute Forwarded Request:** Send the request using the `reqwest::Client` and await the response.
     - **Action:** Call `forward_req_builder.send().await`.
     - **Depends On:** Implement Request Forwarding Setup, Create Reqwest Client
     - **AC Ref:** [AC10] (Foundation for this)
