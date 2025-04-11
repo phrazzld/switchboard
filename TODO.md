@@ -57,7 +57,7 @@
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
     - **AC Ref:** AC14
 
-- [ ] **Task Title:** Send Test Request using `tower::ServiceExt::oneshot` in Basic Test
+- [x] **Task Title:** Send Test Request using `tower::ServiceExt::oneshot` in Basic Test
     - **Action:** Inside the `test_simple_post_forward_success` function, construct an `http::Request` with method POST, URI `/v1/messages`, appropriate headers (e.g., `content-type: application/json`), and a sample JSON body. Use `app.oneshot(request).await` to send the request to the test router instance obtained from `TestSetup`.
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Write Basic Integration Test Skeleton in `proxy_integration_tests.rs`
     - **AC Ref:** AC15

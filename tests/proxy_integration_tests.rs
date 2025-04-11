@@ -2,7 +2,7 @@
 mod common;
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::{Request, StatusCode, HeaderValue, header};
 use tower::ServiceExt;
 use http_body_util::BodyExt;
 use wiremock::{Mock, ResponseTemplate};
@@ -25,6 +25,29 @@ async fn test_simple_post_forward_success() {
             .set_body_json(json!({"status": "ok"})))
         .mount(&test_setup.mock_server)
         .await;
-        
-    // The rest of the test implementation will be added in subsequent tasks
+    
+    // Create a sample JSON request body for the Anthropic Messages API
+    let request_body = json!({
+        "model": "claude-3-opus-20240229",
+        "messages": [
+            {
+                "role": "user",
+                "content": "Hello, Claude!"
+            }
+        ]
+    });
+    
+    // Construct the HTTP request
+    let request = Request::builder()
+        .method("POST")
+        .uri("/v1/messages")
+        .header(header::CONTENT_TYPE, HeaderValue::from_static("application/json"))
+        .body(Body::from(serde_json::to_string(&request_body).unwrap()))
+        .unwrap();
+    
+    // Send the request to our test router instance using oneshot
+    // oneshot consumes the request and sends it through the service
+    let response = test_setup.app.oneshot(request).await.unwrap();
+    
+    // The assertions for the response will be added in the next task
 }
