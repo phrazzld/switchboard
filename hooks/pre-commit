@@ -1,0 +1,37 @@
+#!/bin/sh
+#
+# Pre-commit hook for Rust projects
+# Runs cargo fmt and cargo clippy before allowing commit
+
+# Store the colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+echo "${YELLOW}Running pre-commit checks...${NC}"
+
+# Check if any Rust files are staged
+git diff --name-only --cached --diff-filter=d | grep -q "\.rs$"
+if [ $? -eq 0 ]; then
+    # Run cargo fmt
+    echo "${YELLOW}Running cargo fmt --check...${NC}"
+    cargo fmt --check
+    if [ $? -ne 0 ]; then
+        echo "${RED}Error: Formatting check failed.${NC}"
+        echo "Run 'cargo fmt' to fix formatting issues."
+        exit 1
+    fi
+
+    # Run cargo clippy
+    echo "${YELLOW}Running cargo clippy...${NC}"
+    cargo clippy -- -A dead_code
+    if [ $? -ne 0 ]; then
+        echo "${RED}Error: Linting check failed.${NC}"
+        echo "Fix the linting issues before committing."
+        exit 1
+    fi
+fi
+
+echo "${GREEN}All checks passed!${NC}"
+exit 0

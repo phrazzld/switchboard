@@ -107,21 +107,16 @@ cargo doc --open
 
 ### Setting Up Pre-commit Hooks
 
-We use pre-commit hooks to ensure code quality checks run before each commit:
+We use pre-commit hooks to ensure code quality checks run before each commit. To enable the pre-commit hook:
 
-1. Install pre-commit:
-   ```bash
-   pip install pre-commit
-   # Or use your system's package manager, e.g.:
-   # brew install pre-commit
-   ```
+```bash
+# Copy the hook to your git hooks directory
+cp hooks/pre-commit .git/hooks/
+# Make it executable (if needed)
+chmod +x .git/hooks/pre-commit
+```
 
-2. Install the hooks:
-   ```bash
-   pre-commit install
-   ```
-
-This will automatically run formatting and linting checks before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
+The pre-commit hook will automatically run `cargo fmt --check` and `cargo clippy` before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
 
 ## License
 
