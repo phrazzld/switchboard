@@ -85,7 +85,7 @@
     - **Action:** Implement the helper function as specified in `PLAN.md` Section 6. Use `info!` for basic info, `debug!` for headers/body. Implement header masking for `Authorization`/`x-api-key`. Implement body truncation (`MAX_LOG_BODY_LEN`) and JSON pretty-printing attempt.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** [AC3], [AC24]
-- [ ] **Call Request Logging:** Call `log_request_details` from `proxy_handler` after parsing the request.
+- [x] **Call Request Logging:** Call `log_request_details` from `proxy_handler` after parsing the request.
     - **Action:** Add the call `log_request_details(&method, &original_uri, &original_headers, &body_bytes);` inside `proxy_handler`.
     - **Depends On:** Implement Request Parsing, Implement Request Logging Helper
     - **AC Ref:** [AC3], [AC24]

@@ -96,7 +96,7 @@ pub async fn proxy_handler(
     // Extract and clone the essential request information
     let original_uri = req.uri().clone();
     let method = req.method().clone();
-    let _original_headers = req.headers().clone(); // Will be used in future implementations
+    let original_headers = req.headers().clone();
     
     // Record basic request information in the tracing span
     span.record("http.method", &method.to_string());
@@ -150,7 +150,7 @@ pub async fn proxy_handler(
     
     // Handle any errors that might occur during body extraction
     // The extracted body bytes will be used in future implementations
-    let _body_bytes = match body_bytes_result {
+    let body_bytes = match body_bytes_result {
         Ok(bytes) => {
             info!(body_size = bytes.len(), "Request body read successfully");
             bytes
@@ -165,6 +165,9 @@ pub async fn proxy_handler(
             return Err(StatusCode::BAD_REQUEST);
         }
     };
+    
+    // Log detailed request information including headers and body
+    log_request_details(&method, &original_uri, &original_headers, &body_bytes);
     
     // For now, return a placeholder response while the rest of the handler is implemented
     // This will be replaced with actual forwarding logic in subsequent tasks
