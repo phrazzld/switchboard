@@ -67,16 +67,27 @@
     - **Depends On:** Add Dev Dependencies to `Cargo.toml`, Send Test Request using `tower::ServiceExt::oneshot` in Basic Test
     - **AC Ref:** AC16, AC17, AC18 (implicitly tested when running `cargo test`)
 
-## [!] CLARIFICATIONS NEEDED / ASSUMPTIONS
+## ✅ TESTING INFRASTRUCTURE SETUP COMPLETE
 
-- [ ] **Issue/Assumption:** Assumed `switchboard::proxy_handler::create_router` function exists and accepts `reqwest::Client` and `&'static Config` as arguments.
-    - **Context:** PLAN.md Step 3 (`Implement Shared Test Utilities`) and Step 4 (`Write Basic Integration Test`) rely on this function signature. Existing code snippets (`src/main.rs`, `src/proxy_handler.rs`) confirm this signature.
+All tasks for setting up the basic testing infrastructure have been completed successfully:
 
-- [ ] **Issue/Assumption:** Acknowledged use of `Box::leak` for passing `Config` to `create_router` in tests is a temporary simplification as noted in PLAN.md Step 3 Self-Correction.
-    - **Context:** PLAN.md Step 3 notes this is not ideal and suggests future refinement (e.g., using `Arc<Config>`). This initial setup proceeds with the leak for simplicity as planned.
+1. Created test directory structure
+2. Added necessary dev dependencies to Cargo.toml
+3. Set up TestSetup struct in common module
+4. Implemented setup_test_environment function
+5. Created first integration test with wiremock setup
+6. Verified test passes successfully
 
-- [ ] **Issue/Assumption:** Assumed project root directory is named `switchboard`.
-    - **Context:** PLAN.md Step 1 specifies paths relative to `switchboard/`.
+## [!] CLARIFICATIONS / ASSUMPTIONS CONFIRMED
 
-- [ ] **Issue/Assumption:** Assumed the specified dev-dependency versions in PLAN.md Step 2 are compatible with the project's current Rust toolchain version.
-    - **Context:** PLAN.md Step 2 lists specific versions. Compatibility might require adjustments or toolchain updates.
+- [x] **Issue/Assumption:** Assumed `switchboard::proxy_handler::create_router` function exists and accepts `reqwest::Client` and `&'static Config` as arguments.
+    - **Status:** Confirmed working in the implementation.
+
+- [x] **Issue/Assumption:** Acknowledged use of `Box::leak` for passing `Config` to `create_router` in tests is a temporary simplification as noted in PLAN.md Step 3 Self-Correction.
+    - **Status:** Implemented as planned. Future refinement to consider using `Arc<Config>` remains an option.
+
+- [x] **Issue/Assumption:** Assumed project root directory is named `switchboard`.
+    - **Status:** Confirmed correct in implementation.
+
+- [x] **Issue/Assumption:** Assumed the specified dev-dependency versions in PLAN.md Step 2 are compatible with the project's current Rust toolchain version.
+    - **Status:** Verified working with current setup.
