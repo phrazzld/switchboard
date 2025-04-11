@@ -15,6 +15,13 @@ A Rust-based HTTP proxy service that intercepts and logs traffic between clients
 - Rust 1.68.1 or later
 - An Anthropic API key
 
+### Development Prerequisites
+
+For contributing to the project, you'll need the following additional tools:
+
+- Python and pip (for pre-commit hooks)
+- [pre-commit](https://pre-commit.com/) for automated code quality checks
+
 ## Environment Variables
 
 | Variable | Description | Default |
@@ -95,6 +102,26 @@ cargo clippy
 # Generate and open documentation
 cargo doc --open
 ```
+
+## Contributing
+
+### Setting Up Pre-commit Hooks
+
+We use pre-commit hooks to ensure code quality checks run before each commit:
+
+1. Install pre-commit:
+   ```bash
+   pip install pre-commit
+   # Or use your system's package manager, e.g.:
+   # brew install pre-commit
+   ```
+
+2. Install the hooks:
+   ```bash
+   pre-commit install
+   ```
+
+This will automatically run formatting and linting checks before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
 
 ## License
 
