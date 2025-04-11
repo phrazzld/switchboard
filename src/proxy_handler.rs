@@ -10,7 +10,7 @@ use axum::{
 };
 use bytes::Bytes;
 use hyper::{Request, Uri, header, HeaderMap};
-use reqwest::Client;
+use reqwest::{Client, header::HeaderValue as ReqHeaderValue};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -76,11 +76,11 @@ pub fn create_router(client: Client, config: &'static Config) -> Router {
 )]
 pub async fn proxy_handler(
     req: Request<Body>,
-    _client: Client,
-    _config: &'static Config,
+    client: Client,
+    config: &'static Config,
 ) -> Result<Response, StatusCode> {
     // Start timing the request processing
-    let _start = Instant::now();
+    let start = Instant::now();
     
     // Generate a unique ID for this request
     let req_id = Uuid::new_v4();
@@ -121,10 +121,10 @@ pub async fn proxy_handler(
     );
     
     // Construct the target Anthropic API URL
-    let target_url_str = format!("{}{}", _config.anthropic_target_url, path_and_query);
+    let target_url_str = format!("{}{}", config.anthropic_target_url, path_and_query);
     
     // Parse the constructed URL into a Uri
-    let _target_url = match target_url_str.parse::<Uri>() {
+    let target_url = match target_url_str.parse::<Uri>() {
         Ok(uri) => {
             info!(target_url = %uri, "Target URL constructed successfully");
             uri
@@ -169,9 +169,69 @@ pub async fn proxy_handler(
     // Log detailed request information including headers and body
     log_request_details(&method, &original_uri, &original_headers, &body_bytes);
     
-    // For now, return a placeholder response while the rest of the handler is implemented
-    // This will be replaced with actual forwarding logic in subsequent tasks
-    warn!(request_id = %req_id, "Request parsed successfully, but forwarding not yet implemented");
+    // Create the request builder for forwarding to Anthropic API
+    info!("Setting up request forwarding to Anthropic API");
+    let mut forward_req_builder = client.request(method.clone(), target_url.to_string());
+    
+    // Create new headers for the forwarded request
+    let mut forward_headers = HeaderMap::new();
+    
+    // Copy original headers, filtering out hop-by-hop headers
+    for (name, value) in original_headers.iter() {
+        // Filter out hop-by-hop headers that shouldn't be forwarded
+        if name != header::HOST
+            && name != header::CONNECTION
+            && name != header::PROXY_AUTHENTICATE
+            && name != header::PROXY_AUTHORIZATION
+            && name != header::TE
+            && name != header::TRAILER
+            && name != header::TRANSFER_ENCODING
+            && name != header::UPGRADE
+        {
+            forward_headers.insert(name.clone(), value.clone());
+        }
+    }
+    
+    // Set the Host header based on the target URL
+    if let Some(host) = target_url.host() {
+        match ReqHeaderValue::from_str(host) {
+            Ok(host_value) => {
+                forward_headers.insert(header::HOST, host_value);
+            },
+            Err(e) => {
+                error!(error = %e, host = %host, "Failed to create Host header value");
+                // Continue without setting Host header - reqwest will handle it
+            }
+        }
+    }
+    
+    // Set the Anthropic API key as x-api-key header
+    match ReqHeaderValue::from_str(&config.anthropic_api_key) {
+        Ok(api_key_value) => {
+            // Add the API key header
+            forward_headers.insert(header::HeaderName::from_static("x-api-key"), api_key_value);
+            
+            // Remove Authorization header if it exists (x-api-key is preferred by Anthropic)
+            forward_headers.remove(header::AUTHORIZATION);
+        },
+        Err(e) => {
+            error!(error = %e, "Failed to create header value for Anthropic API key");
+            span.record("http.status_code", StatusCode::INTERNAL_SERVER_ERROR.as_u16());
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    // Add the headers to the request builder
+    forward_req_builder = forward_req_builder.headers(forward_headers);
+    
+    // Add the request body to the builder
+    forward_req_builder = forward_req_builder.body(body_bytes);
+    
+    // Store the builder for the next step (actually sending the request)
+    info!("Request forwarding setup complete");
+    
+    // For now, return a placeholder response until the next task is implemented
+    warn!(request_id = %req_id, "Request forwarding setup complete, but sending not yet implemented");
     Err(StatusCode::NOT_IMPLEMENTED)
 }
 

@@ -89,7 +89,7 @@
     - **Action:** Add the call `log_request_details(&method, &original_uri, &original_headers, &body_bytes);` inside `proxy_handler`.
     - **Depends On:** Implement Request Parsing, Implement Request Logging Helper
     - **AC Ref:** [AC3], [AC24]
-- [ ] **Implement Request Forwarding Setup:** Build the `reqwest::Request` builder, copy method, target URL, filter/copy headers (remove hop-by-hop, set `Host`, set `x-api-key`, remove `Authorization`), and add the request body. Handle API key header errors.
+- [x] **Implement Request Forwarding Setup:** Build the `reqwest::Request` builder, copy method, target URL, filter/copy headers (remove hop-by-hop, set `Host`, set `x-api-key`, remove `Authorization`), and add the request body. Handle API key header errors.
     - **Action:** Create the `reqwest` builder. Iterate over original headers, copying valid ones to a new `HeaderMap`. Set `Host` based on `target_url`. Set `x-api-key` from config, removing `Authorization`. Handle `HeaderValue` creation errors. Add headers and body to the builder.
     - **Depends On:** Implement Target URL Construction, Implement Request Parsing
     - **AC Ref:** [AC5], [AC6], [AC7], [AC8], [AC9]
