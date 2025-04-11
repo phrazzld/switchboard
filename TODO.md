@@ -155,7 +155,7 @@
     - **Action:** Create the `Dockerfile` using a builder stage for compilation and a minimal final stage (e.g., `debian:12-slim`) with `ca-certificates`. Copy the binary and set the `ENTRYPOINT`.
     - **Depends On:** Initialize Rust Project
     - **AC Ref:** [AC28]
-- [ ] **Verify Build:** Ensure the project builds successfully using `cargo build` and `cargo build --release`.
+- [x] **Verify Build:** Ensure the project builds successfully using `cargo build` and `cargo build --release`.
     - **Action:** Run the build commands.
     - **Depends On:** All implementation tasks.
     - **AC Ref:** [AC26]
