@@ -10,9 +10,27 @@ use axum::{
 };
 use hyper::Request;
 use reqwest::Client;
+use serde::Deserialize;
 use tracing::info;
 
 use crate::config::Config;
+
+/// Minimal representation of an Anthropic Messages API request
+/// 
+/// This struct is used only for logging context, not for processing.
+/// It extracts only the essential fields needed for logging identification.
+#[derive(Deserialize, Debug)]
+struct AnthropicMessagesRequestMinimal {
+    /// The model being requested (claude-3-opus, claude-3-sonnet, etc.)
+    model: Option<String>,
+    
+    /// Whether the request is for a streaming response
+    stream: Option<bool>,
+    
+    // Other fields could be added if needed for better logging context
+    // For example, the number of messages in the conversation
+    // messages: Option<Vec<Value>>, // Not included by default as it would be verbose
+}
 
 /// Creates the Axum router with routes for the application
 ///

@@ -61,7 +61,7 @@
     - **AC Ref:** [AC1], [AC25]
 
 ## Proxy Handler Module (`src/proxy_handler.rs`)
-- [ ] **Define API Structs:** Define the minimal `AnthropicMessagesRequestMinimal` struct (optional, for logging context).
+- [x] **Define API Structs:** Define the minimal `AnthropicMessagesRequestMinimal` struct (optional, for logging context).
     - **Action:** Add the struct definition with `serde::Deserialize` as shown in `PLAN.md` Section 5.
     - **Depends On:** Add Core Dependencies
     - **AC Ref:** None (Helper for logging)
