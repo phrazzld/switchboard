@@ -2,6 +2,7 @@
 
 use axum::Router;
 use reqwest::Client;
+use std::sync::Arc;
 use std::time::Duration;
 use switchboard::config::Config;
 use switchboard::proxy_handler::create_router;
@@ -55,13 +56,12 @@ pub async fn setup_test_environment() -> TestSetup {
         .build()
         .expect("Failed to build test reqwest client");
 
-    // Use Box::leak to create a 'static reference to the config
-    // Note: This is a temporary simplification for testing purposes
-    // A future refinement might use Arc<Config> instead to avoid the leak
-    let static_config = Box::leak(Box::new(config.clone()));
+    // Create a thread-safe reference-counted config
+    // This avoids the memory leak from Box::leak while still allowing sharing
+    let config_arc = Arc::new(config.clone());
 
     // Create the application router with our test client and config
-    let app = create_router(client.clone(), static_config);
+    let app = create_router(client.clone(), config_arc);
 
     // Return the complete TestSetup with all components
     TestSetup {

@@ -40,7 +40,7 @@
   - **AC Ref:** `TESTING_STRATEGY.md` (Principle 1b)
 
 ## Test Utilities (tests/common/mod.rs)
-- [ ] **Refactor test config setup to avoid `Box::leak`**
+- [x] **Refactor test config setup to avoid `Box::leak`**
   - **Action:** Evaluate and potentially refactor the test setup in `tests/common/mod.rs` to avoid using `Box::leak` for the static config reference. Consider using `Arc<Config>` passed into the router/handler setup if the complexity increase is acceptable.
   - **Depends On:** None
   - **AC Ref:** `ARCHITECTURE_GUIDELINES.md` (Implied: Safety/Ownership)

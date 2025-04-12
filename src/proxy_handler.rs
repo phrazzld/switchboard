@@ -15,6 +15,7 @@ use reqwest::{header::HeaderValue as ReqHeaderValue, Client};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Instant;
 use tracing::{debug, error, field, info, info_span, instrument, Span};
 use uuid::Uuid;
@@ -47,12 +48,20 @@ struct AnthropicMessagesRequestMinimal {
 /// Sets up an Axum router with a catch-all route that forwards all
 /// incoming requests to the proxy_handler function regardless of
 /// HTTP method (GET, POST, etc.)
-pub fn create_router(client: Client, config: &'static Config) -> Router {
+///
+/// # Arguments
+///
+/// * `client` - The HTTP client used to make requests to the upstream API
+/// * `config` - Configuration wrapped in an Arc for thread-safe sharing
+pub fn create_router(client: Client, config: Arc<Config>) -> Router {
     info!("Creating Axum router with catch-all route to proxy_handler");
 
     Router::new().route(
         "/*path", // Catch-all route
-        any(move |req: Request<Body>| proxy_handler(req, client.clone(), config)),
+        any(move |req: Request<Body>| {
+            let config = Arc::clone(&config);
+            proxy_handler(req, client.clone(), config)
+        }),
     )
 }
 
@@ -62,8 +71,13 @@ pub fn create_router(client: Client, config: &'static Config) -> Router {
 /// 1. Receives an incoming request
 /// 2. Assigns a unique request ID for tracing
 /// 3. Records basic request information in the tracing span
-/// 4. (In future implementations) Will forward the request to the Anthropic API
-///    and return the response
+/// 4. Forwards the request to the Anthropic API and returns the response
+///
+/// # Arguments
+///
+/// * `req` - The incoming HTTP request to be proxied
+/// * `client` - The HTTP client used to make requests to the upstream API
+/// * `config` - Configuration wrapped in an Arc for thread-safe sharing
 ///
 /// The #[instrument] macro automatically creates a tracing span for this function,
 /// with empty fields that will be filled in during processing.
@@ -82,7 +96,7 @@ pub fn create_router(client: Client, config: &'static Config) -> Router {
 pub async fn proxy_handler(
     req: Request<Body>,
     client: Client,
-    config: &'static Config,
+    config: Arc<Config>,
 ) -> Result<Response, StatusCode> {
     // Start timing the request processing
     let start = Instant::now();
