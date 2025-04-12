@@ -45,6 +45,7 @@ pub async fn setup_test_environment() -> TestSetup {
         anthropic_target_url: mock_server.uri(), // Point to the mock server
         log_level: "debug".to_string(), // Use debug level for more verbose test logs
         log_format: "pretty".to_string(), // Use pretty format for readability in tests
+        log_bodies: true,      // Enable body logging for verbose testing
     };
 
     // Create a reqwest client with appropriate timeouts for testing
