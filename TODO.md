@@ -12,12 +12,12 @@
   - **Depends On:** None
   - **AC Ref:** `CODING_STANDARDS.md` (Std 1, 7)
 
-- [ ] **Investigate and fix underlying doctest failures**
+- [x] **Investigate and fix underlying doctest failures**
   - **Action:** Identify the root cause preventing documentation tests (`doctests`) from passing when running `cargo test` (without `--tests`). Implement the necessary fixes in the code or documentation examples.
   - **Depends On:** None
   - **AC Ref:** `CODING_STANDARDS.md` (Std 12), `DOCUMENTATION_APPROACH.md` (Sec 4)
 
-- [ ] **Enable doctest execution in CI test job**
+- [x] **Enable doctest execution in CI test job**
   - **Action:** Modify the `test` job in `.github/workflows/ci.yml` by removing the `--tests` flag from the `cargo test` command, ensuring doctests are included in the standard test suite run by CI.
   - **Depends On:** Investigate and fix underlying doctest failures
   - **AC Ref:** `CODING_STANDARDS.md` (Std 12), `DOCUMENTATION_APPROACH.md` (Sec 4)
