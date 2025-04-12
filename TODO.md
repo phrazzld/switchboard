@@ -17,7 +17,7 @@
     - **Depends On:** None
     - **AC Ref:** Logging Helpers Take Full Config
 
-- [ ] **Task Title:** Remove Redundant Debug Logs for Body Logging
+- [x] **Task Title:** Remove Redundant Debug Logs for Body Logging
     - **Action:** Remove the `debug!` log messages added in `src/proxy_handler.rs` (lines ~200-204, ~471-475) that explicitly state "Full request/response details logged (verbose mode enabled)". These are redundant as the actual body logs (now at `DEBUG` level after implementing the related task) already indicate that logging occurred.
     - **Depends On:** Change Body/Chunk Content Log Level to DEBUG
     - **AC Ref:** Redundant Debug Logs for Body Logging

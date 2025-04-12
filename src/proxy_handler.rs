@@ -197,14 +197,6 @@ pub async fn proxy_handler(
         &config,
     );
 
-    // Additional debug logging for verbose mode
-    if config.log_bodies {
-        debug!(
-            request_id = %req_id,
-            "Full request details logged (verbose mode enabled)"
-        );
-    }
-
     // Create the request builder for forwarding to Anthropic API
     info!("Setting up request forwarding to Anthropic API");
     let mut forward_req_builder = client.request(method.clone(), target_url.to_string());
@@ -493,14 +485,6 @@ pub async fn proxy_handler(
 
         // Log detailed response information including headers and body
         log_response_details(&resp_status, &resp_headers, &resp_body_bytes, &config);
-
-        // Additional verbose logging for response details
-        if config.log_bodies {
-            debug!(
-                request_id = %req_id,
-                "Full response details logged (verbose mode enabled)"
-            );
-        }
 
         // Build the response to return to the client
         info!(
