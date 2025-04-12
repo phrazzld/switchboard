@@ -15,7 +15,7 @@ use proxy_handler::create_router;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Main application entry point
-    println!("Starting Anthropic visibility proxy...");
+    println!("Starting switchboard...");
 
     // Load configuration from environment variables and .env file
     // This returns a &'static Config
@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize tracing for structured logging
     logger::init_tracing(config);
 
-    info!("Anthropic visibility proxy initialized");
+    info!("switchboard initialized");
 
     // Create HTTP client with appropriate settings
     // Using rustls (instead of native-tls) for TLS implementation

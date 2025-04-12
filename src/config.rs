@@ -18,6 +18,8 @@ pub struct Config {
     pub log_level: String,
     /// Log format (json or pretty)
     pub log_format: String,
+    /// Whether to log full request and response bodies
+    pub log_bodies: bool,
 }
 
 /// Global static configuration instance, initialized once on first access
@@ -52,6 +54,9 @@ pub fn load_config() -> &'static Config {
 
         let log_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
         let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
+        let log_bodies = env::var("LOG_BODIES")
+            .map(|v| v.to_lowercase() != "false" && v != "0")
+            .unwrap_or(true);
 
         let loaded_config = Config {
             port,
@@ -59,6 +64,7 @@ pub fn load_config() -> &'static Config {
             anthropic_target_url,
             log_level,
             log_format,
+            log_bodies,
         };
 
         // Log configuration values, but omit the API key for security
@@ -67,6 +73,7 @@ pub fn load_config() -> &'static Config {
             target_url = %loaded_config.anthropic_target_url,
             log_level = %loaded_config.log_level,
             log_format = %loaded_config.log_format,
+            log_bodies = loaded_config.log_bodies,
             "Configuration loaded"
         );
 

@@ -1,15 +1,6 @@
 # BACKLOG
 
-- set up github actions
-- set up precommit hook
-- [DONE] [HIGH] Set up testing infrastructure
-  - ✅ Create test directory structure
-  - ✅ Add test dependencies to Cargo.toml (wiremock, etc.)
-  - ✅ Set up shared test utilities and helpers
-- [PARTIAL] [HIGH] Implement basic integration tests for non-streaming responses
-  - ✅ Focus on happy path first
-  - ✅ Test request forwarding and response handling
-  - 🔄 Verify headers and body are properly processed (basic test implemented, could expand)
+- enable persistent logs
 - [HIGH] Implement basic integration tests for streaming responses
   - Focus on happy path first
   - Test streaming response detection

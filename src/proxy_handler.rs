@@ -189,7 +189,13 @@ pub async fn proxy_handler(
     };
 
     // Log detailed request information including headers and body
-    log_request_details(&method, &original_uri, &original_headers, &body_bytes);
+    log_request_details(
+        &method,
+        &original_uri,
+        &original_headers,
+        &body_bytes,
+        config.log_bodies,
+    );
 
     // Create the request builder for forwarding to Anthropic API
     info!("Setting up request forwarding to Anthropic API");
@@ -319,7 +325,7 @@ pub async fn proxy_handler(
         );
 
         // Call the header logging helper to log status and headers
-        log_response_headers(&resp_status, &resp_headers);
+        log_response_headers(&resp_status, &resp_headers, config.log_bodies);
 
         // Create a stream from the reqwest response
         info!(
@@ -332,14 +338,26 @@ pub async fn proxy_handler(
 
         // Convert reqwest stream to axum stream by mapping each chunk
         // and handling errors appropriately
+        let log_bodies = config.log_bodies;
         let axum_stream = reqwest_stream.map(move |result| match result {
             Ok(bytes) => {
-                // On success, log the chunk size and return the bytes
-                debug!(
-                    request_id = %req_id,
-                    chunk_size = bytes.len(),
-                    "Received stream chunk from Anthropic API"
-                );
+                // Log the chunk content at DEBUG level if LOG_BODIES is enabled
+                if log_bodies {
+                    let chunk_str = String::from_utf8_lossy(&bytes);
+                    debug!(
+                        request_id = %req_id,
+                        chunk_size = bytes.len(),
+                        chunk_content = %chunk_str,
+                        "Received stream chunk from Anthropic API"
+                    );
+                } else {
+                    // Otherwise just log the chunk size at debug level
+                    debug!(
+                        request_id = %req_id,
+                        chunk_size = bytes.len(),
+                        "Received stream chunk from Anthropic API"
+                    );
+                }
                 Ok::<_, axum::BoxError>(bytes)
             }
             Err(e) => {
@@ -466,7 +484,12 @@ pub async fn proxy_handler(
         };
 
         // Log detailed response information including headers and body
-        log_response_details(&resp_status, &resp_headers, &resp_body_bytes);
+        log_response_details(
+            &resp_status,
+            &resp_headers,
+            &resp_body_bytes,
+            config.log_bodies,
+        );
 
         // Build the response to return to the client
         info!(
@@ -540,20 +563,28 @@ pub async fn proxy_handler(
 
 /// Maximum length of request/response bodies that will be logged in full
 /// Bodies larger than this will only have their size logged to avoid excessive logging
-pub const MAX_LOG_BODY_LEN: usize = 10 * 1024; // 10KB
+/// Increased from 10KB to 20KB to capture more verbose logging
+pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 
 /// Logs details of an incoming request in a structured format
 ///
 /// This function creates a new logging span and records comprehensive information about
 /// the request, including method, URI, headers (with sensitive values masked), and the
-/// request body (with size limits and JSON formatting).
+/// request body (with size limits and JSON formatting when enabled).
 ///
 /// # Arguments
 /// * `method` - The HTTP method (GET, POST, etc.)
 /// * `uri` - The request URI including path and query
 /// * `headers` - The request headers map
 /// * `body` - The request body as bytes
-pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMap, body: &Bytes) {
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
+pub fn log_request_details(
+    method: &hyper::Method,
+    uri: &Uri,
+    headers: &HeaderMap,
+    body: &Bytes,
+    log_bodies: bool,
+) {
     // Create a new span for the request details to keep them separate from the main request span
     let span = info_span!("request_details");
     let _enter = span.enter();
@@ -584,14 +615,15 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
     if body_len == 0 {
         // Empty body
         info!("Request body empty");
-    } else if body_len <= MAX_LOG_BODY_LEN {
-        // Body is small enough to log fully
+    } else if log_bodies && body_len <= MAX_LOG_BODY_LEN {
+        // Body is small enough to log fully and logging is enabled
         // Try to parse as JSON first for pretty formatting
         match serde_json::from_slice::<Value>(body) {
             Ok(json_val) => {
                 // Successfully parsed as JSON, pretty print it
                 let pretty_json = serde_json::to_string_pretty(&json_val)
                     .unwrap_or_else(|_| String::from_utf8_lossy(body).to_string());
+                // Log at DEBUG level even when explicitly enabled
                 debug!(
                     http.request.body.content = %pretty_json,
                     http.request.body.size = body_len
@@ -605,6 +637,12 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
                 );
             }
         }
+    } else if body_len <= MAX_LOG_BODY_LEN {
+        // Small enough to log but logging not enabled - put in debug level
+        debug!(
+            http.request.body.size = body_len,
+            "Request body not logged (enable LOG_BODIES to see contents)"
+        );
     } else {
         // Body too large to log fully
         info!(
@@ -618,13 +656,19 @@ pub fn log_request_details(method: &hyper::Method, uri: &Uri, headers: &HeaderMa
 ///
 /// This function creates a new logging span and records comprehensive information about
 /// the response, including status code, headers, and the response body (with size limits
-/// and JSON formatting).
+/// and JSON formatting when enabled).
 ///
 /// # Arguments
 /// * `status` - The HTTP status code
 /// * `headers` - The response headers map
 /// * `body` - The response body as bytes
-pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, body: &Bytes) {
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
+pub fn log_response_details(
+    status: &reqwest::StatusCode,
+    headers: &HeaderMap,
+    body: &Bytes,
+    log_bodies: bool,
+) {
     // Create a new span for the response details to keep them separate from the main request span
     let span = info_span!("response_details");
     let _enter = span.enter();
@@ -655,14 +699,15 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
     if body_len == 0 {
         // Empty body
         info!("Response body empty");
-    } else if body_len <= MAX_LOG_BODY_LEN {
-        // Body is small enough to log fully
+    } else if log_bodies && body_len <= MAX_LOG_BODY_LEN {
+        // Body is small enough to log fully and logging is enabled
         // Try to parse as JSON first for pretty formatting
         match serde_json::from_slice::<Value>(body) {
             Ok(json_val) => {
                 // Successfully parsed as JSON, pretty print it
                 let pretty_json = serde_json::to_string_pretty(&json_val)
                     .unwrap_or_else(|_| String::from_utf8_lossy(body).to_string());
+                // Log at DEBUG level even when explicitly enabled
                 debug!(
                     http.response.body.content = %pretty_json,
                     http.response.body.size = body_len
@@ -676,6 +721,12 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
                 );
             }
         }
+    } else if body_len <= MAX_LOG_BODY_LEN {
+        // Small enough to log but logging not enabled - put in debug level
+        debug!(
+            http.response.body.size = body_len,
+            "Response body not logged (enable LOG_BODIES to see contents)"
+        );
     } else {
         // Body too large to log fully
         info!(
@@ -690,12 +741,14 @@ pub fn log_response_details(status: &reqwest::StatusCode, headers: &HeaderMap, b
 /// This function creates a new logging span and records the response status and headers,
 /// without attempting to log the body (since the body will be streamed). This is specifically
 /// designed for streaming responses where we want to log headers immediately before
-/// starting to stream the response body.
+/// starting to stream the response body. When body logging is enabled, it logs an informational
+/// message indicating that streaming is beginning.
 ///
 /// # Arguments
 /// * `status` - The HTTP status code of the response
 /// * `headers` - The response headers map
-pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap) {
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
+pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap, log_bodies: bool) {
     // Create a new span for the streaming response details
     let span = info_span!("streaming_response_details");
     let _enter = span.enter();
@@ -725,5 +778,9 @@ pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap) {
     debug!(http.response.headers = ?headers_log);
 
     // Log a message indicating that we're about to start streaming
-    info!("Headers logged, beginning to stream response body");
+    if log_bodies {
+        info!("Headers logged, beginning to stream response body (full logging enabled)");
+    } else {
+        info!("Headers logged, beginning to stream response body (content logging disabled)");
+    }
 }

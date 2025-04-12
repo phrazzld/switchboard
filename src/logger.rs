@@ -4,6 +4,7 @@
 //! used for structured logging throughout the application.
 
 use crate::config::Config;
+use tracing::info;
 use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 
 /// Initialize the tracing system for structured logging
@@ -12,7 +13,7 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 /// based on the provided configuration.
 ///
 /// # Arguments
-/// * `config` - The application configuration containing log_level and log_format settings
+/// * `config` - The application configuration containing log_level, log_format, and log_bodies settings
 ///
 /// # Example
 /// ```
@@ -25,6 +26,7 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 /// #     anthropic_target_url: "https://example.com".to_string(),
 /// #     log_level: "info".to_string(),
 /// #     log_format: "pretty".to_string(),
+/// #     log_bodies: true,
 /// # };
 /// logger::init_tracing(&mock_config);
 /// ```
@@ -50,11 +52,27 @@ pub fn init_tracing(config: &Config) {
             // JSON formatting for structured logging (good for production/cloud environments)
             let json_layer = fmt::layer().json();
             subscriber.with(json_layer).init();
+
+            // Log configuration information
+            info!(
+                log_level = %config.log_level,
+                log_format = "json",
+                log_bodies = config.log_bodies,
+                "Initialized JSON logger"
+            );
         }
         _ => {
             // Default to pretty formatting (good for development)
             let pretty_layer = fmt::layer().pretty();
             subscriber.with(pretty_layer).init();
+
+            // Log configuration information
+            info!(
+                log_level = %config.log_level,
+                log_format = "pretty",
+                log_bodies = config.log_bodies,
+                "Initialized pretty logger"
+            );
         }
     }
 }

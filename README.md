@@ -30,6 +30,7 @@ For contributing to the project, you'll need the following additional tools:
 | `ANTHROPIC_TARGET_URL` | Anthropic API base URL | https://api.anthropic.com |
 | `LOG_LEVEL` | Logging level (info, debug, etc.) | info |
 | `LOG_FORMAT` | Log output format (pretty or json) | pretty |
+| `LOG_BODIES` | Whether to log full request and response bodies | true |
 
 ## Getting Started
 
@@ -43,6 +44,7 @@ PORT=8080
 ANTHROPIC_API_KEY=your-api-key-here
 LOG_LEVEL=info
 LOG_FORMAT=pretty
+LOG_BODIES=true  # Enabled by default, set to false to disable full logging
 ```
 
 ### Building
