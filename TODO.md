@@ -7,7 +7,7 @@
   - **Depends On:** None
   - **AC Ref:** `CODING_STANDARDS.md` (Std 8)
 
-- [ ] **Enforce clippy warnings as errors in CI lint job**
+- [x] **Enforce clippy warnings as errors in CI lint job**
   - **Action:** Modify the `lint` job in `.github/workflows/ci.yml` to add the `-D warnings` flag (or deny specific lints as configured) to the `cargo clippy` command to ensure stricter checks are enforced in the CI pipeline.
   - **Depends On:** None
   - **AC Ref:** `CODING_STANDARDS.md` (Std 1, 7)

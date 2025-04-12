@@ -60,8 +60,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-lint-
       - name: Run cargo clippy
-        # Enforce all clippy warnings to ensure high code quality
-        run: cargo clippy
+        # Enforce all clippy warnings as errors to ensure high code quality
+        run: cargo clippy -- -D warnings
 
   test:
     name: Run Tests
