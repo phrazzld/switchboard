@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build Commands
 - Build: `cargo build` (development) or `cargo build --release` (optimized)
-- Run: `./target/release/anthropic-visibility-proxy`
+- Run: `./target/release/switchboard`
 - Test: `cargo test` (all tests) or `cargo test <test_name>` (single test)
 - Format: `cargo fmt`
 - Lint: `cargo clippy`
