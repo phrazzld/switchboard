@@ -50,7 +50,7 @@
   - **AC Ref:** `ARCHITECTURE_GUIDELINES.md` (Implied: Safety/Ownership)
 
 ## Code Formatting
-- [ ] **Ensure all files end with a final newline**
+- [x] **Ensure all files end with a final newline**
   - **Action:** Add a final newline character to the end of the following files: `README.md`, `hooks/pre-commit` (if not removed by framework switch), `tests/common/mod.rs`. Ensure `rustfmt` or other formatters enforce this going forward.
   - **Depends On:** None
   - **AC Ref:** General Best Practice

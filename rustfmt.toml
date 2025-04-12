@@ -1,0 +1,5 @@
+# Rustfmt configuration
+# See https://rust-lang.github.io/rustfmt/ for all available options
+
+# Ensure files end with a newline
+file_lines = true
