@@ -570,14 +570,14 @@ pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 ///
 /// This function creates a new logging span and records comprehensive information about
 /// the request, including method, URI, headers (with sensitive values masked), and the
-/// request body (with size limits and JSON formatting).
+/// request body (with size limits and JSON formatting when enabled).
 ///
 /// # Arguments
 /// * `method` - The HTTP method (GET, POST, etc.)
 /// * `uri` - The request URI including path and query
 /// * `headers` - The request headers map
 /// * `body` - The request body as bytes
-/// * `log_bodies` - Boolean flag indicating whether to log full body content
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
 pub fn log_request_details(
     method: &hyper::Method,
     uri: &Uri,
@@ -656,13 +656,13 @@ pub fn log_request_details(
 ///
 /// This function creates a new logging span and records comprehensive information about
 /// the response, including status code, headers, and the response body (with size limits
-/// and JSON formatting).
+/// and JSON formatting when enabled).
 ///
 /// # Arguments
 /// * `status` - The HTTP status code
 /// * `headers` - The response headers map
 /// * `body` - The response body as bytes
-/// * `log_bodies` - Boolean flag indicating whether to log full body content
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
 pub fn log_response_details(
     status: &reqwest::StatusCode,
     headers: &HeaderMap,
@@ -741,12 +741,13 @@ pub fn log_response_details(
 /// This function creates a new logging span and records the response status and headers,
 /// without attempting to log the body (since the body will be streamed). This is specifically
 /// designed for streaming responses where we want to log headers immediately before
-/// starting to stream the response body.
+/// starting to stream the response body. When body logging is enabled, it logs an informational
+/// message indicating that streaming is beginning.
 ///
 /// # Arguments
 /// * `status` - The HTTP status code of the response
 /// * `headers` - The response headers map
-/// * `log_bodies` - Boolean flag indicating whether to log full body content
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
 pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap, log_bodies: bool) {
     // Create a new span for the streaming response details
     let span = info_span!("streaming_response_details");

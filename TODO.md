@@ -22,7 +22,7 @@
     - **Depends On:** Change Body/Chunk Content Log Level to DEBUG
     - **AC Ref:** Redundant Debug Logs for Body Logging
 
-- [ ] **Task Title:** Update Doc Comments for Logging Helper Functions
+- [x] **Task Title:** Update Doc Comments for Logging Helper Functions
     - **Action:** Update the Rustdoc comments (`///`) for the `log_request_details`, `log_response_details`, and `log_response_headers` functions in `src/proxy_handler.rs`. Specifically, update the `# Arguments` section to accurately reflect the parameters passed to these functions after refactoring (should now be `log_bodies: bool` instead of `config: &Config`). Ensure the description accurately reflects the function's behavior.
     - **Depends On:** Refactor Logging Helpers to Accept `log_bodies` Flag Only
     - **AC Ref:** Doc Comment Updates Needed
