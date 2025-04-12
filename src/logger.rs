@@ -16,10 +16,17 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 ///
 /// # Example
 /// ```
-/// # use switchboard::config;
+/// # use switchboard::config::Config;
 /// # use switchboard::logger;
-/// let config = config::load_config();
-/// logger::init_tracing(config);
+/// # // Create a mock config for testing instead of using global config
+/// # let mock_config = Config {
+/// #     port: "8080".to_string(),
+/// #     anthropic_api_key: "test-key".to_string(),
+/// #     anthropic_target_url: "https://example.com".to_string(),
+/// #     log_level: "info".to_string(),
+/// #     log_format: "pretty".to_string(),
+/// # };
+/// logger::init_tracing(&mock_config);
 /// ```
 pub fn init_tracing(config: &Config) {
     // Try to get filter directive from environment first (RUST_LOG),
