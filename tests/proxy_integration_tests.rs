@@ -3,8 +3,8 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request, StatusCode};
-// StreamExt is not actually used in the test, but imported for potential future use
-#[allow(unused_imports)]
+// TODO: StreamExt will be used in a future improvement to properly parse SSE streams
+// chunk by chunk instead of using the current approach with body_str.contains()
 use futures_util::StreamExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;

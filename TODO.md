@@ -33,7 +33,7 @@
   - **AC Ref:** `CORE_PRINCIPLES.md` (Principle 6), `DOCUMENTATION_APPROACH.md` (Sec 2), `CODING_STANDARDS.md` (Std 8)
 
 ## Integration Tests (tests/proxy_integration_tests.rs)
-- [ ] **Resolve `unused_imports` suppression in integration tests**
+- [x] **Resolve `unused_imports` suppression in integration tests**
   - **Action:** Investigate the `#[allow(unused_imports)]` for `futures_util::StreamExt` in `tests/proxy_integration_tests.rs`. Either remove the import and the `allow` attribute if it's truly unused, or add a `// TODO:` comment explaining its intended future use if it's planned.
   - **Depends On:** None
   - **AC Ref:** `CODING_STANDARDS.md` (Std 8)
