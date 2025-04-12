@@ -19,8 +19,7 @@ A Rust-based HTTP proxy service that intercepts and logs traffic between clients
 
 For contributing to the project, you'll need the following additional tools:
 
-- Python and pip (for pre-commit hooks)
-- [pre-commit](https://pre-commit.com/) for automated code quality checks
+- Git
 
 ## Environment Variables
 
@@ -116,7 +115,7 @@ cp hooks/pre-commit .git/hooks/
 chmod +x .git/hooks/pre-commit
 ```
 
-The pre-commit hook will automatically run `cargo fmt --check` and `cargo clippy` before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
+The pre-commit hook will automatically run `cargo fmt --check` and `cargo clippy -- -D warnings` before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
 
 ## License
 

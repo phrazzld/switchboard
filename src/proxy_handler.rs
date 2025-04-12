@@ -25,7 +25,12 @@ use crate::config::Config;
 ///
 /// This struct is used only for logging context, not for processing.
 /// It extracts only the essential fields needed for logging identification.
+///
+/// # Note
+/// Currently not actively used but prepared for future logging enhancements.
+/// The fields will be used to provide better contextual information in logs.
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)] // Explicitly suppressed as this struct is prepared for future use
 struct AnthropicMessagesRequestMinimal {
     /// The model being requested (claude-3-opus, claude-3-sonnet, etc.)
     model: Option<String>,

@@ -23,12 +23,8 @@
   - **AC Ref:** `CODING_STANDARDS.md` (Std 12), `DOCUMENTATION_APPROACH.md` (Sec 4)
 
 ## Developer Experience (README.md, hooks/pre-commit)
-- [ ] **Replace custom pre-commit hook with standard `pre-commit` framework**
-  - **Action:** Implement the standard `pre-commit` framework:
-    1. Add a `.pre-commit-config.yaml` file defining hooks for `cargo fmt --check` and `cargo clippy` (with strict settings, e.g., `-D warnings`).
-    2. Update `README.md` prerequisites to include `pre-commit` (`pip install pre-commit`).
-    3. Update `README.md` setup instructions to use `pre-commit install`.
-    4. Remove the custom `hooks/pre-commit` shell script and its setup instructions from `README.md`.
+- [x] **Update pre-commit hook to use stricter settings**
+  - **Action:** Modify the custom pre-commit hook in `hooks/pre-commit` to use stricter settings for `cargo clippy` (e.g., `-D warnings` instead of `-A dead_code`).
   - **Depends On:** None
   - **AC Ref:** `CORE_PRINCIPLES.md` (Principle 6), `DOCUMENTATION_APPROACH.md` (Sec 2), `CODING_STANDARDS.md` (Std 8)
 

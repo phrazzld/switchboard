@@ -23,9 +23,9 @@ if [ $? -eq 0 ]; then
         exit 1
     fi
 
-    # Run cargo clippy
+    # Run cargo clippy with strict settings
     echo "${YELLOW}Running cargo clippy...${NC}"
-    cargo clippy -- -A dead_code
+    cargo clippy -- -D warnings
     if [ $? -ne 0 ]; then
         echo "${RED}Error: Linting check failed.${NC}"
         echo "Fix the linting issues before committing."
