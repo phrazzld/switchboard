@@ -349,10 +349,10 @@ pub async fn proxy_handler(
         let config_clone = Arc::clone(&config);
         let axum_stream = reqwest_stream.map(move |result| match result {
             Ok(bytes) => {
-                // Log the chunk content at INFO level if LOG_BODIES is enabled
+                // Log the chunk content at DEBUG level if LOG_BODIES is enabled
                 if config_clone.log_bodies {
                     let chunk_str = String::from_utf8_lossy(&bytes);
-                    info!(
+                    debug!(
                         request_id = %req_id,
                         chunk_size = bytes.len(),
                         chunk_content = %chunk_str,
@@ -634,15 +634,15 @@ pub fn log_request_details(
                 // Successfully parsed as JSON, pretty print it
                 let pretty_json = serde_json::to_string_pretty(&json_val)
                     .unwrap_or_else(|_| String::from_utf8_lossy(body).to_string());
-                // Log at INFO level instead of DEBUG when explicitly enabled
-                info!(
+                // Log at DEBUG level even when explicitly enabled
+                debug!(
                     http.request.body.content = %pretty_json,
                     http.request.body.size = body_len
                 );
             }
             Err(_) => {
                 // Not valid JSON, log as regular string
-                info!(
+                debug!(
                     http.request.body.content = %String::from_utf8_lossy(body),
                     http.request.body.size = body_len
                 );
@@ -718,15 +718,15 @@ pub fn log_response_details(
                 // Successfully parsed as JSON, pretty print it
                 let pretty_json = serde_json::to_string_pretty(&json_val)
                     .unwrap_or_else(|_| String::from_utf8_lossy(body).to_string());
-                // Log at INFO level instead of DEBUG when explicitly enabled
-                info!(
+                // Log at DEBUG level even when explicitly enabled
+                debug!(
                     http.response.body.content = %pretty_json,
                     http.response.body.size = body_len
                 );
             }
             Err(_) => {
                 // Not valid JSON, log as regular string
-                info!(
+                debug!(
                     http.response.body.content = %String::from_utf8_lossy(body),
                     http.response.body.size = body_len
                 );
