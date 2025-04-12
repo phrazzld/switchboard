@@ -3,8 +3,8 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{header, HeaderValue, Request, StatusCode};
-// TODO: StreamExt will be used in a future improvement to properly parse SSE streams
-// chunk by chunk instead of using the current approach with body_str.contains()
+// TODO: Consider using StreamExt in a future improvement to parse SSE streams
+// chunk by chunk instead of the current approach that processes the whole body at once
 use futures_util::StreamExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;
@@ -166,42 +166,44 @@ async fn test_streaming_response_forward_success() {
     // Convert the body to a string for validation
     let body_str = String::from_utf8_lossy(&body).to_string();
 
-    // Expected SSE event patterns (simplified for testing purposes)
-    // Note: In a real implementation, we'd need more sophisticated parsing
-    // to handle edge cases like events split across chunk boundaries
-    let expected_events = vec![
-        "{\"type\": \"message_start\"",
-        "{\"type\": \"content_block_start\"",
-        "{\"type\": \"content_block_delta\"", // Hello
-        "{\"type\": \"content_block_delta\"", // world
-        "{\"type\": \"content_block_delta\"", // !
-        "{\"type\": \"content_block_stop\"",
-        "{\"type\": \"message_stop\"",
-    ];
-
-    // Make sure the body is not empty
+    // Ensure the body is not empty
     assert!(!body_str.is_empty(), "Expected non-empty response body");
 
-    // Verify each expected event appears in the body
-    for expected_event in expected_events {
-        assert!(
-            body_str.contains(expected_event),
-            "Missing expected event pattern '{}' in response body",
-            expected_event
-        );
+    // Initialize an empty vector to store parsed events
+    let mut parsed_events = Vec::new();
+
+    // Parse the SSE stream line by line
+    for line in body_str.lines() {
+        let trimmed = line.trim();
+        // Check if the line starts with "data: " prefix (SSE format)
+        if trimmed.starts_with("data: ") {
+            // Extract the JSON content after "data: "
+            let data_content = &trimmed["data: ".len()..];
+            // Parse the JSON data
+            if !data_content.is_empty() {
+                let json_value: serde_json::Value = serde_json::from_str(data_content)
+                    .expect("Failed to parse SSE event data as JSON");
+                // Add the parsed event to our collection
+                parsed_events.push(json_value);
+            }
+        }
     }
 
-    // Verify the presence of each part of the assembled message
-    assert!(
-        body_str.contains("\"text\": \"Hello\""),
-        "Missing 'Hello' text in response"
-    );
-    assert!(
-        body_str.contains("\"text\": \" world\""),
-        "Missing ' world' text in response"
-    );
-    assert!(
-        body_str.contains("\"text\": \"!\""),
-        "Missing '!' text in response"
+    // Define the expected sequence of events using serde_json::json! macro
+    let expected_events = vec![
+        json!({"type": "message_start", "message": {"id": "msg_123", "type": "message"}}),
+        json!({"type": "content_block_start", "index": 0, "content_block": {"type": "text"}}),
+        json!({"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Hello"}}),
+        json!({"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": " world"}}),
+        json!({"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "!"}}),
+        json!({"type": "content_block_stop", "index": 0}),
+        json!({"type": "message_stop"}),
+    ];
+
+    // Verify that the parsed events match the expected sequence
+    assert_eq!(
+        parsed_events, expected_events,
+        "SSE events do not match expected sequence and content.\nGot: {:#?}\nExpected: {:#?}",
+        parsed_events, expected_events
     );
 }

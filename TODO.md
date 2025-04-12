@@ -38,7 +38,7 @@
   - **Depends On:** None
   - **AC Ref:** `CODING_STANDARDS.md` (Std 8)
 
-- [ ] **Refactor streaming test assertions for robustness**
+- [x] **Refactor streaming test assertions for robustness**
   - **Action:** Modify the `test_streaming_response_forward_success` test in `tests/proxy_integration_tests.rs`. Replace the brittle `body_str.contains(...)` assertions with logic that parses the Server-Sent Events (SSE) stream properly (e.g., line by line, checking `data: ` prefix, parsing JSON) and asserts on the sequence and content of the parsed events.
   - **Depends On:** None
   - **AC Ref:** `TESTING_STRATEGY.md` (Principle 1b)
