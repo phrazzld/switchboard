@@ -52,12 +52,12 @@
   - **AC Ref:** General Best Practice
 
 ## [!] CLARIFICATIONS NEEDED / ASSUMPTIONS
-- [ ] **Issue/Assumption:** Need details on the "separate issue" preventing doctests from passing.
-  - **Context:** The comment in `.github/workflows/ci.yml:85` mentions skipping doctests (`--tests`) due to a separate issue. Understanding this issue is required for the "Investigate and fix underlying doctest failures" task.
+- [x] **Issue/Assumption:** Need details on the "separate issue" preventing doctests from passing.
+  - **Context:** The comment in `.github/workflows/ci.yml:85` mentioned skipping doctests (`--tests`) due to a separate issue. This has been investigated and fixed as part of the "Investigate and fix underlying doctest failures" task. The issue was related to missing imports in the doctest example.
 
 - [ ] **Issue/Assumption:** Confirm the decision to switch from the custom pre-commit script to the standard `pre-commit` framework.
   - **Context:** The feedback strongly suggests switching (`README.md:106-112`, `hooks/pre-commit`). This task assumes the switch will be implemented. If not, the task needs modification, and a separate task to fix linting in the *existing* script would be needed.
 
-- [ ] **Issue/Assumption:** Evaluate complexity vs. benefit of replacing `Box::leak` with `Arc<Config>` in test setup.
-  - **Context:** The suggestion in `tests/common/mod.rs:61` is conditional ("consider using... if the complexity isn't significantly higher"). An evaluation is needed before proceeding with the "Refactor test config setup to avoid `Box::leak`" task.
+- [x] **Issue/Assumption:** Evaluate complexity vs. benefit of replacing `Box::leak` with `Arc<Config>` in test setup.
+  - **Context:** The suggestion in `tests/common/mod.rs:61` was conditional ("consider using... if the complexity isn't significantly higher"). This has been evaluated and implemented as the complexity was minimal while providing better safety and memory management.
 ```
