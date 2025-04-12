@@ -12,7 +12,7 @@
     - **Depends On:** None
     - **AC Ref:** Body/Chunk Logging Level Too High
 
-- [ ] **Task Title:** Refactor Logging Helpers to Accept `log_bodies` Flag Only
+- [x] **Task Title:** Refactor Logging Helpers to Accept `log_bodies` Flag Only
     - **Action:** Modify the function signatures and implementations of `log_request_details`, `log_response_details`, and `log_response_headers` in `src/proxy_handler.rs`. Instead of accepting the full `config: &Config`, pass only the necessary `log_bodies: bool` flag. Update the call sites within `proxy_handler` accordingly.
     - **Depends On:** None
     - **AC Ref:** Logging Helpers Take Full Config

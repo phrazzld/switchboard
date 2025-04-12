@@ -194,7 +194,7 @@ pub async fn proxy_handler(
         &original_uri,
         &original_headers,
         &body_bytes,
-        &config,
+        config.log_bodies,
     );
 
     // Create the request builder for forwarding to Anthropic API
@@ -325,7 +325,7 @@ pub async fn proxy_handler(
         );
 
         // Call the header logging helper to log status and headers
-        log_response_headers(&resp_status, &resp_headers, &config);
+        log_response_headers(&resp_status, &resp_headers, config.log_bodies);
 
         // Create a stream from the reqwest response
         info!(
@@ -338,11 +338,11 @@ pub async fn proxy_handler(
 
         // Convert reqwest stream to axum stream by mapping each chunk
         // and handling errors appropriately
-        let config_clone = Arc::clone(&config);
+        let log_bodies = config.log_bodies;
         let axum_stream = reqwest_stream.map(move |result| match result {
             Ok(bytes) => {
                 // Log the chunk content at DEBUG level if LOG_BODIES is enabled
-                if config_clone.log_bodies {
+                if log_bodies {
                     let chunk_str = String::from_utf8_lossy(&bytes);
                     debug!(
                         request_id = %req_id,
@@ -484,7 +484,12 @@ pub async fn proxy_handler(
         };
 
         // Log detailed response information including headers and body
-        log_response_details(&resp_status, &resp_headers, &resp_body_bytes, &config);
+        log_response_details(
+            &resp_status,
+            &resp_headers,
+            &resp_body_bytes,
+            config.log_bodies,
+        );
 
         // Build the response to return to the client
         info!(
@@ -572,13 +577,13 @@ pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 /// * `uri` - The request URI including path and query
 /// * `headers` - The request headers map
 /// * `body` - The request body as bytes
-/// * `config` - The application configuration to check if full body logging is enabled
+/// * `log_bodies` - Boolean flag indicating whether to log full body content
 pub fn log_request_details(
     method: &hyper::Method,
     uri: &Uri,
     headers: &HeaderMap,
     body: &Bytes,
-    config: &Config,
+    log_bodies: bool,
 ) {
     // Create a new span for the request details to keep them separate from the main request span
     let span = info_span!("request_details");
@@ -610,7 +615,7 @@ pub fn log_request_details(
     if body_len == 0 {
         // Empty body
         info!("Request body empty");
-    } else if config.log_bodies && body_len <= MAX_LOG_BODY_LEN {
+    } else if log_bodies && body_len <= MAX_LOG_BODY_LEN {
         // Body is small enough to log fully and logging is enabled
         // Try to parse as JSON first for pretty formatting
         match serde_json::from_slice::<Value>(body) {
@@ -657,12 +662,12 @@ pub fn log_request_details(
 /// * `status` - The HTTP status code
 /// * `headers` - The response headers map
 /// * `body` - The response body as bytes
-/// * `config` - The application configuration to check if full body logging is enabled
+/// * `log_bodies` - Boolean flag indicating whether to log full body content
 pub fn log_response_details(
     status: &reqwest::StatusCode,
     headers: &HeaderMap,
     body: &Bytes,
-    config: &Config,
+    log_bodies: bool,
 ) {
     // Create a new span for the response details to keep them separate from the main request span
     let span = info_span!("response_details");
@@ -694,7 +699,7 @@ pub fn log_response_details(
     if body_len == 0 {
         // Empty body
         info!("Response body empty");
-    } else if config.log_bodies && body_len <= MAX_LOG_BODY_LEN {
+    } else if log_bodies && body_len <= MAX_LOG_BODY_LEN {
         // Body is small enough to log fully and logging is enabled
         // Try to parse as JSON first for pretty formatting
         match serde_json::from_slice::<Value>(body) {
@@ -741,8 +746,8 @@ pub fn log_response_details(
 /// # Arguments
 /// * `status` - The HTTP status code of the response
 /// * `headers` - The response headers map
-/// * `config` - The application configuration to check if full body logging is enabled
-pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap, config: &Config) {
+/// * `log_bodies` - Boolean flag indicating whether to log full body content
+pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap, log_bodies: bool) {
     // Create a new span for the streaming response details
     let span = info_span!("streaming_response_details");
     let _enter = span.enter();
@@ -772,7 +777,7 @@ pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap, c
     debug!(http.response.headers = ?headers_log);
 
     // Log a message indicating that we're about to start streaming
-    if config.log_bodies {
+    if log_bodies {
         info!("Headers logged, beginning to stream response body (full logging enabled)");
     } else {
         info!("Headers logged, beginning to stream response body (content logging disabled)");
