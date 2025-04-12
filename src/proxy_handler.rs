@@ -15,8 +15,9 @@ use reqwest::{header::HeaderValue as ReqHeaderValue, Client};
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Instant;
-use tracing::{debug, error, field, info, info_span, instrument, warn, Span};
+use tracing::{debug, error, field, info, info_span, instrument, Span};
 use uuid::Uuid;
 
 use crate::config::Config;
@@ -25,7 +26,12 @@ use crate::config::Config;
 ///
 /// This struct is used only for logging context, not for processing.
 /// It extracts only the essential fields needed for logging identification.
+///
+/// # Note
+/// Currently not actively used but prepared for future logging enhancements.
+/// The fields will be used to provide better contextual information in logs.
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)] // Explicitly suppressed as this struct is prepared for future use
 struct AnthropicMessagesRequestMinimal {
     /// The model being requested (claude-3-opus, claude-3-sonnet, etc.)
     model: Option<String>,
@@ -42,12 +48,20 @@ struct AnthropicMessagesRequestMinimal {
 /// Sets up an Axum router with a catch-all route that forwards all
 /// incoming requests to the proxy_handler function regardless of
 /// HTTP method (GET, POST, etc.)
-pub fn create_router(client: Client, config: &'static Config) -> Router {
+///
+/// # Arguments
+///
+/// * `client` - The HTTP client used to make requests to the upstream API
+/// * `config` - Configuration wrapped in an Arc for thread-safe sharing
+pub fn create_router(client: Client, config: Arc<Config>) -> Router {
     info!("Creating Axum router with catch-all route to proxy_handler");
 
     Router::new().route(
         "/*path", // Catch-all route
-        any(move |req: Request<Body>| proxy_handler(req, client.clone(), config)),
+        any(move |req: Request<Body>| {
+            let config = Arc::clone(&config);
+            proxy_handler(req, client.clone(), config)
+        }),
     )
 }
 
@@ -57,8 +71,13 @@ pub fn create_router(client: Client, config: &'static Config) -> Router {
 /// 1. Receives an incoming request
 /// 2. Assigns a unique request ID for tracing
 /// 3. Records basic request information in the tracing span
-/// 4. (In future implementations) Will forward the request to the Anthropic API
-///    and return the response
+/// 4. Forwards the request to the Anthropic API and returns the response
+///
+/// # Arguments
+///
+/// * `req` - The incoming HTTP request to be proxied
+/// * `client` - The HTTP client used to make requests to the upstream API
+/// * `config` - Configuration wrapped in an Arc for thread-safe sharing
 ///
 /// The #[instrument] macro automatically creates a tracing span for this function,
 /// with empty fields that will be filled in during processing.
@@ -77,7 +96,7 @@ pub fn create_router(client: Client, config: &'static Config) -> Router {
 pub async fn proxy_handler(
     req: Request<Body>,
     client: Client,
-    config: &'static Config,
+    config: Arc<Config>,
 ) -> Result<Response, StatusCode> {
     // Start timing the request processing
     let start = Instant::now();
@@ -89,7 +108,7 @@ pub async fn proxy_handler(
     let span = Span::current();
 
     // Record the request ID in the span
-    span.record("req_id", &req_id.to_string());
+    span.record("req_id", req_id.to_string());
 
     info!(request_id = %req_id, "Starting request processing");
 
@@ -99,7 +118,7 @@ pub async fn proxy_handler(
     let original_headers = req.headers().clone();
 
     // Record basic request information in the tracing span
-    span.record("http.method", &method.to_string());
+    span.record("http.method", method.to_string());
     span.record("url.path", original_uri.path());
 
     // If there's a query string, record it in the span

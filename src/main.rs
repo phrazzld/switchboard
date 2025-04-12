@@ -4,6 +4,7 @@ mod proxy_handler;
 
 use axum::Server;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::signal;
@@ -17,6 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting Anthropic visibility proxy...");
 
     // Load configuration from environment variables and .env file
+    // This returns a &'static Config
     let config = config::load_config();
 
     // Initialize tracing for structured logging
@@ -39,11 +41,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("HTTP client created with rustls TLS support");
 
+    // Create a clone of the static config that we can own and wrap in Arc
+    let config_owned = config.clone();
+    let config_arc = Arc::new(config_owned);
+
     // Create the router with the HTTP client and config
-    let app = create_router(client, config);
+    // Clone the Arc to preserve ownership for later use
+    let app = create_router(client, config_arc.clone());
 
     // Parse and bind to the configured address
-    let addr_str = format!("0.0.0.0:{}", config.port);
+    let addr_str = format!("0.0.0.0:{}", config_arc.port);
     let addr: SocketAddr = match addr_str.parse() {
         Ok(addr) => addr,
         Err(e) => {

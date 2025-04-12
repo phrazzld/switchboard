@@ -1,0 +1,5 @@
+# Rustfmt configuration
+# See https://rust-lang.github.io/rustfmt/ for all available options
+
+# Default configuration, which enforces standard Rust formatting conventions
+# including trailing newlines at the end of files
