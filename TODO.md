@@ -12,7 +12,7 @@
 
   **Dependencies:** None
 
-- [ ] **T002: Extend Config Struct with New Logging Fields**
+- [x] **T002: Extend Config Struct with New Logging Fields**
   - Add the following fields to the `Config` struct:
     - `log_file_path: String` - Path to the log file (default: "./switchboard.log")
     - `log_file_level: String` - Minimum log level for file output (default: "debug")

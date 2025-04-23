@@ -14,12 +14,18 @@ pub struct Config {
     pub anthropic_api_key: String,
     /// Target URL for the Anthropic API
     pub anthropic_target_url: String,
-    /// Log level (info, debug, etc.)
-    pub log_level: String,
-    /// Log format (json or pretty)
+    /// Minimum log level for stdout output (info, debug, etc.)
+    pub log_stdout_level: String,
+    /// Format for stdout log output (json or pretty)
     pub log_format: String,
     /// Whether to log full request and response bodies
     pub log_bodies: bool,
+    /// Path to the comprehensive log file
+    pub log_file_path: String,
+    /// Minimum log level for file output (debug, trace, etc.)
+    pub log_file_level: String,
+    /// Maximum size for logged bodies before truncation (bytes)
+    pub log_max_body_size: usize,
 }
 
 /// Global static configuration instance, initialized once on first access
@@ -52,28 +58,39 @@ pub fn load_config() -> &'static Config {
         let anthropic_target_url = env::var("ANTHROPIC_TARGET_URL")
             .unwrap_or_else(|_| "https://api.anthropic.com".to_string());
 
-        let log_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
+        let log_stdout_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
         let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
         let log_bodies = env::var("LOG_BODIES")
             .map(|v| v.to_lowercase() != "false" && v != "0")
             .unwrap_or(true);
 
+        // Default values for new fields (actual environment loading will be implemented in T003)
+        let log_file_path = "./switchboard.log".to_string();
+        let log_file_level = "debug".to_string();
+        let log_max_body_size = 20480; // 20KB default
+
         let loaded_config = Config {
             port,
             anthropic_api_key,
             anthropic_target_url,
-            log_level,
+            log_stdout_level,
             log_format,
             log_bodies,
+            log_file_path,
+            log_file_level,
+            log_max_body_size,
         };
 
         // Log configuration values, but omit the API key for security
         info!(
             port = %loaded_config.port,
             target_url = %loaded_config.anthropic_target_url,
-            log_level = %loaded_config.log_level,
+            log_stdout_level = %loaded_config.log_stdout_level,
             log_format = %loaded_config.log_format,
             log_bodies = loaded_config.log_bodies,
+            log_file_path = %loaded_config.log_file_path,
+            log_file_level = %loaded_config.log_file_level,
+            log_max_body_size = loaded_config.log_max_body_size,
             "Configuration loaded"
         );
 

@@ -13,7 +13,7 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 /// based on the provided configuration.
 ///
 /// # Arguments
-/// * `config` - The application configuration containing log_level, log_format, and log_bodies settings
+/// * `config` - The application configuration containing log_stdout_level, log_format, and log_bodies settings
 ///
 /// # Example
 /// ```
@@ -24,17 +24,20 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 /// #     port: "8080".to_string(),
 /// #     anthropic_api_key: "test-key".to_string(),
 /// #     anthropic_target_url: "https://example.com".to_string(),
-/// #     log_level: "info".to_string(),
+/// #     log_stdout_level: "info".to_string(),
 /// #     log_format: "pretty".to_string(),
 /// #     log_bodies: true,
+/// #     log_file_path: "./switchboard.log".to_string(),
+/// #     log_file_level: "debug".to_string(),
+/// #     log_max_body_size: 20480,
 /// # };
 /// logger::init_tracing(&mock_config);
 /// ```
 pub fn init_tracing(config: &Config) {
     // Try to get filter directive from environment first (RUST_LOG),
-    // fall back to config.log_level, or use 'info' as last resort
+    // fall back to config.log_stdout_level, or use 'info' as last resort
     let filter = EnvFilter::try_from_default_env()
-        .or_else(|_| EnvFilter::try_new(&config.log_level))
+        .or_else(|_| EnvFilter::try_new(&config.log_stdout_level))
         .unwrap_or_else(|e| {
             eprintln!(
                 "Failed to parse log level filter: {}, using default 'info'",
@@ -55,7 +58,7 @@ pub fn init_tracing(config: &Config) {
 
             // Log configuration information
             info!(
-                log_level = %config.log_level,
+                log_level = %config.log_stdout_level,
                 log_format = "json",
                 log_bodies = config.log_bodies,
                 "Initialized JSON logger"
@@ -68,7 +71,7 @@ pub fn init_tracing(config: &Config) {
 
             // Log configuration information
             info!(
-                log_level = %config.log_level,
+                log_level = %config.log_stdout_level,
                 log_format = "pretty",
                 log_bodies = config.log_bodies,
                 "Initialized pretty logger"
