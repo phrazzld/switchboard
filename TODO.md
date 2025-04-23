@@ -68,7 +68,7 @@
 
   **Dependencies:** T001, T003
 
-- [ ] **T005: Update Request Logging with New Configuration**
+- [x] **T005: Update Request Logging with New Configuration**
   - Update `log_request_details` function to:
     - Include the `log_max_body_size` parameter
     - Respect the `log_bodies` configuration

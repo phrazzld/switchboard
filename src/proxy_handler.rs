@@ -195,6 +195,7 @@ pub async fn proxy_handler(
         &original_headers,
         &body_bytes,
         config.log_bodies,
+        config.log_max_body_size,
     );
 
     // Create the request builder for forwarding to Anthropic API
@@ -564,6 +565,9 @@ pub async fn proxy_handler(
 /// Maximum length of request/response bodies that will be logged in full
 /// Bodies larger than this will only have their size logged to avoid excessive logging
 /// Increased from 10KB to 20KB to capture more verbose logging
+///
+/// @deprecated This constant is kept for backward compatibility but is no longer used.
+/// The `log_max_body_size` parameter from Config is used instead.
 pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 
 /// Logs details of an incoming request in a structured format
@@ -577,13 +581,15 @@ pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 /// * `uri` - The request URI including path and query
 /// * `headers` - The request headers map
 /// * `body` - The request body as bytes
-/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs
+/// * `log_max_body_size` - Maximum size in bytes for logged bodies before truncation
 pub fn log_request_details(
     method: &hyper::Method,
     uri: &Uri,
     headers: &HeaderMap,
     body: &Bytes,
     log_bodies: bool,
+    log_max_body_size: usize,
 ) {
     // Create a new span for the request details to keep them separate from the main request span
     let span = info_span!("request_details");
@@ -615,7 +621,7 @@ pub fn log_request_details(
     if body_len == 0 {
         // Empty body
         info!("Request body empty");
-    } else if log_bodies && body_len <= MAX_LOG_BODY_LEN {
+    } else if log_bodies && body_len <= log_max_body_size {
         // Body is small enough to log fully and logging is enabled
         // Try to parse as JSON first for pretty formatting
         match serde_json::from_slice::<Value>(body) {
@@ -637,7 +643,7 @@ pub fn log_request_details(
                 );
             }
         }
-    } else if body_len <= MAX_LOG_BODY_LEN {
+    } else if body_len <= log_max_body_size {
         // Small enough to log but logging not enabled - put in debug level
         debug!(
             http.request.body.size = body_len,
