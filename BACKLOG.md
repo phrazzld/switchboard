@@ -1,24 +1,10 @@
-# BACKLOG
+# Project Backlog
 
-- enable persistent logs
-- [HIGH] Implement basic integration tests for streaming responses
-  - Focus on happy path first
-  - Test streaming response detection
-  - Verify streaming body is properly handled
-- [HIGH] Add unit tests for helper functions
-  - Test logging helpers
-  - Test other pure functions
-- [HIGH] Add doc tests for public APIs
-  - Focus on Config and Logger modules
-- [MEDIUM] Refactor large proxy handler function
-  - Extract logging helpers to a separate module
-  - Refactor main handler into smaller focused functions
-  - Create helper functions for request building, streaming logic, and non-streaming logic
-- [LOW] Remove unnecessary turbofish syntax
-  - Clean up type annotations where Rust can infer types
-  - Locations identified in CODE_REVIEW.md
-- [LOW] Improve Dockerfile security
-  - Add non-root user
-  - Configure application to run as non-root user
-- [LOW] Fix documentation inconsistency
-  - Align Rust version between README.md and Dockerfile
+## Infrastructure
+- [ ] Set up useful precommit hooks
+    * Warn when files are over 500 lines
+    * Error when files are over 1000 lines
+    * Run tests
+    * Run linter
+    * Etc
+- [ ] Set up GitHub Actions CI
