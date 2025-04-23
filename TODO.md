@@ -43,7 +43,7 @@
         2. Commit is not blocked by a warning.
     - **Depends‑on:** [T003]
 
-- [ ] **T005 · Feature · P1: implement line count error**
+- [x] **T005 · Feature · P1: implement line count error**
     - **Context:** PLAN.md Detailed Build Steps #3.c, Error & Edge-Case Strategy
     - **Action:**
         1. Edit `hooks/pre-commit`.
