@@ -148,7 +148,7 @@
         3. Hook handles empty commits gracefully.
     - **Depends‑on:** [T006]
 
-- [ ] **T015 · Refactor · P3: add messaging for slow tests**
+- [x] **T015 · Refactor · P3: add messaging for slow tests**
     - **Context:** PLAN.md Risk Matrix (Hook execution time)
     - **Action:**
         1. Edit `hooks/pre-commit`.

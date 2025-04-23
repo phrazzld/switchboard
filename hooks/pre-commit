@@ -70,6 +70,7 @@ if [ -n "$STAGED_RS_FILES" ]; then
     fi
     
     # Run tests
+    echo "${YELLOW}Note: Tests might take some time to complete. Please be patient...${NC}"
     echo "${YELLOW}Running cargo test...${NC}"
     cargo test
     if [ $? -ne 0 ]; then
