@@ -10,7 +10,7 @@
         1. Variables are defined in the script.
     - **Depends‑on:** none
 
-- [ ] **T002 · Feature · P2: get list of staged rust files**
+- [x] **T002 · Feature · P2: get list of staged rust files**
     - **Context:** PLAN.md Detailed Build Steps #3.a
     - **Action:**
         1. Edit `hooks/pre-commit`.

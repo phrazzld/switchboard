@@ -15,9 +15,11 @@ NC='\033[0m' # No Color
 
 echo "${YELLOW}Running pre-commit checks...${NC}"
 
+# Get list of staged Rust files (excluding deleted files)
+STAGED_RS_FILES=$(git diff --name-only --cached --diff-filter=ACM | grep "\.rs$" || true)
+
 # Check if any Rust files are staged
-git diff --name-only --cached --diff-filter=d | grep -q "\.rs$"
-if [ $? -eq 0 ]; then
+if [ -n "$STAGED_RS_FILES" ]; then
     # Run cargo fmt
     echo "${YELLOW}Running cargo fmt --check...${NC}"
     cargo fmt --check
