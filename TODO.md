@@ -21,7 +21,7 @@
         2. Script handles the case where no `.rs` files are staged.
     - **Depends‑on:** none
 
-- [ ] **T003 · Feature · P2: implement line count check logic**
+- [x] **T003 · Feature · P2: implement line count check logic**
     - **Context:** PLAN.md Detailed Build Steps #3.b, #3.c
     - **Action:**
         1. Edit `hooks/pre-commit`.

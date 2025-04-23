@@ -20,6 +20,26 @@ STAGED_RS_FILES=$(git diff --name-only --cached --diff-filter=ACM | grep "\.rs$"
 
 # Check if any Rust files are staged
 if [ -n "$STAGED_RS_FILES" ]; then
+    # Check line counts for each staged Rust file
+    echo "${YELLOW}Checking line counts in Rust files...${NC}"
+    for file in $STAGED_RS_FILES; do
+        # Skip files that don't exist (might have been deleted after staging)
+        if [ -f "$file" ]; then
+            # Get line count for the file
+            line_count=$(wc -l < "$file" | awk '{print $1}')
+            
+            # Store the result for later use in T004 and T005
+            # This will be enhanced in future tickets to display warnings/errors
+            if [ "$line_count" -gt "$ERROR_LINES" ]; then
+                # Exceeds error threshold - will be handled in T005
+                echo "File $file: $line_count lines (exceeds error threshold of $ERROR_LINES)"
+            elif [ "$line_count" -gt "$WARN_LINES" ]; then
+                # Exceeds warning threshold - will be handled in T004
+                echo "File $file: $line_count lines (exceeds warning threshold of $WARN_LINES)"
+            fi
+        fi
+    done
+
     # Run cargo fmt
     echo "${YELLOW}Running cargo fmt --check...${NC}"
     cargo fmt --check
