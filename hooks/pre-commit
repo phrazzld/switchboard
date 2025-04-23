@@ -37,6 +37,15 @@ if [ -n "$STAGED_RS_FILES" ]; then
         echo "Fix the linting issues before committing."
         exit 1
     fi
+    
+    # Run tests
+    echo "${YELLOW}Running cargo test...${NC}"
+    cargo test
+    if [ $? -ne 0 ]; then
+        echo "${RED}Error: Tests failed.${NC}"
+        echo "Fix the failing tests before committing."
+        exit 1
+    fi
 fi
 
 echo "${GREEN}All checks passed!${NC}"

@@ -63,7 +63,7 @@
         2. Script exits successfully (status 0) if only non-Rust files are staged (assuming other checks pass).
     - **Depends‑on:** [T002]
 
-- [ ] **T007 · Feature · P1: add cargo test execution**
+- [x] **T007 · Feature · P1: add cargo test execution**
     - **Context:** PLAN.md Detailed Build Steps #4
     - **Action:**
         1. Edit `hooks/pre-commit`.
