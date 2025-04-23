@@ -137,7 +137,7 @@
         3. Boundary conditions (499, 500, 1000, 1001) behave as expected.
     - **Depends‑on:** [T004, T005]
 
-- [ ] **T014 · Test · P2: manually test no rust files scenario**
+- [x] **T014 · Test · P2: manually test no rust files scenario**
     - **Context:** PLAN.md Detailed Build Steps #7, Testing Strategy, Error & Edge-Case Strategy
     - **Action:**
         1. Stage only non-`.rs` files and attempt commit.
