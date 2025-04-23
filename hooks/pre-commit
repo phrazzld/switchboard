@@ -37,8 +37,9 @@ if [ -n "$STAGED_RS_FILES" ]; then
                 echo "Please refactor this file into smaller modules."
                 error_found=1
             elif [ "$line_count" -gt "$WARN_LINES" ]; then
-                # Exceeds warning threshold - will be handled in T004
-                echo "File $file: $line_count lines (exceeds warning threshold of $WARN_LINES)"
+                # Exceeds warning threshold
+                echo "${YELLOW}Warning: File $file has $line_count lines (exceeds recommended limit of $WARN_LINES).${NC}"
+                echo "Consider refactoring this file into smaller modules in the future."
             fi
         fi
     done

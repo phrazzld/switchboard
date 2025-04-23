@@ -32,7 +32,7 @@
         2. Comparisons against thresholds are performed.
     - **Depends‑on:** [T001, T002]
 
-- [ ] **T004 · Feature · P2: implement line count warning**
+- [x] **T004 · Feature · P2: implement line count warning**
     - **Context:** PLAN.md Detailed Build Steps #3.c, Error & Edge-Case Strategy
     - **Action:**
         1. Edit `hooks/pre-commit`.
