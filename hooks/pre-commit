@@ -3,6 +3,10 @@
 # Pre-commit hook for Rust projects
 # Runs cargo fmt and cargo clippy before allowing commit
 
+# Define line count thresholds
+WARN_LINES=500
+ERROR_LINES=1000
+
 # Store the colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
