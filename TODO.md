@@ -113,7 +113,7 @@
         1. Installation instructions in README are clear and complete.
     - **Depends‑on:** none
 
-- [ ] **T012 · Test · P2: manually test hook failure scenarios**
+- [x] **T012 · Test · P2: manually test hook failure scenarios**
     - **Context:** PLAN.md Detailed Build Steps #7, Testing Strategy
     - **Action:**
         1. Introduce a formatting error and attempt commit.
