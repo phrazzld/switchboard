@@ -84,7 +84,7 @@
         1. User sees clear start/end messages for each check run.
     - **Depends‑on:** [T003, T007]
 
-- [ ] **T009 · Refactor · P3: implement colored output**
+- [x] **T009 · Refactor · P3: implement colored output**
     - **Context:** PLAN.md Logging & Observability
     - **Action:**
         1. Edit `hooks/pre-commit`.
