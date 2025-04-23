@@ -75,7 +75,7 @@
         3. Hook passes if tests pass.
     - **Depends‑on:** none
 
-- [ ] **T008 · Refactor · P3: add check summary messages**
+- [x] **T008 · Refactor · P3: add check summary messages**
     - **Context:** PLAN.md Detailed Build Steps #5, Logging & Observability
     - **Action:**
         1. Edit `hooks/pre-commit`.

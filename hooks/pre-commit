@@ -50,6 +50,9 @@ if [ -n "$STAGED_RS_FILES" ]; then
         echo "${RED}Error: Commit blocked due to files exceeding the maximum line count.${NC}"
         exit 1
     fi
+    
+    # If we get here, the line count check passed
+    echo "${GREEN}Line count check passed!${NC}"
 
     # Run cargo fmt
     echo "${YELLOW}Running cargo fmt --check...${NC}"
@@ -59,6 +62,7 @@ if [ -n "$STAGED_RS_FILES" ]; then
         echo "Run 'cargo fmt' to fix formatting issues."
         exit 1
     fi
+    echo "${GREEN}Formatting check passed!${NC}"
 
     # Run cargo clippy with strict settings
     echo "${YELLOW}Running cargo clippy...${NC}"
@@ -68,6 +72,7 @@ if [ -n "$STAGED_RS_FILES" ]; then
         echo "Fix the linting issues before committing."
         exit 1
     fi
+    echo "${GREEN}Linting check passed!${NC}"
     
     # Run tests
     echo "${YELLOW}Note: Tests might take some time to complete. Please be patient...${NC}"
@@ -78,6 +83,7 @@ if [ -n "$STAGED_RS_FILES" ]; then
         echo "Fix the failing tests before committing."
         exit 1
     fi
+    echo "${GREEN}Tests passed!${NC}"
 else
     echo "${GREEN}No Rust files staged. Skipping Rust-specific checks.${NC}"
 fi
