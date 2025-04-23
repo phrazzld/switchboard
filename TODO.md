@@ -125,7 +125,7 @@
         3. Hook correctly blocks commit for test failures.
     - **Depends‑on:** [T007]
 
-- [ ] **T013 · Test · P2: manually test line count scenarios**
+- [x] **T013 · Test · P2: manually test line count scenarios**
     - **Context:** PLAN.md Detailed Build Steps #7, Testing Strategy
     - **Action:**
         1. Create/stage files with ~501, ~999, ~1000, ~1001 lines and attempt commit.
