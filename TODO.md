@@ -30,7 +30,7 @@
 
   **Dependencies:** None
 
-- [ ] **T003: Update Configuration Loading from Environment**
+- [x] **T003: Update Configuration Loading from Environment**
   - Update `load_config()` to read the new environment variables:
     - `LOG_FILE_PATH`
     - `LOG_FILE_LEVEL`

@@ -64,10 +64,24 @@ pub fn load_config() -> &'static Config {
             .map(|v| v.to_lowercase() != "false" && v != "0")
             .unwrap_or(true);
 
-        // Default values for new fields (actual environment loading will be implemented in T003)
-        let log_file_path = "./switchboard.log".to_string();
-        let log_file_level = "debug".to_string();
-        let log_max_body_size = 20480; // 20KB default
+        // Load file logging configuration
+        let log_file_path =
+            env::var("LOG_FILE_PATH").unwrap_or_else(|_| "./switchboard.log".to_string());
+        let log_file_level = env::var("LOG_FILE_LEVEL").unwrap_or_else(|_| "debug".to_string());
+
+        // Parse LOG_MAX_BODY_SIZE with error handling
+        let log_max_body_size = env::var("LOG_MAX_BODY_SIZE")
+            .ok()
+            .and_then(|size_str| {
+                size_str.parse::<usize>().ok().or_else(|| {
+                    eprintln!(
+                        "Failed to parse LOG_MAX_BODY_SIZE: '{}', using default 20480",
+                        size_str
+                    );
+                    None
+                })
+            })
+            .unwrap_or(20480); // Default to 20KB if not set or invalid
 
         let loaded_config = Config {
             port,
