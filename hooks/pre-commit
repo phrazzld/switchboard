@@ -18,16 +18,6 @@ echo "${YELLOW}Running pre-commit checks...${NC}"
 # Get list of staged Rust files (excluding deleted files)
 STAGED_RS_FILES=$(git diff --name-only --cached --diff-filter=ACM | grep "\.rs$" || true)
 
-# Debug output
-echo "${YELLOW}DEBUG: Staged Rust files:${NC}"
-for file in $STAGED_RS_FILES; do
-    echo "${YELLOW}DEBUG:   $file${NC}"
-    if [ -f "$file" ]; then
-        line_count=$(wc -l < "$file" | awk '{print $1}')
-        echo "${YELLOW}DEBUG:     Line count: $line_count${NC}"
-    fi
-done
-
 # Check if any Rust files are staged
 if [ -n "$STAGED_RS_FILES" ]; then
     echo "${YELLOW}Rust files detected in staged changes. Running Rust-specific checks...${NC}"
