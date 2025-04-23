@@ -108,16 +108,42 @@ cargo doc --open
 
 ### Setting Up Pre-commit Hooks
 
-We use pre-commit hooks to ensure code quality checks run before each commit. To enable the pre-commit hook:
+We use pre-commit hooks to ensure code quality checks run before each commit. You can set up the pre-commit hook using either a file copy or a symbolic link.
+
+#### Option 1: Copy Method (recommended for most users)
 
 ```bash
 # Copy the hook to your git hooks directory
 cp hooks/pre-commit .git/hooks/
-# Make it executable (if needed)
+# Make it executable (required on Unix-based systems)
 chmod +x .git/hooks/pre-commit
 ```
 
-The pre-commit hook will automatically run `cargo fmt --check` and `cargo clippy -- -D warnings` before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
+#### Option 2: Symlink Method (better for development on the hook itself)
+
+```bash
+# Create a symbolic link to the hook
+ln -sf "$(pwd)/hooks/pre-commit" .git/hooks/pre-commit
+# Make it executable (required on Unix-based systems)
+chmod +x .git/hooks/pre-commit
+```
+
+The symlink method is preferred if you plan to contribute improvements to the hook, as any changes you make to the hook will be immediately active without requiring you to copy the file again.
+
+The pre-commit hook performs the following checks:
+
+1. **File Length Check**: Ensures Rust files maintain reasonable size
+   - Warning at 500+ lines: Suggests refactoring but allows commit
+   - Error at 1000+ lines: Blocks commit until file is refactored into smaller modules
+
+2. **Code Quality Checks**:
+   - `cargo fmt --check`: Verifies code adheres to formatting standards
+   - `cargo clippy -- -D warnings`: Ensures code passes linting checks
+
+3. **Test Execution**:
+   - `cargo test`: Runs all tests to ensure functionality is maintained
+
+If any checks fail, the commit will be aborted with a descriptive error message. Fix the issues and try again.
 
 ## License
 

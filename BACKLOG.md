@@ -1,10 +1,3 @@
-# Project Backlog
+# BACKLOG
 
-## Infrastructure
-- [ ] Set up useful precommit hooks
-    * Warn when files are over 500 lines
-    * Error when files are over 1000 lines
-    * Run tests
-    * Run linter
-    * Etc
-- [ ] Set up GitHub Actions CI
+- refactor pre-commit hooks to use proper pre-commit framework

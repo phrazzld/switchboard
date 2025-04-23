@@ -26,3 +26,9 @@
 
 # Local build configuration files
 *.stamp
+
+# Local dev references
+thinktank_output/
+TASK-PROMPT.md
+CODE_REVIEW.md
+diff.md
