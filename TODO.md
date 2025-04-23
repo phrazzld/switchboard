@@ -94,7 +94,7 @@
         1. Hook output uses colors for enhanced readability of status/warnings/errors.
     - **Depends‑on:** [T004, T005, T008]
 
-- [ ] **T010 · Chore · P2: update README with new checks**
+- [x] **T010 · Chore · P2: update README with new checks**
     - **Context:** PLAN.md Documentation
     - **Action:**
         1. Edit `README.md`.

@@ -117,7 +117,20 @@ cp hooks/pre-commit .git/hooks/
 chmod +x .git/hooks/pre-commit
 ```
 
-The pre-commit hook will automatically run `cargo fmt --check` and `cargo clippy -- -D warnings` before each commit. If any checks fail, the commit will be aborted. Fix the issues and try again.
+The pre-commit hook performs the following checks:
+
+1. **File Length Check**: Ensures Rust files maintain reasonable size
+   - Warning at 500+ lines: Suggests refactoring but allows commit
+   - Error at 1000+ lines: Blocks commit until file is refactored into smaller modules
+
+2. **Code Quality Checks**:
+   - `cargo fmt --check`: Verifies code adheres to formatting standards
+   - `cargo clippy -- -D warnings`: Ensures code passes linting checks
+
+3. **Test Execution**:
+   - `cargo test`: Runs all tests to ensure functionality is maintained
+
+If any checks fail, the commit will be aborted with a descriptive error message. Fix the issues and try again.
 
 ## License
 
