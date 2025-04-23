@@ -42,3 +42,4 @@ axum = { version = "0.6.20" }  # Match the version used in main dependencies
 tower = { version = "0.4", features = ["util"] }
 http-body-util = "0.1"
 uuid = { version = "1.4.1", features = ["v4"] }  # Match the version used in main dependencies
+tempfile = "3.8"

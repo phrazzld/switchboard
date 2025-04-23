@@ -21,8 +21,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This returns a &'static Config
     let config = config::load_config();
 
-    // Initialize tracing for structured logging
-    logger::init_tracing(config);
+    // Initialize tracing for structured logging with dual output
+    // Store the worker guard to keep non-blocking file writer alive
+    let _guard = logger::init_tracing(config);
 
     info!("switchboard initialized");
 
