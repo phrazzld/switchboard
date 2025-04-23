@@ -53,7 +53,7 @@
         2. Script exits with non-zero status, blocking the commit.
     - **Depends‑on:** [T003]
 
-- [ ] **T006 · Bugfix · P2: handle no staged rust files gracefully**
+- [x] **T006 · Bugfix · P2: handle no staged rust files gracefully**
     - **Context:** PLAN.md Error & Edge-Case Strategy
     - **Action:**
         1. Edit `hooks/pre-commit`.

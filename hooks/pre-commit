@@ -20,6 +20,7 @@ STAGED_RS_FILES=$(git diff --name-only --cached --diff-filter=ACM | grep "\.rs$"
 
 # Check if any Rust files are staged
 if [ -n "$STAGED_RS_FILES" ]; then
+    echo "${YELLOW}Rust files detected in staged changes. Running Rust-specific checks...${NC}"
     # Check line counts for each staged Rust file
     echo "${YELLOW}Checking line counts in Rust files...${NC}"
     # Flag to track if any files exceed the error threshold
@@ -76,6 +77,8 @@ if [ -n "$STAGED_RS_FILES" ]; then
         echo "Fix the failing tests before committing."
         exit 1
     fi
+else
+    echo "${GREEN}No Rust files staged. Skipping Rust-specific checks.${NC}"
 fi
 
 echo "${GREEN}All checks passed!${NC}"
