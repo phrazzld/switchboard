@@ -108,14 +108,27 @@ cargo doc --open
 
 ### Setting Up Pre-commit Hooks
 
-We use pre-commit hooks to ensure code quality checks run before each commit. To enable the pre-commit hook:
+We use pre-commit hooks to ensure code quality checks run before each commit. You can set up the pre-commit hook using either a file copy or a symbolic link.
+
+#### Option 1: Copy Method (recommended for most users)
 
 ```bash
 # Copy the hook to your git hooks directory
 cp hooks/pre-commit .git/hooks/
-# Make it executable (if needed)
+# Make it executable (required on Unix-based systems)
 chmod +x .git/hooks/pre-commit
 ```
+
+#### Option 2: Symlink Method (better for development on the hook itself)
+
+```bash
+# Create a symbolic link to the hook
+ln -sf "$(pwd)/hooks/pre-commit" .git/hooks/pre-commit
+# Make it executable (required on Unix-based systems)
+chmod +x .git/hooks/pre-commit
+```
+
+The symlink method is preferred if you plan to contribute improvements to the hook, as any changes you make to the hook will be immediately active without requiring you to copy the file again.
 
 The pre-commit hook performs the following checks:
 

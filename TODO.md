@@ -104,7 +104,7 @@
         1. README accurately reflects the behavior of the updated pre-commit hook.
     - **Depends‑on:** [T005, T007]
 
-- [ ] **T011 · Chore · P3: update README installation instructions**
+- [x] **T011 · Chore · P3: update README installation instructions**
     - **Context:** PLAN.md Documentation
     - **Action:**
         1. Edit `README.md`.
