@@ -100,7 +100,7 @@
 
   **Dependencies:** T004
 
-- [ ] **T007: Create Unit Tests for Configuration**
+- [x] **T007: Create Unit Tests for Configuration**
   - Add tests to verify:
     - Default values when environment variables are not set
     - Proper parsing when environment variables are set
