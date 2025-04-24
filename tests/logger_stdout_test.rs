@@ -374,7 +374,8 @@ fn test_logger_json_format() {
     };
 
     // Initialize the logger (this should succeed with JSON format)
-    let _guard = logger::init_tracing(&config);
+    let _guard =
+        logger::init_tracing(&config).expect("Failed to initialize logging for stdout JSON test");
 
     // Emit a log message
     info!(format = "json", "Test with JSON format");

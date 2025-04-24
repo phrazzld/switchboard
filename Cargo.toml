@@ -44,6 +44,7 @@ hyper = { version = "0.14.27", features = ["server", "http1", "http2"] }
 bytes = "1.4.0"
 futures-util = "0.3.28"
 dotenvy = "0.15.7"
+thiserror = "1.0.48"
 
 [dev-dependencies]
 # Testing dependencies for integration tests

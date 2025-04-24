@@ -58,8 +58,12 @@ pub fn setup_logging(
                 log_max_body_size: 20480,
             });
 
-            let guard = logger::init_tracing(&config);
-            (Some(config), Some(guard))
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
         }
         LoggingMode::FileOnly => {
             // Create config with file only (set stdout level to OFF)
@@ -75,8 +79,12 @@ pub fn setup_logging(
                 log_max_body_size: 20480,
             });
 
-            let guard = logger::init_tracing(&config);
-            (Some(config), Some(guard))
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
         }
         LoggingMode::DualOutput => {
             // Create config with both outputs enabled
@@ -92,8 +100,12 @@ pub fn setup_logging(
                 log_max_body_size: 20480,
             });
 
-            let guard = logger::init_tracing(&config);
-            (Some(config), Some(guard))
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
         }
     }
 }

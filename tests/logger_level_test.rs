@@ -94,7 +94,8 @@ fn test_log_level_filtering() {
 
     // Set up debug level logging
     let config = create_test_config(&debug_base_path, "debug");
-    let _guard = logger::init_tracing(&config);
+    let _guard =
+        logger::init_tracing(&config).expect("Failed to initialize logging for debug level test");
 
     // Write logs at all levels
     trace!("TRACE message");

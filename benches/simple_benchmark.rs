@@ -83,8 +83,12 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
                 log_max_body_size: 20480,
             });
 
-            let guard = logger::init_tracing(&config);
-            (Some(config), Some(guard))
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
         }
         LogMode::FileOnly => {
             let config = Arc::new(Config {
@@ -102,8 +106,12 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
                 log_max_body_size: 20480,
             });
 
-            let guard = logger::init_tracing(&config);
-            (Some(config), Some(guard))
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
         }
         LogMode::DualOutput => {
             let config = Arc::new(Config {
@@ -121,8 +129,12 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
                 log_max_body_size: 20480,
             });
 
-            let guard = logger::init_tracing(&config);
-            (Some(config), Some(guard))
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
         }
     };
 

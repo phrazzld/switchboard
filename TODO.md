@@ -219,7 +219,7 @@
 
   **Dependencies:** T001-T013
 
-- [ ] **T015: Improve Logger Directory Creation Error Handling**
+- [~] **T015: Improve Logger Directory Creation Error Handling**
   - Modify the `init_tracing` function in `src/logger.rs` to properly handle directory creation failures
   - Return a `Result` type instead of ignoring the error
   - Create a custom error type for logging initialization failures (e.g., `LogInitError`)

@@ -76,7 +76,8 @@ fn test_directory_creation() {
 
     // Create config and initialize logging
     let config = create_test_config(&log_base_path, "debug");
-    let _guard = logger::init_tracing(&config);
+    let _guard =
+        logger::init_tracing(&config).expect("Failed to initialize logging for directory test");
 
     // Write a test log
     info!("Test message for directory creation test");

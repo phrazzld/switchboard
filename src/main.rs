@@ -23,7 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize tracing for structured logging with dual output
     // Store the worker guard to keep non-blocking file writer alive
-    let _guard = logger::init_tracing(config);
+    let _guard = logger::init_tracing(config).map_err(|e| {
+        eprintln!("Failed to initialize logging: {}", e);
+        e
+    })?;
 
     info!("switchboard initialized");
 

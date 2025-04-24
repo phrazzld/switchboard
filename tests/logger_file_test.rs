@@ -99,7 +99,7 @@ fn test_file_creation_and_json_format() {
 
     // Create config and initialize logging
     let config = create_test_config(&log_base_path, "debug");
-    let _guard = logger::init_tracing(&config);
+    let _guard = logger::init_tracing(&config).expect("Failed to initialize logging for file test");
 
     // Write test logs with structured fields
     debug!(value = 42, "Debug message with structured data");
