@@ -4,7 +4,6 @@
 use bytes::Bytes;
 use hyper::{HeaderMap, Method, Uri};
 use reqwest::StatusCode;
-use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use switchboard::config::Config;
@@ -264,7 +263,7 @@ fn generate_test_body(size: usize) -> Bytes {
     while data.len() < size - 2 {
         data.push('a');
     }
-    data.push_str(r#"}"#);
+    data.push('}');
     Bytes::from(data)
 }
 

@@ -55,7 +55,7 @@ fn run_benchmark(name: &str, config: Option<LogConfig>, iterations: usize, body_
 
     for &size in body_sizes {
         // Set up the test environment
-        let (config_obj, guard) = setup_logging(config.clone());
+        let (config_obj, guard) = setup_logging(config);
 
         // Prepare test data
         let body = generate_test_body(size);
@@ -270,6 +270,6 @@ fn generate_test_body(size: usize) -> bytes::Bytes {
         data.push('a');
     }
 
-    data.push_str(r#"}"#);
+    data.push('}');
     bytes::Bytes::from(data)
 }

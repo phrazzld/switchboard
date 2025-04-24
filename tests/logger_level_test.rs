@@ -7,6 +7,8 @@ use switchboard::logger;
 use tracing::{debug, error, info, trace, warn};
 
 // Helper function to check if a file exists and is readable
+// Currently unused but retained for potential future test expansions
+#[allow(dead_code)]
 fn file_exists_and_readable(path: &Path) -> bool {
     match File::open(path) {
         Ok(_) => true,

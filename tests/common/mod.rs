@@ -11,9 +11,15 @@ use wiremock::MockServer;
 /// Represents the setup needed for integration tests.
 pub struct TestSetup {
     /// HTTP client for the application to use
+    /// Note: This field is required during setup even though tests may not access it directly,
+    /// as it's captured by the router and used internally during request processing.
+    #[allow(dead_code)]
     pub client: Client,
 
     /// Application configuration pointing to the mock server
+    /// Note: This field is retained for potential future tests that might need to verify config values,
+    /// though it's not directly accessed in current tests.
+    #[allow(dead_code)]
     pub config: Config,
 
     /// The WireMock server instance
