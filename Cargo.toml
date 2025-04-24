@@ -13,6 +13,18 @@ path = "src/lib.rs"
 name = "switchboard"
 path = "src/main.rs"
 
+[[bin]]
+name = "manual_benchmark"
+path = "benches/manual_benchmark.rs"
+
+[[bin]]
+name = "simple_benchmark"
+path = "benches/simple_benchmark.rs"
+
+[[bench]]
+name = "logging_benchmarks"
+harness = false  # Tell Rust to use Criterion's harness instead of the built-in one
+
 [dependencies]
 # NOTE: These versions are specified based on PLAN.md Section 4.2
 # The exact versions may need adjustment based on the actual Rust version used for building.
@@ -25,12 +37,15 @@ serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.107"
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
+tracing-appender = "0.2.2"
 uuid = { version = "1.4.1", features = ["v4"] }
 http = "0.2.9"
 hyper = { version = "0.14.27", features = ["server", "http1", "http2"] }
 bytes = "1.4.0"
 futures-util = "0.3.28"
 dotenvy = "0.15.7"
+thiserror = "1.0.48"
+libc = "0.2.153"
 
 [dev-dependencies]
 # Testing dependencies for integration tests
@@ -41,3 +56,6 @@ axum = { version = "0.6.20" }  # Match the version used in main dependencies
 tower = { version = "0.4", features = ["util"] }
 http-body-util = "0.1"
 uuid = { version = "1.4.1", features = ["v4"] }  # Match the version used in main dependencies
+tempfile = "3.8"
+chrono = "0.4.31"  # For date formatting in tests
+criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }  # For benchmarking

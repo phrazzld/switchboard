@@ -1,0 +1,149 @@
+use std::sync::Arc;
+use std::time::Duration;
+use switchboard::config::Config;
+use switchboard::logger;
+use tempfile::tempdir;
+use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::registry;
+use tracing_subscriber::Layer;
+
+/// Benchmark logging modes
+#[derive(Debug, Clone, Copy)]
+pub enum LoggingMode {
+    /// No logging (completely disabled)
+    Disabled,
+    /// Stdout logging only
+    StdoutOnly,
+    /// File logging only
+    FileOnly,
+    /// Both stdout and file logging (dual-output)
+    DualOutput,
+}
+
+/// Initialize a specific logging configuration for benchmarking
+pub fn setup_logging(
+    mode: LoggingMode,
+) -> (
+    Option<Arc<Config>>,
+    Option<tracing_appender::non_blocking::WorkerGuard>,
+) {
+    // Create a temp directory for log files
+    let temp_dir = tempdir().expect("Failed to create temp directory");
+    let log_file_path = temp_dir
+        .path()
+        .join("benchmark.log")
+        .to_string_lossy()
+        .to_string();
+
+    match mode {
+        LoggingMode::Disabled => {
+            // Set up a no-op subscriber
+            let subscriber = registry().with(LevelFilter::OFF);
+            tracing::subscriber::set_global_default(subscriber)
+                .expect("Failed to set tracing subscriber");
+            (None, None)
+        }
+        LoggingMode::StdoutOnly => {
+            // Create config with stdout only (set file level to OFF)
+            let config = Arc::new(Config {
+                port: "0".to_string(),                     // Not used in benchmarks
+                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                log_stdout_level: "debug".to_string(),
+                log_format: "json".to_string(), // JSON format for consistency
+                log_bodies: true,
+                log_file_path,
+                log_file_level: "off".to_string(), // Disable file logging
+                log_max_body_size: 20480,
+            });
+
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
+        }
+        LoggingMode::FileOnly => {
+            // Create config with file only (set stdout level to OFF)
+            let config = Arc::new(Config {
+                port: "0".to_string(),                     // Not used in benchmarks
+                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                log_stdout_level: "off".to_string(),       // Disable stdout logging
+                log_format: "json".to_string(),            // Not relevant when stdout disabled
+                log_bodies: true,
+                log_file_path,
+                log_file_level: "debug".to_string(),
+                log_max_body_size: 20480,
+            });
+
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
+        }
+        LoggingMode::DualOutput => {
+            // Create config with both outputs enabled
+            let config = Arc::new(Config {
+                port: "0".to_string(),                     // Not used in benchmarks
+                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                log_stdout_level: "debug".to_string(),
+                log_format: "json".to_string(), // JSON format for consistency
+                log_bodies: true,
+                log_file_path,
+                log_file_level: "debug".to_string(),
+                log_max_body_size: 20480,
+            });
+
+            match logger::init_tracing(&config) {
+                Ok(guard) => (Some(config), Some(guard)),
+                Err(e) => {
+                    panic!("Failed to initialize logging for benchmarks: {}", e);
+                }
+            }
+        }
+    }
+}
+
+/// Generate sample test data for benchmarks
+pub fn generate_test_data(size: usize) -> bytes::Bytes {
+    let mut data = String::with_capacity(size);
+
+    // Create a sample JSON string of approximately the specified size
+    data.push_str(r#"{"message":"#);
+
+    // Fill with placeholder data to reach the target size
+    while data.len() < size - 2 {
+        data.push('a');
+    }
+
+    data.push_str(r#"}"#);
+    bytes::Bytes::from(data)
+}
+
+/// Helper function to simulate a typical processing delay
+/// This helps benchmark how logging affects the rest of the application
+pub async fn simulate_processing_delay() {
+    tokio::time::sleep(Duration::from_millis(5)).await;
+}
+
+/// Clean up after running a benchmark with the specified logging mode
+pub fn teardown_logging(
+    _mode: LoggingMode,
+    _config: Option<Arc<Config>>,
+    guard: Option<tracing_appender::non_blocking::WorkerGuard>,
+) {
+    // Explicitly drop the worker guard to ensure logs are flushed
+    if let Some(g) = guard {
+        drop(g);
+    }
+
+    // Reset the global default subscriber to a no-op subscriber
+    let subscriber = registry().with(LevelFilter::OFF);
+    let _ = tracing::subscriber::set_global_default(subscriber);
+}

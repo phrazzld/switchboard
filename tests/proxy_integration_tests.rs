@@ -5,7 +5,7 @@ use axum::body::Body;
 use axum::http::{header, HeaderValue, Request, StatusCode};
 // TODO: Consider using StreamExt in a future improvement to parse SSE streams
 // chunk by chunk instead of the current approach that processes the whole body at once
-use futures_util::StreamExt;
+// Removed unused import: futures_util::StreamExt
 use serde_json::{json, Value};
 use tower::ServiceExt;
 use wiremock::matchers::{method, path};
