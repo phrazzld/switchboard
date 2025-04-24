@@ -143,7 +143,7 @@
 
   **Dependencies:** T004
 
-- [ ] **T010: Test Body Logging and Size Limits**
+- [x] **T010: Test Body Logging and Size Limits**
   - Add tests to verify:
     - Bodies are logged when `log_bodies` is true
     - Bodies are omitted when `log_bodies` is false
