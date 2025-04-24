@@ -11,7 +11,7 @@
         2. Code compiles successfully
     - **Depends-on:** none
 
-- [ ] **T002 · Refactor · P2: update `validate_log_path` for directory structure**
+- [x] **T002 · Refactor · P2: update `validate_log_path` for directory structure**
     - **Context:** PLAN.md § 1.2 Update Path Generation
     - **Action:**
         1. Modify existing `validate_log_path` function to handle subdirectories
