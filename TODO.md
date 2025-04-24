@@ -115,7 +115,7 @@
 
   **Dependencies:** T003
 
-- [ ] **T008: Create Tests for File Logging**
+- [x] **T008: Create Tests for File Logging**
   - Add tests to verify:
     - Logs are written to the specified file
     - JSON format is correctly used
