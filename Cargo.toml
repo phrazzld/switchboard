@@ -45,6 +45,7 @@ bytes = "1.4.0"
 futures-util = "0.3.28"
 dotenvy = "0.15.7"
 thiserror = "1.0.48"
+libc = "0.2.153"
 
 [dev-dependencies]
 # Testing dependencies for integration tests
