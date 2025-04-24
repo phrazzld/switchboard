@@ -84,7 +84,7 @@
 
   **Dependencies:** T004
 
-- [ ] **T006: Update Response Logging with New Configuration**
+- [x] **T006: Update Response Logging with New Configuration**
   - Update `log_response_details` function to:
     - Include the `log_max_body_size` parameter
     - Respect the `log_bodies` configuration

@@ -326,7 +326,12 @@ pub async fn proxy_handler(
         );
 
         // Call the header logging helper to log status and headers
-        log_response_headers(&resp_status, &resp_headers, config.log_bodies);
+        log_response_headers(
+            &resp_status,
+            &resp_headers,
+            config.log_bodies,
+            Some(start.elapsed()),
+        );
 
         // Create a stream from the reqwest response
         info!(
@@ -490,6 +495,8 @@ pub async fn proxy_handler(
             &resp_headers,
             &resp_body_bytes,
             config.log_bodies,
+            config.log_max_body_size,
+            Some(start.elapsed()),
         );
 
         // Build the response to return to the client
@@ -568,6 +575,7 @@ pub async fn proxy_handler(
 ///
 /// @deprecated This constant is kept for backward compatibility but is no longer used.
 /// The `log_max_body_size` parameter from Config is used instead.
+#[allow(dead_code)]
 pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 
 /// Logs details of an incoming request in a structured format
@@ -668,19 +676,34 @@ pub fn log_request_details(
 /// * `status` - The HTTP status code
 /// * `headers` - The response headers map
 /// * `body` - The response body as bytes
-/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs
+/// * `log_max_body_size` - Maximum size in bytes for logged bodies before truncation
+/// * `duration` - Optional duration of the request for timing metrics
 pub fn log_response_details(
     status: &reqwest::StatusCode,
     headers: &HeaderMap,
     body: &Bytes,
     log_bodies: bool,
+    log_max_body_size: usize,
+    duration: Option<std::time::Duration>,
 ) {
     // Create a new span for the response details to keep them separate from the main request span
     let span = info_span!("response_details");
     let _enter = span.enter();
 
-    // Log basic response information at the info level
-    info!(http.status_code = %status.as_u16(), status_text = %status.canonical_reason().unwrap_or("Unknown"));
+    // Log basic response information at the info level, including timing if available
+    if let Some(dur) = duration {
+        info!(
+            http.status_code = %status.as_u16(),
+            status_text = %status.canonical_reason().unwrap_or("Unknown"),
+            duration_ms = %dur.as_millis()
+        );
+    } else {
+        info!(
+            http.status_code = %status.as_u16(),
+            status_text = %status.canonical_reason().unwrap_or("Unknown")
+        );
+    }
 
     // Build a map of header names to values, masking sensitive headers
     let mut headers_log: HashMap<String, String> = HashMap::new();
@@ -705,7 +728,7 @@ pub fn log_response_details(
     if body_len == 0 {
         // Empty body
         info!("Response body empty");
-    } else if log_bodies && body_len <= MAX_LOG_BODY_LEN {
+    } else if log_bodies && body_len <= log_max_body_size {
         // Body is small enough to log fully and logging is enabled
         // Try to parse as JSON first for pretty formatting
         match serde_json::from_slice::<Value>(body) {
@@ -727,7 +750,7 @@ pub fn log_response_details(
                 );
             }
         }
-    } else if body_len <= MAX_LOG_BODY_LEN {
+    } else if body_len <= log_max_body_size {
         // Small enough to log but logging not enabled - put in debug level
         debug!(
             http.response.body.size = body_len,
@@ -753,18 +776,33 @@ pub fn log_response_details(
 /// # Arguments
 /// * `status` - The HTTP status code of the response
 /// * `headers` - The response headers map
-/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs (when true and body size <= MAX_LOG_BODY_LEN)
-pub fn log_response_headers(status: &reqwest::StatusCode, headers: &HeaderMap, log_bodies: bool) {
+/// * `log_bodies` - Boolean flag indicating whether to include full body content in logs
+/// * `duration` - Optional duration of the request for timing metrics
+pub fn log_response_headers(
+    status: &reqwest::StatusCode,
+    headers: &HeaderMap,
+    log_bodies: bool,
+    duration: Option<std::time::Duration>,
+) {
     // Create a new span for the streaming response details
     let span = info_span!("streaming_response_details");
     let _enter = span.enter();
 
-    // Log that streaming is starting
-    info!(
-        http.status_code = %status.as_u16(),
-        status_text = %status.canonical_reason().unwrap_or("Unknown"),
-        "Starting streaming response"
-    );
+    // Log that streaming is starting, with timing if available
+    if let Some(dur) = duration {
+        info!(
+            http.status_code = %status.as_u16(),
+            status_text = %status.canonical_reason().unwrap_or("Unknown"),
+            duration_ms = %dur.as_millis(),
+            "Starting streaming response"
+        );
+    } else {
+        info!(
+            http.status_code = %status.as_u16(),
+            status_text = %status.canonical_reason().unwrap_or("Unknown"),
+            "Starting streaming response"
+        );
+    }
 
     // Build a map of header names to values, masking sensitive headers
     let mut headers_log: HashMap<String, String> = HashMap::new();
