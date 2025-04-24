@@ -188,7 +188,7 @@
 
   **Dependencies:** T004
 
-- [ ] **T013: Update README with Logging Configuration**
+- [x] **T013: Update README with Logging Configuration**
   - Add a section to the README detailing:
     - New environment variables with descriptions and defaults
     - Example log output for both stdout and file

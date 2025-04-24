@@ -28,9 +28,17 @@ For contributing to the project, you'll need the following additional tools:
 | `PORT` | HTTP port to listen on | 8080 |
 | `ANTHROPIC_API_KEY` | Your Anthropic API key (required) | - |
 | `ANTHROPIC_TARGET_URL` | Anthropic API base URL | https://api.anthropic.com |
-| `LOG_LEVEL` | Logging level (info, debug, etc.) | info |
-| `LOG_FORMAT` | Log output format (pretty or json) | pretty |
+
+### Logging Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LOG_LEVEL` | Minimum log level for stdout (trace, debug, info, warn, error) | info |
+| `LOG_FILE_LEVEL` | Minimum log level for file output | debug |
+| `LOG_FORMAT` | Log output format for stdout (pretty or json) | pretty |
+| `LOG_FILE_PATH` | Path to the log file with daily rotation | ./switchboard.log |
 | `LOG_BODIES` | Whether to log full request and response bodies | true |
+| `LOG_MAX_BODY_SIZE` | Maximum size in bytes for logged bodies before truncation | 20480 |
 
 ## Getting Started
 
@@ -40,11 +48,18 @@ For contributing to the project, you'll need the following additional tools:
 2. Create a `.env` file in the project root (or set environment variables):
 
 ```
+# Server configuration
 PORT=8080
 ANTHROPIC_API_KEY=your-api-key-here
-LOG_LEVEL=info
-LOG_FORMAT=pretty
-LOG_BODIES=true  # Enabled by default, set to false to disable full logging
+ANTHROPIC_TARGET_URL=https://api.anthropic.com
+
+# Logging configuration
+LOG_LEVEL=info                  # Stdout log level
+LOG_FILE_LEVEL=debug            # File log level
+LOG_FORMAT=pretty               # Stdout format (pretty or json)
+LOG_FILE_PATH=./switchboard.log # Log file path with daily rotation
+LOG_BODIES=true                 # Log request/response bodies
+LOG_MAX_BODY_SIZE=20480         # Max size of logged bodies in bytes
 ```
 
 ### Building
@@ -86,7 +101,116 @@ https://api.anthropic.com/v1/messages
 http://localhost:8080/v1/messages
 ```
 
-Requests will be forwarded to the Anthropic API, and both requests and responses will be logged according to your LOG_LEVEL setting.
+Requests will be forwarded to the Anthropic API, and both requests and responses will be logged according to your logging configuration.
+
+## Logging System
+
+Switchboard implements a dual-output logging system that provides comprehensive logging capabilities with minimal performance impact.
+
+### Dual-Output Logging
+
+Logs are sent to two destinations simultaneously:
+
+1. **File Output:**
+   - JSON-formatted logs for machine parsing
+   - Daily log rotation (files named like `switchboard.log.2023-04-24`)
+   - Non-blocking I/O for minimal performance impact
+   - Typically more verbose (default level: debug)
+   - Ideal for automated analysis and troubleshooting
+
+2. **Stdout Output:**
+   - Configurable format (pretty or JSON)
+   - Typically less verbose (default level: info)
+   - Ideal for immediate feedback during development
+
+### Log Formats
+
+#### Pretty Format (default for stdout)
+
+```
+2023-04-24T12:34:56.789012Z  INFO switchboard::proxy_handler: Processing request method=POST path=/v1/messages query=
+2023-04-24T12:34:56.842125Z  INFO switchboard::proxy_handler: Received response from Anthropic API with status 200 request_id=d29f1db4-73cb-4e8f-9cd1-b9a971b088ff status=200 headers_count=12
+```
+
+#### JSON Format (used for file logs)
+
+```json
+{
+  "timestamp": "2023-04-24T12:34:56.789012Z",
+  "level": "INFO",
+  "fields": {
+    "message": "Processing request",
+    "method": "POST",
+    "path": "/v1/messages",
+    "query": ""
+  },
+  "target": "switchboard::proxy_handler"
+}
+```
+
+### Log Levels
+
+Logs can be filtered by level, from most to least verbose:
+
+1. **trace**: Very detailed debugging information (rarely used)
+2. **debug**: Technical details useful for debugging
+3. **info**: General information about normal operation
+4. **warn**: Warning conditions that don't prevent operation
+5. **error**: Error conditions that may impair functionality
+
+### Request and Response Body Logging
+
+- Bodies are logged when `LOG_BODIES=true` (the default)
+- Bodies are truncated at `LOG_MAX_BODY_SIZE` (default: 20480 bytes)
+- Logged at DEBUG level for both request and response
+- JSON bodies are pretty-printed for readability
+- Sensitive headers like `Authorization` are automatically redacted
+
+### Common Configuration Scenarios
+
+#### Production Environment
+
+```
+LOG_LEVEL=warn                   # Show only warnings and errors on stdout
+LOG_FILE_LEVEL=info              # Keep file logs at info level for troubleshooting
+LOG_FILE_PATH=/var/log/switchboard/app.log  # Use a system log directory
+LOG_BODIES=false                 # Disable body logging for privacy and performance
+```
+
+#### Development Environment
+
+```
+LOG_LEVEL=debug                  # Show detailed logs on stdout
+LOG_FORMAT=pretty                # Use human-readable format
+LOG_FILE_PATH=./dev.log          # Local log file
+LOG_BODIES=true                  # Log bodies for debugging
+```
+
+#### Performance Testing
+
+```
+LOG_LEVEL=error                  # Minimize stdout logging
+LOG_FILE_LEVEL=error             # Minimize file logging
+LOG_BODIES=false                 # Disable body logging
+```
+
+### Log Rotation
+
+File logs are automatically rotated daily with date suffixes:
+- `switchboard.log.2023-04-23`
+- `switchboard.log.2023-04-24`
+
+This prevents log files from growing too large and makes it easier to find logs from a specific date.
+
+### Troubleshooting with Logs
+
+When investigating issues:
+
+1. **Check file logs first**: They contain more detailed information (debug level)
+2. **Increase stdout verbosity**: Set `LOG_LEVEL=debug` to see more details on the console
+3. **Enable body logging**: Make sure `LOG_BODIES=true` to see full request/response content
+4. **Look for correlation IDs**: Each request gets a unique ID that appears in all related logs
+5. **Check log file permissions**: Ensure the application has write access to the log directory
 
 ## Common Commands
 
