@@ -32,3 +32,10 @@ thinktank_output/
 TASK-PROMPT.md
 CODE_REVIEW.md
 diff.md
+
+# Log files
+*.log*
+logs/
+benchmark.log.*
+switchboard.log.*
+test_switchboard.log.*

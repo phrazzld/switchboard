@@ -218,3 +218,35 @@
   - Documentation is complete and accurate
 
   **Dependencies:** T001-T013
+
+- [ ] **T015: Improve Logger Directory Creation Error Handling**
+  - Modify the `init_tracing` function in `src/logger.rs` to properly handle directory creation failures
+  - Return a `Result` type instead of ignoring the error
+  - Create a custom error type for logging initialization failures (e.g., `LogInitError`)
+  - Update callers to handle the potential error case
+  - Add appropriate error messages with context (directory path, permissions, etc.)
+
+  **Acceptance Criteria:**
+  - Directory creation failures are properly propagated as `Result`s
+  - The application exits gracefully with clear error message if log directories cannot be created
+  - Error includes specific details about the path and reason for failure
+  - All callers of `init_tracing` handle the potential error
+
+  **Dependencies:** None
+
+- [ ] **T016: Enhance Log File Path Validation**
+  - Add comprehensive validation for log file paths in `src/logger.rs`
+  - Check for path traversal attacks (e.g., paths containing `../`)
+  - Validate permissions for the specified directory
+  - Add checks for reserved system paths that shouldn't be used for logs
+  - Ensure proper error messages that include specific validation failures
+  - Consider using path canonicalization to resolve and validate absolute paths
+
+  **Acceptance Criteria:**
+  - Path validation function is implemented and called before attempting to create directories
+  - Validation detects potentially insecure or invalid log paths
+  - Clear error messages are provided when validation fails
+  - Validation respects legitimate use cases (e.g., temp directories, absolute paths)
+  - Tests are added to verify validation logic
+
+  **Dependencies:** None
