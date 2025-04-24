@@ -130,7 +130,7 @@
 
   **Dependencies:** T004
 
-- [ ] **T009: Create Tests for Stdout Logging**
+- [x] **T009: Create Tests for Stdout Logging**
   - Add tests to verify:
     - Logs are written to stdout
     - Format switches between pretty and JSON correctly
