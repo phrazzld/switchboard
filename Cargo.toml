@@ -13,6 +13,18 @@ path = "src/lib.rs"
 name = "switchboard"
 path = "src/main.rs"
 
+[[bin]]
+name = "manual_benchmark"
+path = "benches/manual_benchmark.rs"
+
+[[bin]]
+name = "simple_benchmark"
+path = "benches/simple_benchmark.rs"
+
+[[bench]]
+name = "logging_benchmarks"
+harness = false  # Tell Rust to use Criterion's harness instead of the built-in one
+
 [dependencies]
 # NOTE: These versions are specified based on PLAN.md Section 4.2
 # The exact versions may need adjustment based on the actual Rust version used for building.
@@ -43,3 +55,5 @@ tower = { version = "0.4", features = ["util"] }
 http-body-util = "0.1"
 uuid = { version = "1.4.1", features = ["v4"] }  # Match the version used in main dependencies
 tempfile = "3.8"
+chrono = "0.4.31"  # For date formatting in tests
+criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }  # For benchmarking
