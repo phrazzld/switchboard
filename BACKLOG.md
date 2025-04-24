@@ -14,6 +14,21 @@
 
 - refactor pre-commit hooks to use proper pre-commit framework
 
+- implement improved log file management system
+   - restructure log file organization to use dedicated directories (`./logs/` by default)
+   - implement robust log rotation with configurable rotation parameters
+      - size-based rotation (e.g., rotate at 10MB)
+      - count-based retention (keep last N files)
+      - age-based cleanup (remove logs older than X days)
+   - add proper shutdown handler to ensure final logs are flushed
+   - provide environment-specific log paths (dev vs. production)
+      - respect XDG Base Directory spec for user-level logs
+      - use system standards (/var/log) for service deployment
+   - implement log compression for rotated files
+   - add log file status reporting (disk usage, file counts)
+   - separate application logs from test logs into different subdirectories
+   - add log directory health checks (permissions, disk space)
+
 ## Code Quality & Optimizations
 
 - centralize hardcoded logging defaults
