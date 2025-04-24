@@ -135,16 +135,20 @@ pub enum LogInitError {
     },
 }
 
-/// Validate a log file path for security and usability concerns
+/// Validate a log file path for security and usability concerns, creating directories as needed
 ///
 /// This function performs comprehensive validation on a log file path to ensure it:
 /// - Does not contain path traversal attempts
 /// - Is not a reserved system path
 /// - Has appropriate permissions for logging
 /// - Can be canonicalized to an absolute path
+/// - Creates required directory structure if it doesn't exist
+///
+/// The function now supports the new directory structure using `DEFAULT_LOG_DIR` and the
+/// appropriate subdirectory (`APP_LOG_SUBDIR` or `TEST_LOG_SUBDIR`).
 ///
 /// # Arguments
-/// * `path_str` - The string path to validate
+/// * `path_str` - The string path to validate, can be a file or directory path
 ///
 /// # Returns
 /// * `Ok(PathBuf)` - The canonicalized absolute path if validation passes
@@ -158,11 +162,12 @@ pub enum LogInitError {
 ///
 /// # Errors
 /// Returns detailed error types for different validation failures:
-/// - `LogInitError::InvalidPath` - Path is empty or missing a filename component
+/// - `LogInitError::InvalidPath` - Path is empty or has invalid format
 /// - `LogInitError::PathTraversalAttempt` - Path contains `../` sequences
 /// - `LogInitError::ReservedSystemPath` - Path points to a reserved system directory
 /// - `LogInitError::PermissionIssue` - Directory exists but is not writable
 /// - `LogInitError::PathCanonicalizationError` - Path cannot be canonicalized
+/// - `LogInitError::DirectoryCreationFailed` - Directory structure couldn't be created
 ///
 /// # Examples
 ///
@@ -194,27 +199,30 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
         )));
     }
 
-    // Check if filename is present
-    // Handle the case of a directory path ending with / or \
-    if path_str.ends_with('/') || path_str.ends_with('\\') {
-        return Err(LogInitError::InvalidPath(format!(
-            "Invalid log file path (ends with directory separator): {}",
-            path_str
-        )));
-    }
+    // Determine if this is a directory path or a file path
+    let is_directory_path = path_str.ends_with('/') || path_str.ends_with('\\');
 
-    let file_name = match path.file_name() {
-        Some(name) => name,
-        None => {
-            return Err(LogInitError::InvalidPath(format!(
-                "Invalid log file path (no filename): {}",
-                path_str
-            )));
-        }
+    // If it's a directory path, we'll use it directly for directory checks
+    // If it's a file path, we'll extract the directory and filename separately
+    let (dir_path, file_name_opt) = if is_directory_path {
+        // For directory paths, we use the path directly and have no filename
+        (path, None)
+    } else {
+        // For file paths, extract filename and directory separately
+        let file_name = match path.file_name() {
+            Some(name) => name,
+            None => {
+                return Err(LogInitError::InvalidPath(format!(
+                    "Invalid log file path (no filename): {}",
+                    path_str
+                )));
+            }
+        };
+
+        // Get directory component
+        let dir_path = path.parent().unwrap_or_else(|| Path::new("."));
+        (dir_path, Some(file_name))
     };
-
-    // Get directory component
-    let dir_path = path.parent().unwrap_or_else(|| Path::new("."));
 
     // Reserved system paths that should not be used for logging
     let reserved_paths = [
@@ -279,6 +287,59 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
         }
     }
 
+    // If base directory doesn't exist, create the needed structure
+    let base_dir = if path_str.starts_with(DEFAULT_LOG_DIR) {
+        PathBuf::from(DEFAULT_LOG_DIR)
+    } else if path_str.contains(DEFAULT_LOG_DIR) {
+        // This handles more complex paths that might include the default directory somewhere
+        let parts: Vec<_> = path_str.split(DEFAULT_LOG_DIR).collect();
+        if parts.len() >= 2 {
+            PathBuf::from(format!("{}{}", parts[0], DEFAULT_LOG_DIR))
+        } else {
+            PathBuf::from(DEFAULT_LOG_DIR)
+        }
+    } else {
+        // For paths that don't include our default directory, we'll just focus on the provided directory
+        PathBuf::new()
+    };
+
+    // If we identified a valid base directory and it doesn't exist, create it
+    if !base_dir.as_os_str().is_empty() && !base_dir.exists() {
+        if let Err(e) = std::fs::create_dir_all(&base_dir) {
+            return Err(LogInitError::DirectoryCreationFailed {
+                path: base_dir.display().to_string(),
+                source: e,
+            });
+        }
+    }
+
+    // Check for and create the app/test subdirectories if needed
+    if base_dir.as_os_str().is_empty() {
+        // No base directory was identified, so we can't create subdirectories
+    } else if path_str.contains(APP_LOG_SUBDIR) {
+        // Path contains app subdirectory
+        let app_dir = base_dir.join(APP_LOG_SUBDIR);
+        if !app_dir.exists() {
+            if let Err(e) = std::fs::create_dir_all(&app_dir) {
+                return Err(LogInitError::DirectoryCreationFailed {
+                    path: app_dir.display().to_string(),
+                    source: e,
+                });
+            }
+        }
+    } else if path_str.contains(TEST_LOG_SUBDIR) {
+        // Path contains test subdirectory
+        let test_dir = base_dir.join(TEST_LOG_SUBDIR);
+        if !test_dir.exists() {
+            if let Err(e) = std::fs::create_dir_all(&test_dir) {
+                return Err(LogInitError::DirectoryCreationFailed {
+                    path: test_dir.display().to_string(),
+                    source: e,
+                });
+            }
+        }
+    }
+
     // If directory exists, check permissions
     if dir_path.exists() {
         // Try to check if we can write to this directory
@@ -330,11 +391,28 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
                 });
             }
         }
+    } else if !is_directory_path {
+        // If it's a file path and the parent directory doesn't exist, create it
+        if let Err(e) = std::fs::create_dir_all(dir_path) {
+            return Err(LogInitError::DirectoryCreationFailed {
+                path: dir_path.display().to_string(),
+                source: e,
+            });
+        }
     }
 
-    // Construct a canonicalized path for the full file path
-    let mut result_path = canonical_path;
-    result_path.push(file_name);
+    // Construct the final path
+    let result_path = if is_directory_path {
+        // For directory paths, just use the canonical path directly
+        canonical_path
+    } else {
+        // For file paths, combine canonical directory path with filename
+        let mut path = canonical_path;
+        if let Some(file_name) = file_name_opt {
+            path.push(file_name);
+        }
+        path
+    };
 
     Ok(result_path)
 }
@@ -734,11 +812,11 @@ mod tests {
             );
         }
 
-        // No filename (just a directory)
-        assert!(matches!(
-            validate_log_path("/tmp/"),
-            Err(LogInitError::InvalidPath(_))
-        ));
+        // Directory path test is now different from original
+        // Since we now support directory paths, this should not return an error
+        // We'll replace this with a different test case
+        let result = validate_log_path("/tmp/");
+        assert!(result.is_ok(), "Directory path should now be valid: /tmp/");
 
         // Reserved system paths
         #[cfg(target_family = "unix")]
