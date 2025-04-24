@@ -79,7 +79,7 @@ pub fn create_router(client: Client, config: Arc<Config>) -> Router {
 /// * `client` - The HTTP client used to make requests to the upstream API
 /// * `config` - Configuration wrapped in an Arc for thread-safe sharing
 ///
-/// The #[instrument] macro automatically creates a tracing span for this function,
+/// The `#[instrument]` attribute macro automatically creates a tracing span for this function,
 /// with empty fields that will be filled in during processing.
 #[instrument(
     skip_all,                                  // Don't include the function arguments in the span
@@ -574,7 +574,8 @@ pub async fn proxy_handler(
 /// Increased from 10KB to 20KB to capture more verbose logging
 ///
 /// @deprecated This constant is kept for backward compatibility but is no longer used.
-/// The `log_max_body_size` parameter from Config is used instead.
+/// The `log_max_body_size` parameter from Config is used instead, which allows for
+/// configuration via environment variables.
 #[allow(dead_code)]
 pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 
@@ -584,6 +585,33 @@ pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 /// the request, including method, URI, headers (with sensitive values masked), and the
 /// request body (with size limits and JSON formatting when enabled).
 ///
+/// # Log Format
+///
+/// This function produces log entries with the following structure:
+///
+/// 1. Basic request information at INFO level:
+///    - `http.method`: HTTP method (GET, POST, etc.)
+///    - `url.full`: Complete request URL
+///
+/// 2. Headers at DEBUG level:
+///    - `http.request.headers`: Map of all headers (sensitive values redacted)
+///
+/// 3. Body logging based on size and configuration:
+///    - If empty: "Request body empty" at INFO level
+///    - If `log_bodies=true` and body size <= `log_max_body_size`:
+///      * Body content logged at DEBUG level with `http.request.body.content` and `http.request.body.size`
+///      * JSON bodies are pretty-printed for readability
+///    - If `log_bodies=false` and body size <= `log_max_body_size`:
+///      * "Request body not logged" at DEBUG level with just `http.request.body.size`
+///    - If body size > `log_max_body_size`:
+///      * "Request body too large to log fully" at INFO level with just `http.request.body.size`
+///
+/// # Security Notes
+///
+/// - Sensitive headers like `Authorization` and `x-api-key` are automatically redacted
+/// - Body logging can be disabled entirely via the `log_bodies` parameter
+/// - Body size limits prevent excessive logging with large payloads
+///
 /// # Arguments
 /// * `method` - The HTTP method (GET, POST, etc.)
 /// * `uri` - The request URI including path and query
@@ -591,6 +619,25 @@ pub const MAX_LOG_BODY_LEN: usize = 20 * 1024; // 20KB
 /// * `body` - The request body as bytes
 /// * `log_bodies` - Boolean flag indicating whether to include full body content in logs
 /// * `log_max_body_size` - Maximum size in bytes for logged bodies before truncation
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use hyper::{Method, Uri, HeaderMap};
+/// use bytes::Bytes;
+/// use switchboard::proxy_handler::log_request_details;
+///
+/// // Create request components
+/// let method = Method::POST;
+/// let uri = Uri::from_static("https://example.com/v1/messages");
+/// let headers = HeaderMap::new();
+/// let body = Bytes::from(r#"{"message":"Hello world"}"#);
+///
+/// // Log request details
+/// log_request_details(&method, &uri, &headers, &body, true, 1024);
+/// ```
 pub fn log_request_details(
     method: &hyper::Method,
     uri: &Uri,
@@ -669,8 +716,42 @@ pub fn log_request_details(
 /// Logs details of an API response in a structured format
 ///
 /// This function creates a new logging span and records comprehensive information about
-/// the response, including status code, headers, and the response body (with size limits
-/// and JSON formatting when enabled).
+/// the response, including status code, headers, response body (with size limits and
+/// JSON formatting when enabled), and timing metrics.
+///
+/// # Log Format
+///
+/// This function produces log entries with the following structure:
+///
+/// 1. Basic response information at INFO level:
+///    - `http.status_code`: Numeric HTTP status code
+///    - `status_text`: String representation of the status code
+///    - `duration_ms`: Request duration in milliseconds (if provided)
+///
+/// 2. Headers at DEBUG level:
+///    - `http.response.headers`: Map of all headers (sensitive values redacted)
+///
+/// 3. Body logging based on size and configuration:
+///    - If empty: "Response body empty" at INFO level
+///    - If `log_bodies=true` and body size <= `log_max_body_size`:
+///      * Body content logged at DEBUG level with `http.response.body.content` and `http.response.body.size`
+///      * JSON bodies are pretty-printed for readability
+///    - If `log_bodies=false` and body size <= `log_max_body_size`:
+///      * "Response body not logged" at DEBUG level with just `http.response.body.size`
+///    - If body size > `log_max_body_size`:
+///      * "Response body too large to log fully" at INFO level with just `http.response.body.size`
+///
+/// # Performance Metrics
+///
+/// When the `duration` parameter is provided, this function includes timing metrics in the
+/// log entry, which is useful for monitoring API response times. This timing data is always
+/// included at the INFO level regardless of body logging settings.
+///
+/// # Security Notes
+///
+/// - Sensitive headers like `Authorization` and `x-api-key` are automatically redacted
+/// - Body logging can be disabled entirely via the `log_bodies` parameter
+/// - Body size limits prevent excessive logging with large payloads
 ///
 /// # Arguments
 /// * `status` - The HTTP status code
@@ -679,6 +760,27 @@ pub fn log_request_details(
 /// * `log_bodies` - Boolean flag indicating whether to include full body content in logs
 /// * `log_max_body_size` - Maximum size in bytes for logged bodies before truncation
 /// * `duration` - Optional duration of the request for timing metrics
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use hyper::HeaderMap;
+/// use reqwest::StatusCode;
+/// use bytes::Bytes;
+/// use std::time::Duration;
+/// use switchboard::proxy_handler::log_response_details;
+///
+/// // Create response components
+/// let status = StatusCode::OK;
+/// let headers = HeaderMap::new();
+/// let body = Bytes::from(r#"{"result":"success","data":{}}"#);
+/// let duration = Duration::from_millis(150);
+///
+/// // Log response details with timing
+/// log_response_details(&status, &headers, &body, true, 1024, Some(duration));
+/// ```
 pub fn log_response_details(
     status: &reqwest::StatusCode,
     headers: &HeaderMap,
@@ -770,14 +872,65 @@ pub fn log_response_details(
 /// This function creates a new logging span and records the response status and headers,
 /// without attempting to log the body (since the body will be streamed). This is specifically
 /// designed for streaming responses where we want to log headers immediately before
-/// starting to stream the response body. When body logging is enabled, it logs an informational
-/// message indicating that streaming is beginning.
+/// starting to stream the response body.
+///
+/// # Streaming-Specific Behavior
+///
+/// Unlike `log_response_details`, this function:
+/// - Does not attempt to log the response body (which will be streamed later)
+/// - Creates a dedicated span named "streaming_response_details"
+/// - Logs a message at INFO level indicating that streaming is beginning
+/// - Indicates whether full body logging is enabled for subsequent stream chunks
+///
+/// # Log Format
+///
+/// This function produces log entries with the following structure:
+///
+/// 1. Basic response information at INFO level:
+///    - `http.status_code`: Numeric HTTP status code
+///    - `status_text`: String representation of the status code
+///    - `duration_ms`: Request handling duration in milliseconds (if provided)
+///    - Message: "Starting streaming response"
+///
+/// 2. Headers at DEBUG level:
+///    - `http.response.headers`: Map of all headers (sensitive values redacted)
+///
+/// 3. Streaming notification at INFO level:
+///    - Message indicating that streaming is beginning, with logging status
+///
+/// # Use Case
+///
+/// Use this function instead of `log_response_details` when handling streaming responses,
+/// particularly with SSE (Server-Sent Events) or streaming APIs. It allows logging of the
+/// response metadata before the actual streaming begins, which is especially useful for
+/// timing metrics and initial response verification.
 ///
 /// # Arguments
 /// * `status` - The HTTP status code of the response
 /// * `headers` - The response headers map
 /// * `log_bodies` - Boolean flag indicating whether to include full body content in logs
 /// * `duration` - Optional duration of the request for timing metrics
+///
+/// # Examples
+///
+/// Basic usage:
+///
+/// ```
+/// use hyper::HeaderMap;
+/// use reqwest::StatusCode;
+/// use std::time::Duration;
+/// use switchboard::proxy_handler::log_response_headers;
+///
+/// // Create streaming response components
+/// let status = StatusCode::OK;
+/// let headers = HeaderMap::new();
+/// let duration = Duration::from_millis(120);
+///
+/// // Log streaming response headers with timing
+/// log_response_headers(&status, &headers, true, Some(duration));
+///
+/// // Begin streaming chunks...
+/// ```
 pub fn log_response_headers(
     status: &reqwest::StatusCode,
     headers: &HeaderMap,

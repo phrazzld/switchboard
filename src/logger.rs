@@ -3,6 +3,61 @@
 //! This module handles the initialization and configuration of the tracing system
 //! used for structured logging throughout the application with support for
 //! dual outputs (file and stdout).
+//!
+//! # Dual-Output Logging
+//!
+//! The logging system is designed to output logs to two destinations simultaneously:
+//!
+//! 1. **File Output:** JSON-formatted logs written to a file with daily rotation
+//!    - Uses non-blocking I/O to prevent application slowdowns
+//!    - Configurable minimum log level via `log_file_level`
+//!    - JSON format for easy parsing and analysis
+//!    - Daily rotation appends the date to filenames (e.g., `switchboard.log.2023-04-24`)
+//!
+//! 2. **Stdout Output:** Configurable format for console display
+//!    - Choose between human-readable "pretty" format or JSON
+//!    - Configurable minimum log level via `log_stdout_level`
+//!
+//! # Configuration
+//!
+//! Logging is configured through the following environment variables:
+//!
+//! - `LOG_FILE_PATH`: Path to the log file (default: "./switchboard.log")
+//! - `LOG_FILE_LEVEL`: Minimum level for file logs (default: "debug")
+//! - `LOG_LEVEL`: Minimum level for stdout logs (default: "info")
+//! - `LOG_FORMAT`: Format for stdout logs ("pretty" or "json", default: "pretty")
+//! - `LOG_BODIES`: Whether to log request/response bodies (default: "true")
+//! - `LOG_MAX_BODY_SIZE`: Maximum size for logged bodies in bytes (default: "20480")
+//!
+//! # JSON Log Format
+//!
+//! When logging to files (or stdout with JSON format), logs follow this schema:
+//!
+//! ```json
+//! {
+//!   "timestamp": "2023-04-24T12:34:56.789012Z",  // ISO-8601 UTC timestamp
+//!   "level": "INFO",                             // Log level
+//!   "fields": {                                  // Structured fields
+//!     "message": "Log message here",             // The log message
+//!     "field1": "value1",                        // Additional structured fields
+//!     "field2": 123                              // Numeric values preserved as numbers
+//!   },
+//!   "target": "switchboard::module_name",        // Source module
+//!   "span": {                                    // Span information (if present)
+//!     "name": "span_name"
+//!   },
+//!   "spans": [                                   // Span hierarchy (if present)
+//!     {"name": "span_name"}
+//!   ]
+//! }
+//! ```
+//!
+//! # Non-Blocking I/O
+//!
+//! File logging uses non-blocking I/O through the `tracing_appender` crate. This prevents
+//! the application from blocking when writing logs to disk, which is important for maintaining
+//! performance under high loads. The `WorkerGuard` returned by `init_tracing()` must be kept
+//! alive for the duration of the application to ensure logs are properly flushed.
 
 use crate::config::Config;
 use std::io;
@@ -15,17 +70,30 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 /// Initialize the tracing system for structured logging with dual output
 ///
 /// Sets up the tracing subscriber with two output layers:
-/// 1. File: JSON-formatted logs with level filtering by `log_file_level`, using
+/// 1. **File Layer**: JSON-formatted logs with level filtering by `log_file_level`, using
 ///    non-blocking I/O and daily rotation.
-/// 2. Stdout: Configurable format (pretty or JSON) with level filtering by `log_stdout_level`.
+/// 2. **Stdout Layer**: Configurable format (pretty or JSON) with level filtering by `log_stdout_level`.
 ///
-/// Returns a `WorkerGuard` which must be kept alive for the non-blocking file appender
-/// to flush logs on shutdown.
+/// This function handles:
+/// - Creating log directories if they don't exist
+/// - Setting up daily log rotation
+/// - Configuring non-blocking file I/O
+/// - Applying the appropriate filters based on log levels
+/// - Setting up the correct output format for each destination
+///
+/// The function logs its own initialization with configuration details, which serves as
+/// verification that logging is properly set up.
 ///
 /// # Arguments
 /// * `config` - The application configuration containing logging settings
 ///
+/// # Returns
+/// Returns a `WorkerGuard` which **must be kept alive** for the duration of the application.
+/// If this guard is dropped, pending logs might not be flushed to disk. In a typical
+/// application, store this guard in your main application struct or in the `main` function.
+///
 /// # Examples
+/// Basic initialization with default settings:
 /// ```
 /// # use switchboard::config::Config;
 /// # use switchboard::logger;
@@ -41,9 +109,54 @@ use tracing_subscriber::{fmt, prelude::*, registry, EnvFilter};
 /// #     log_file_level: "debug".to_string(),
 /// #     log_max_body_size: 20480,
 /// # };
+/// // Initialize logging and keep the guard alive
 /// let _guard = logger::init_tracing(&mock_config);
-/// // The guard must be kept alive for the duration of the application
-/// // to ensure logs are flushed properly on shutdown
+///
+/// // Your application code here...
+///
+/// // Guard automatically dropped at end of scope, flushing remaining logs
+/// ```
+///
+/// Using JSON format for both outputs:
+/// ```
+/// # use switchboard::config::Config;
+/// # use switchboard::logger;
+/// let config = Config {
+///     // ... other fields ...
+///     log_stdout_level: "info".to_string(),
+///     log_format: "json".to_string(), // Use JSON for stdout too
+///     log_file_path: "./logs/switchboard.log".to_string(),
+///     log_file_level: "debug".to_string(),
+///     // ... other fields ...
+///     # port: "8080".to_string(),
+///     # anthropic_api_key: "test-key".to_string(),
+///     # anthropic_target_url: "https://example.com".to_string(),
+///     # log_bodies: true,
+///     # log_max_body_size: 20480,
+/// };
+///
+/// let _guard = logger::init_tracing(&config);
+/// ```
+///
+/// Different log levels for file and stdout:
+/// ```
+/// # use switchboard::config::Config;
+/// # use switchboard::logger;
+/// let config = Config {
+///     // ... other fields ...
+///     log_stdout_level: "warn".to_string(), // Only warnings and errors go to stdout
+///     log_file_path: "./logs/switchboard.log".to_string(),
+///     log_file_level: "trace".to_string(),  // Everything goes to the file
+///     // ... other fields ...
+///     # port: "8080".to_string(),
+///     # anthropic_api_key: "test-key".to_string(),
+///     # anthropic_target_url: "https://example.com".to_string(),
+///     # log_format: "pretty".to_string(),
+///     # log_bodies: true,
+///     # log_max_body_size: 20480,
+/// };
+///
+/// let _guard = logger::init_tracing(&config);
 /// ```
 pub fn init_tracing(config: &Config) -> WorkerGuard {
     // Parse log file path to get directory and filename
