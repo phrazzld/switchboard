@@ -79,6 +79,13 @@ use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling;
 use tracing_subscriber::{fmt as tracing_fmt, prelude::*, registry, EnvFilter};
 
+/// Default base directory for logs
+pub const DEFAULT_LOG_DIR: &str = "./logs";
+/// Subdirectory for application logs
+pub const APP_LOG_SUBDIR: &str = "app";
+/// Subdirectory for test logs
+pub const TEST_LOG_SUBDIR: &str = "test";
+
 /// Error type for logging initialization failures
 #[derive(Debug, Error)]
 pub enum LogInitError {
