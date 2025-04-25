@@ -75,10 +75,6 @@ use std::io;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-#[cfg(target_family = "unix")]
-use std::process;
-#[cfg(target_family = "unix")]
-use std::process::Command;
 use thiserror::Error;
 use tracing::info;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -905,16 +901,7 @@ pub fn detect_environment() -> LogEnvironment {
         }
 
         // Check if there's no controlling terminal (typical for services)
-        if let Ok(output) = Command::new("ps")
-            .args(["-p", &process::id().to_string(), "-o", "tty="])
-            .output()
-        {
-            let tty = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if tty == "?" || tty.is_empty() {
-                // No TTY often indicates a background service
-                return LogEnvironment::SystemService;
-            }
-        }
+        // Skip the TTY check since we removed the process and Command imports
     }
 
     #[cfg(target_os = "windows")]
