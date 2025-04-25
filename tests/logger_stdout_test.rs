@@ -371,6 +371,7 @@ fn test_logger_json_format() {
         log_file_path: temp_file.to_string_lossy().to_string(),
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
+        log_directory_mode: switchboard::config::LogDirectoryMode::Default,
     };
 
     // Initialize the logger (this should succeed with JSON format)

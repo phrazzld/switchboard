@@ -108,7 +108,7 @@ fn create_development_log_path(filename: &str, log_type: LogType) -> PathBuf {
         LogType::Application => APP_LOG_SUBDIR,
         LogType::Test => TEST_LOG_SUBDIR,
     };
-    
+
     PathBuf::from(DEFAULT_LOG_DIR).join(subdir).join(filename)
 }
 
@@ -143,7 +143,9 @@ fn test_development_environment_paths() {
     let app_content = format!("App log in development environment {}", test_id);
     let test_content = format!("Test log in development environment {}", test_id);
 
-    if create_log_file(&app_log_path, &app_content) && create_log_file(&test_log_path, &test_content) {
+    if create_log_file(&app_log_path, &app_content)
+        && create_log_file(&test_log_path, &test_content)
+    {
         // Verify paths are in the correct locations
         assert!(
             app_log_path.starts_with(&expected_base_dir),
@@ -229,13 +231,15 @@ fn test_environment_detection_mapping() {
 fn test_xdg_path_format() {
     // This test verifies the format of the XDG path without checking if files can be created there
     let xdg_path = get_xdg_log_directory();
-    
+
     // Verify the XDG path is properly formatted according to platform conventions
     #[cfg(target_os = "linux")]
     {
         // Linux XDG path should contain .local/share
         assert!(
-            xdg_path.to_string_lossy().contains(".local/share/switchboard/logs"),
+            xdg_path
+                .to_string_lossy()
+                .contains(".local/share/switchboard/logs"),
             "Linux XDG path should follow XDG standard: {}",
             xdg_path.display()
         );
@@ -245,7 +249,9 @@ fn test_xdg_path_format() {
     {
         // macOS XDG path should contain Library/Application Support
         assert!(
-            xdg_path.to_string_lossy().contains("Library/Application Support/switchboard/logs"),
+            xdg_path
+                .to_string_lossy()
+                .contains("Library/Application Support/switchboard/logs"),
             "macOS XDG path should follow Apple standards: {}",
             xdg_path.display()
         );
@@ -255,7 +261,9 @@ fn test_xdg_path_format() {
     {
         // Windows XDG path should contain AppData/Roaming
         assert!(
-            xdg_path.to_string_lossy().contains("AppData\\Roaming\\switchboard\\logs"),
+            xdg_path
+                .to_string_lossy()
+                .contains("AppData\\Roaming\\switchboard\\logs"),
             "Windows XDG path should follow Windows standards: {}",
             xdg_path.display()
         );
@@ -266,7 +274,7 @@ fn test_xdg_path_format() {
 fn test_system_path_format() {
     // This test verifies the format of the system path without checking if files can be created there
     let system_path = PathBuf::from(SYSTEM_LOG_DIR);
-    
+
     // Verify the system path is properly formatted according to platform conventions
     #[cfg(target_family = "unix")]
     {
@@ -296,24 +304,28 @@ fn test_directory_structure_creation() {
     // Test that we can create the expected directory structure
     let test_id = format!("dir_struct_{}", std::process::id());
     let base_dir = PathBuf::from(DEFAULT_LOG_DIR);
-    
+
     // Create the app and test directories
-    let app_log_path = base_dir.join(APP_LOG_SUBDIR).join(format!("{}.log", test_id));
-    let test_log_path = base_dir.join(TEST_LOG_SUBDIR).join(format!("{}.log", test_id));
-    
+    let app_log_path = base_dir
+        .join(APP_LOG_SUBDIR)
+        .join(format!("{}.log", test_id));
+    let test_log_path = base_dir
+        .join(TEST_LOG_SUBDIR)
+        .join(format!("{}.log", test_id));
+
     // Create log files with content
     let app_content = format!("App log directory structure test {}", test_id);
     let test_content = format!("Test log directory structure test {}", test_id);
-    
+
     create_log_file(&app_log_path, &app_content);
     create_log_file(&test_log_path, &test_content);
-    
+
     // Verify the directory structure
     assert!(
         verify_directory_structure(&base_dir),
         "Failed to create and verify directory structure"
     );
-    
+
     // Verify log files
     assert!(
         verify_log_file(&app_log_path, &app_content),
@@ -323,7 +335,7 @@ fn test_directory_structure_creation() {
         verify_log_file(&test_log_path, &test_content),
         "Test log verification failed"
     );
-    
+
     // Clean up
     let _ = fs::remove_file(&app_log_path);
     let _ = fs::remove_file(&test_log_path);

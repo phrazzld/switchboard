@@ -2,6 +2,36 @@ use std::env;
 use std::sync::OnceLock;
 use tracing::info;
 
+/// Specifies how log directory should be determined
+///
+/// This enum controls how the application selects the base directory for logs,
+/// allowing for different deployment scenarios (development, user installation,
+/// system service).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogDirectoryMode {
+    /// Automatically determine the log directory based on environment detection
+    ///
+    /// - Development: Uses "./logs/" (DEFAULT_LOG_DIR)
+    /// - User Installation: Uses XDG-compliant directory
+    /// - System Service: Uses system log path (/var/log/switchboard on Unix)
+    Default,
+
+    /// Forces use of XDG Base Directory specification
+    ///
+    /// Uses platform-specific user data directories:
+    /// - Linux: ~/.local/share/switchboard/logs
+    /// - macOS: ~/Library/Application Support/switchboard/logs
+    /// - Windows: C:\Users\<user>\AppData\Roaming\switchboard\logs
+    XDG,
+
+    /// Forces use of system log directories
+    ///
+    /// Uses system-level log directories:
+    /// - Unix-like: /var/log/switchboard
+    /// - Windows: C:\ProgramData\Switchboard\Logs
+    System,
+}
+
 /// Configuration for the application
 ///
 /// Holds all the configuration values needed by the application,
@@ -26,6 +56,8 @@ pub struct Config {
     pub log_file_level: String,
     /// Maximum size for logged bodies before truncation (bytes)
     pub log_max_body_size: usize,
+    /// How to determine the log directory (Default|XDG|System)
+    pub log_directory_mode: LogDirectoryMode,
 }
 
 /// Global static configuration instance, initialized once on first access
@@ -83,6 +115,15 @@ pub fn load_config() -> &'static Config {
             })
             .unwrap_or(20480); // Default to 20KB if not set or invalid
 
+        // Parse LOG_DIRECTORY_MODE environment variable
+        let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
+            .map(|mode| match mode.to_lowercase().as_str() {
+                "xdg" => LogDirectoryMode::XDG,
+                "system" => LogDirectoryMode::System,
+                _ => LogDirectoryMode::Default,
+            })
+            .unwrap_or(LogDirectoryMode::Default);
+
         let loaded_config = Config {
             port,
             anthropic_api_key,
@@ -93,6 +134,7 @@ pub fn load_config() -> &'static Config {
             log_file_path,
             log_file_level,
             log_max_body_size,
+            log_directory_mode,
         };
 
         // Log configuration values, but omit the API key for security
@@ -105,6 +147,7 @@ pub fn load_config() -> &'static Config {
             log_file_path = %loaded_config.log_file_path,
             log_file_level = %loaded_config.log_file_level,
             log_max_body_size = loaded_config.log_max_body_size,
+            log_directory_mode = ?loaded_config.log_directory_mode,
             "Configuration loaded"
         );
 
@@ -180,6 +223,15 @@ mod tests {
             })
             .unwrap_or(20480);
 
+        // Parse LOG_DIRECTORY_MODE
+        let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
+            .map(|mode| match mode.to_lowercase().as_str() {
+                "xdg" => LogDirectoryMode::XDG,
+                "system" => LogDirectoryMode::System,
+                _ => LogDirectoryMode::Default,
+            })
+            .unwrap_or(LogDirectoryMode::Default);
+
         let config = Config {
             port,
             anthropic_api_key,
@@ -190,6 +242,7 @@ mod tests {
             log_file_path,
             log_file_level,
             log_max_body_size,
+            log_directory_mode,
         };
 
         // Restore old environment
@@ -238,6 +291,7 @@ mod tests {
         assert_eq!(config.log_file_path, "./switchboard.log");
         assert_eq!(config.log_file_level, "debug");
         assert_eq!(config.log_max_body_size, 20480);
+        assert_eq!(config.log_directory_mode, LogDirectoryMode::Default);
     }
 
     #[test]
@@ -252,6 +306,7 @@ mod tests {
             ("LOG_FILE_PATH", "/tmp/custom.log"),
             ("LOG_FILE_LEVEL", "trace"),
             ("LOG_MAX_BODY_SIZE", "10240"),
+            ("LOG_DIRECTORY_MODE", "xdg"),
         ]);
 
         let config = create_test_config_with_env(env_vars);
@@ -266,6 +321,7 @@ mod tests {
         assert_eq!(config.log_file_path, "/tmp/custom.log");
         assert_eq!(config.log_file_level, "trace");
         assert_eq!(config.log_max_body_size, 10240);
+        assert_eq!(config.log_directory_mode, LogDirectoryMode::XDG);
     }
 
     #[test]
@@ -351,6 +407,65 @@ mod tests {
         assert_eq!(
             config.log_stdout_level, "info",
             "Default should be used when LOG_LEVEL is empty"
+        );
+    }
+
+    #[test]
+    fn test_log_directory_mode_parsing() {
+        // Test the default value
+        let mut env_vars = HashMap::new();
+        env_vars.insert("ANTHROPIC_API_KEY", "test-api-key");
+
+        let config = create_test_config_with_env(env_vars.clone());
+        assert_eq!(
+            config.log_directory_mode,
+            LogDirectoryMode::Default,
+            "Default mode should be used when LOG_DIRECTORY_MODE is unset"
+        );
+
+        // Test explicit "default" value
+        env_vars.insert("LOG_DIRECTORY_MODE", "default");
+        let config = create_test_config_with_env(env_vars.clone());
+        assert_eq!(
+            config.log_directory_mode,
+            LogDirectoryMode::Default,
+            "Default mode should be used when LOG_DIRECTORY_MODE is 'default'"
+        );
+
+        // Test XDG mode
+        env_vars.insert("LOG_DIRECTORY_MODE", "xdg");
+        let config = create_test_config_with_env(env_vars.clone());
+        assert_eq!(
+            config.log_directory_mode,
+            LogDirectoryMode::XDG,
+            "XDG mode should be used when LOG_DIRECTORY_MODE is 'xdg'"
+        );
+
+        // Test System mode
+        env_vars.insert("LOG_DIRECTORY_MODE", "system");
+        let config = create_test_config_with_env(env_vars.clone());
+        assert_eq!(
+            config.log_directory_mode,
+            LogDirectoryMode::System,
+            "System mode should be used when LOG_DIRECTORY_MODE is 'system'"
+        );
+
+        // Test case insensitivity
+        env_vars.insert("LOG_DIRECTORY_MODE", "XDG");
+        let config = create_test_config_with_env(env_vars.clone());
+        assert_eq!(
+            config.log_directory_mode,
+            LogDirectoryMode::XDG,
+            "XDG mode should be used when LOG_DIRECTORY_MODE is 'XDG' (uppercase)"
+        );
+
+        // Test invalid value (should default)
+        env_vars.insert("LOG_DIRECTORY_MODE", "invalid");
+        let config = create_test_config_with_env(env_vars);
+        assert_eq!(
+            config.log_directory_mode,
+            LogDirectoryMode::Default,
+            "Default mode should be used when LOG_DIRECTORY_MODE is invalid"
         );
     }
 
