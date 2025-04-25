@@ -140,7 +140,7 @@
         2. Utilities ensure test logs go to the designated test subdirectory
     - **Depends-on:** [T001, T007]
 
-- [ ] **T013 · Test · P2: update existing tests to use new test log utilities**
+- [x] **T013 · Test · P2: update existing tests to use new test log utilities**
     - **Context:** PLAN.md § 5.2 Update Test Framework
     - **Action:**
         1. Refactor existing tests in the `tests/` directory
