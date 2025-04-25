@@ -187,7 +187,7 @@
         2. All tests pass
     - **Depends-on:** [T003]
 
-- [ ] **T017 · Test · P2: add unit tests for path resolution**
+- [x] **T017 · Test · P2: add unit tests for path resolution**
     - **Context:** PLAN.md § 7.1 Unit Tests
     - **Action:**
         1. Write unit tests for `LogPathResolver.resolve()`
