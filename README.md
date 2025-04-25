@@ -40,6 +40,7 @@ For contributing to the project, you'll need the following additional tools:
 | `LOG_BODIES` | Whether to log full request and response bodies | true |
 | `LOG_MAX_BODY_SIZE` | Maximum size in bytes for logged bodies before truncation | 20480 |
 | `LOG_DIRECTORY_MODE` | Controls how the log directory is determined (default, xdg, system) | default |
+| `LOG_MAX_AGE_DAYS` | Maximum age for log files in days before automatic cleanup | None (disabled) |
 
 ## Getting Started
 
@@ -62,6 +63,7 @@ LOG_FILE_PATH=./switchboard.log # Log file path with daily rotation
 LOG_BODIES=true                 # Log request/response bodies
 LOG_MAX_BODY_SIZE=20480         # Max size of logged bodies in bytes
 LOG_DIRECTORY_MODE=default      # Log directory selection mode (default, xdg, system)
+LOG_MAX_AGE_DAYS=30             # Cleanup logs older than 30 days (comment out to disable)
 ```
 
 ### Building
@@ -82,6 +84,12 @@ cargo run
 
 # Run with the compiled binary
 ./target/release/switchboard
+
+# View command-line options
+./target/release/switchboard --help
+
+# Run log cleanup and exit
+./target/release/switchboard --clean-logs
 ```
 
 ### Testing
@@ -178,6 +186,7 @@ LOG_FILE_LEVEL=info              # Keep file logs at info level for troubleshoot
 LOG_DIRECTORY_MODE=system        # Use system logs directory (/var/log/switchboard)
 LOG_FILE_PATH=app.log            # Log file name (will be placed in the system directory)
 LOG_BODIES=false                 # Disable body logging for privacy and performance
+LOG_MAX_AGE_DAYS=90              # Keep logs for 90 days
 ```
 
 #### Development Environment
@@ -188,6 +197,7 @@ LOG_FORMAT=pretty                # Use human-readable format
 LOG_DIRECTORY_MODE=default       # Auto-detect (will use ./logs/ in development)
 LOG_FILE_PATH=dev.log            # Log file name (will be placed in ./logs/)
 LOG_BODIES=true                  # Log bodies for debugging
+LOG_MAX_AGE_DAYS=14              # Clean up logs older than 14 days
 ```
 
 #### User Installation
@@ -196,7 +206,8 @@ LOG_BODIES=true                  # Log bodies for debugging
 LOG_LEVEL=info                   # Standard logging level for general usage
 LOG_FILE_LEVEL=debug             # More verbose file logs for troubleshooting
 LOG_DIRECTORY_MODE=xdg           # Use XDG directory (e.g., ~/.local/share/switchboard/logs on Linux)
-LOG_FILE_PATH=switchboard.log     # Log file name (will be placed in the XDG directory)
+LOG_FILE_PATH=switchboard.log    # Log file name (will be placed in the XDG directory)
+LOG_MAX_AGE_DAYS=30              # Clean up logs older than 30 days
 ```
 
 #### Performance Testing
@@ -206,6 +217,7 @@ LOG_LEVEL=error                  # Minimize stdout logging
 LOG_FILE_LEVEL=error             # Minimize file logging
 LOG_DIRECTORY_MODE=default       # Use default directory
 LOG_BODIES=false                 # Disable body logging
+# LOG_MAX_AGE_DAYS               # Omit to disable log cleanup
 ```
 
 ### Log Rotation
@@ -216,12 +228,50 @@ File logs are automatically rotated daily with date suffixes:
 
 This prevents log files from growing too large and makes it easier to find logs from a specific date.
 
-### Log Directory Structure
+### Automatic Log Cleanup
 
-Logs are organized in a structured directory hierarchy:
+Switchboard includes automatic log cleanup functionality to prevent logs from accumulating indefinitely:
+
+- **Configuration**: Set `LOG_MAX_AGE_DAYS` to specify the maximum age for log files (in days)
+- **Startup Cleanup**: Logs older than the specified age are automatically cleaned up at application startup
+- **Manual Cleanup**: Run the application with the `--clean-logs` flag to perform cleanup and exit
+  ```bash
+  # Clean up logs and exit (using configured LOG_MAX_AGE_DAYS)
+  ./target/release/switchboard --clean-logs
+  ```
+- **Cleanup Scope**: Both application and test logs are cleaned up
+- **Safety**: Non-log files are never removed, even if they're in the log directories
+- **Detailed Reporting**: Cleanup results are logged with file counts and total bytes removed
+
+When cleanup is enabled, the application will scan both the app/ and test/ log subdirectories and remove any log files with modification times older than the specified cutoff date.
 
 ```
-logs/
+┌────────────────────┐     ┌────────────────────┐     ┌────────────────────┐
+│ Configuration      │     │ Cleanup Trigger    │     │ Log Directories    │
+│ LOG_MAX_AGE_DAYS=30│────▶│ - Application Start│────▶│ - logs/app/        │
+│                    │     │ - --clean-logs Flag│     │ - logs/test/       │
+└────────────────────┘     └────────────────────┘     └────────────────────┘
+           │                                                    │
+           │                                                    │
+           ▼                                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           Log Cleanup Process                           │
+│                                                                         │
+│  1. Calculate cutoff date (current date - LOG_MAX_AGE_DAYS)            │
+│  2. Scan both app/ and test/ directories                               │
+│  3. Identify log files (*.log and *.log.YYYY-MM-DD format)             │
+│  4. Check modification times against cutoff date                        │
+│  5. Remove log files older than cutoff date                             │
+│  6. Report cleanup results (files and bytes removed)                    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Log Directory Structure
+
+Logs are organized in a structured directory hierarchy with separate subdirectories for application and test logs. The base directory depends on the deployment environment (configurable with `LOG_DIRECTORY_MODE`):
+
+```
+<base_directory>/
 ├── app/                    # Application logs 
 │   ├── switchboard.log
 │   ├── switchboard.log.2023-04-23
@@ -236,6 +286,62 @@ This separation ensures:
 1. Application logs don't get mixed with test logs
 2. Log files are organized by purpose
 3. Cleanup and retention policies can be applied separately
+
+#### Environment-Specific Base Directories
+
+The base directory for logs is determined based on the deployment environment and the `LOG_DIRECTORY_MODE` setting:
+
+| Environment | LOG_DIRECTORY_MODE | Base Directory |
+|-------------|-------------------|---------------|
+| Development | default | `./logs/` (current directory) |
+| User Installation | default or xdg | Linux: `~/.local/share/switchboard/logs`<br>macOS: `~/Library/Application Support/switchboard/logs`<br>Windows: `C:\Users\<user>\AppData\Roaming\switchboard\logs` |
+| System Service | default or system | Unix: `/var/log/switchboard`<br>Windows: `C:\ProgramData\Switchboard\Logs` |
+
+Environment detection is automatic:
+- Development is detected by debug builds or when `SWITCHBOARD_DEV` environment variable is set
+- User Installation is detected when running from a user's home directory
+- System Service is detected when running as a service (systemd, launchd, Windows Service)
+
+#### Path Resolution Process
+
+When you provide a log file path (e.g., `./switchboard.log`), the logger:
+
+1. Extracts just the filename from the provided path
+2. Determines the appropriate base directory based on environment and configuration
+3. Appends the appropriate subdirectory (`app/` or `test/`) based on the log type
+4. Creates the directory structure if it doesn't exist
+5. Sets appropriate permissions on the directories
+6. Returns the fully resolved path (e.g., `./logs/app/switchboard.log`)
+
+```
+┌────────────────────┐     ┌────────────────────┐     ┌────────────────────┐
+│ User Configuration │     │ Environment        │     │ Log Type           │
+│ LOG_FILE_PATH      │     │ - Development      │     │ - Application      │
+│ LOG_DIRECTORY_MODE │────▶│ - User Installation│────▶│ - Test             │
+│                    │     │ - System Service   │     │                    │
+└────────────────────┘     └────────────────────┘     └────────────────────┘
+           │                        │                          │
+           │                        │                          │
+           ▼                        ▼                          ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Path Resolution Process                          │
+│                                                                         │
+│  1. Extract filename from LOG_FILE_PATH                                 │
+│  2. Determine base directory from environment & LOG_DIRECTORY_MODE      │
+│  3. Append appropriate subdirectory (app/ or test/)                     │
+│  4. Create directories if needed                                        │
+│  5. Set appropriate permissions                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+           │
+           │
+           ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Final Resolved Path                             │
+│                                                                         │
+│  <base_directory>/<subdirectory>/<filename>                             │
+│  Example: ./logs/app/switchboard.log                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 #### Log Migration Utility
 
