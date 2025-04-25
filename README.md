@@ -216,6 +216,41 @@ File logs are automatically rotated daily with date suffixes:
 
 This prevents log files from growing too large and makes it easier to find logs from a specific date.
 
+### Log Directory Structure
+
+Logs are organized in a structured directory hierarchy:
+
+```
+logs/
+├── app/                    # Application logs 
+│   ├── switchboard.log
+│   ├── switchboard.log.2023-04-23
+│   └── switchboard.log.2023-04-24
+└── test/                   # Test logs
+    ├── test_switchboard.log
+    ├── test_switchboard.log.2023-04-23
+    └── test_switchboard.log.2023-04-24
+```
+
+This separation ensures:
+1. Application logs don't get mixed with test logs
+2. Log files are organized by purpose
+3. Cleanup and retention policies can be applied separately
+
+#### Log Migration Utility
+
+If you're upgrading from a previous version, you may have log files in the root directory. Use the provided migration utility to move them to the correct locations:
+
+```bash
+# Run the log migration utility
+./tools/migrate_logs.sh
+```
+
+This script will automatically:
+- Identify log files in the root directory
+- Move them to the appropriate subdirectory based on naming patterns
+- Preserve timestamps and handle duplicates
+
 ### Log Directory Mode
 
 The `LOG_DIRECTORY_MODE` environment variable controls how the application selects the base directory for logs, allowing for different deployment scenarios:

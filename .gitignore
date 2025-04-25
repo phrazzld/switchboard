@@ -35,7 +35,8 @@ diff.md
 
 # Log files
 *.log*
-logs/
+logs/**/*.log*
+logs/*.log*
 benchmark.log.*
 switchboard.log.*
 test_switchboard.log.*
