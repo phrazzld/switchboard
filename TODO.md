@@ -152,7 +152,7 @@
 
 ## Logger Implementation
 
-- [ ] **T014 · Feature · P1: integrate `LogPathResolver` into `init_tracing`**
+- [x] **T014 · Feature · P1: integrate `LogPathResolver` into `init_tracing`**
     - **Context:** PLAN.md § 6.1 Update init_tracing
     - **Action:**
         1. Modify the `init_tracing` function
