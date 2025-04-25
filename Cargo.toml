@@ -46,6 +46,7 @@ futures-util = "0.3.28"
 dotenvy = "0.15.7"
 thiserror = "1.0.48"
 libc = "0.2.153"
+directories = "6.0.0"
 
 [dev-dependencies]
 # Testing dependencies for integration tests
