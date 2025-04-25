@@ -201,6 +201,98 @@ impl LogPathResolver {
             file_name,
         }
     }
+    
+    /// Resolves the complete log file path and creates necessary directories
+    ///
+    /// This method:
+    /// 1. Constructs the full path by combining:
+    ///    - Base directory (determined by environment)
+    ///    - Subdirectory (app/ or test/ based on log type)
+    ///    - Filename
+    /// 2. Creates the directory structure if it doesn't exist
+    /// 3. Sets appropriate permissions based on platform
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(PathBuf)` - The resolved absolute path if everything succeeds
+    /// * `Err(LogInitError)` - Error details if directory creation or permission setting fails
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use switchboard::config::Config;
+    /// use switchboard::logger::{LogPathResolver, LogType};
+    ///
+    /// // Create a test configuration
+    /// let config = Config {
+    ///     // ... config fields ...
+    ///     log_file_path: "./switchboard.log".to_string(),
+    ///     // ... other fields ...
+    ///     # port: "8080".to_string(),
+    ///     # anthropic_api_key: "test-key".to_string(),
+    ///     # anthropic_target_url: "https://example.com".to_string(),
+    ///     # log_stdout_level: "info".to_string(),
+    ///     # log_format: "pretty".to_string(),
+    ///     # log_bodies: true,
+    ///     # log_file_level: "debug".to_string(),
+    ///     # log_max_body_size: 20480,
+    /// };
+    ///
+    /// // Create a resolver for application logs and resolve the path
+    /// let app_resolver = LogPathResolver::new(&config, LogType::Application);
+    /// let app_log_path = app_resolver.resolve().expect("Failed to resolve log path");
+    /// println!("App logs will be stored at: {}", app_log_path.display());
+    /// ```
+    pub fn resolve(&self) -> Result<PathBuf, LogInitError> {
+        // Determine the appropriate subdirectory based on log type
+        let subdir = match self.log_type {
+            LogType::Application => APP_LOG_SUBDIR,
+            LogType::Test => TEST_LOG_SUBDIR,
+        };
+        
+        // Construct the directory path by combining base dir and subdirectory
+        let dir_path = self.base_dir.join(subdir);
+        
+        // Create the directory if it doesn't exist
+        if !dir_path.exists() {
+            if let Err(e) = std::fs::create_dir_all(&dir_path) {
+                return Err(LogInitError::DirectoryCreationFailed {
+                    path: dir_path.display().to_string(),
+                    source: e,
+                });
+            }
+            
+            // Set directory permissions (platform-specific)
+            #[cfg(target_family = "unix")]
+            {
+                use std::fs::Permissions;
+                use std::os::unix::fs::PermissionsExt;
+                
+                // Set directory permissions to 0o750 (rwxr-x---)
+                if let Err(e) = std::fs::set_permissions(&dir_path, Permissions::from_mode(0o750)) {
+                    return Err(LogInitError::PermissionIssue {
+                        path: dir_path.display().to_string(),
+                        reason: format!("Failed to set directory permissions: {}", e),
+                    });
+                }
+            }
+            
+            // Windows: default permissions are generally appropriate
+            // But we could add ACL tightening here if needed in the future
+            #[cfg(target_family = "windows")]
+            {
+                // Windows default permissions for newly created directories are
+                // typically inherited from parent, which is usually appropriate
+                // For advanced ACL support, we would need to use the windows-rs crate
+            }
+        }
+        
+        // Combine directory path with filename to get the full path
+        let file_path = dir_path.join(&self.file_name);
+        
+        // Return the resolved path
+        Ok(file_path)
+    }
 }
 
 /// Error type for logging initialization failures
@@ -1374,5 +1466,203 @@ mod tests {
 
         // Verify that the default filename is used
         assert_eq!(resolver.file_name, "switchboard.log");
+    }
+    
+    #[test]
+    fn test_log_path_resolver_resolve() {
+        // Create a test configuration
+        let config = Config {
+            port: "0".to_string(),
+            anthropic_api_key: "test-key".to_string(),
+            anthropic_target_url: "https://example.com".to_string(),
+            log_stdout_level: "info".to_string(),
+            log_format: "pretty".to_string(),
+            log_bodies: true,
+            log_file_path: "custom.log".to_string(),
+            log_file_level: "debug".to_string(),
+            log_max_body_size: 1024,
+        };
+
+        // Test app log resolution
+        let app_resolver = LogPathResolver::new(&config, LogType::Application);
+        let app_path = app_resolver.resolve().expect("Failed to resolve app path");
+        
+        // Verify the app path structure
+        assert!(
+            app_path.to_string_lossy().contains(APP_LOG_SUBDIR),
+            "App path does not contain app subdirectory: {}",
+            app_path.display()
+        );
+        assert!(
+            app_path.ends_with("custom.log"),
+            "App path does not end with correct filename: {}",
+            app_path.display()
+        );
+        
+        // Test test log resolution
+        let test_resolver = LogPathResolver::new(&config, LogType::Test);
+        let test_path = test_resolver.resolve().expect("Failed to resolve test path");
+        
+        // Verify the test path structure
+        assert!(
+            test_path.to_string_lossy().contains(TEST_LOG_SUBDIR),
+            "Test path does not contain test subdirectory: {}",
+            test_path.display()
+        );
+        assert!(
+            test_path.ends_with("custom.log"),
+            "Test path does not end with correct filename: {}",
+            test_path.display()
+        );
+        
+        // Verify the directories were created
+        let app_dir_path = app_path.parent().unwrap();
+        let test_dir_path = test_path.parent().unwrap();
+        
+        assert!(
+            app_dir_path.exists(),
+            "App log directory was not created: {}",
+            app_dir_path.display()
+        );
+        assert!(
+            test_dir_path.exists(),
+            "Test log directory was not created: {}",
+            test_dir_path.display()
+        );
+        
+        // On Unix platforms, verify the permissions
+        #[cfg(target_family = "unix")]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            
+            let app_dir_perms = std::fs::metadata(app_dir_path)
+                .expect("Failed to get app directory metadata")
+                .permissions()
+                .mode();
+            let test_dir_perms = std::fs::metadata(test_dir_path)
+                .expect("Failed to get test directory metadata")
+                .permissions()
+                .mode();
+            
+            // Check that the mode matches 0o750 (rwxr-x---)
+            // We use bitwise AND with 0o777 to mask out non-permission bits
+            assert_eq!(
+                app_dir_perms & 0o777,
+                0o750,
+                "App directory permissions are incorrect: {:o}",
+                app_dir_perms & 0o777
+            );
+            assert_eq!(
+                test_dir_perms & 0o777,
+                0o750,
+                "Test directory permissions are incorrect: {:o}",
+                test_dir_perms & 0o777
+            );
+        }
+    }
+    
+    #[test]
+    fn test_log_path_resolver_resolve_existing_directory() {
+        // Create a test directory structure that already exists
+        let temp_dir = env::temp_dir().join("switchboard_resolver_test");
+        let app_dir = temp_dir.join(APP_LOG_SUBDIR);
+        let test_dir = temp_dir.join(TEST_LOG_SUBDIR);
+        
+        // Create the directories
+        std::fs::create_dir_all(&app_dir).expect("Failed to create test app directory");
+        std::fs::create_dir_all(&test_dir).expect("Failed to create test test directory");
+        
+        // This config is not used in this test but kept for context clarity
+        let _config = Config {
+            port: "0".to_string(),
+            anthropic_api_key: "test-key".to_string(),
+            anthropic_target_url: "https://example.com".to_string(),
+            log_stdout_level: "info".to_string(),
+            log_format: "pretty".to_string(),
+            log_bodies: true,
+            log_file_path: "existing.log".to_string(),
+            log_file_level: "debug".to_string(),
+            log_max_body_size: 1024,
+        };
+        
+        // Create custom resolvers with our test paths
+        let app_resolver = LogPathResolver {
+            base_dir: temp_dir.clone(),
+            log_type: LogType::Application,
+            file_name: "existing.log".to_string(),
+        };
+        
+        let test_resolver = LogPathResolver {
+            base_dir: temp_dir.clone(),
+            log_type: LogType::Test,
+            file_name: "existing.log".to_string(),
+        };
+        
+        // Resolve paths
+        let app_path = app_resolver.resolve().expect("Failed to resolve existing app path");
+        let test_path = test_resolver.resolve().expect("Failed to resolve existing test path");
+        
+        // Verify the paths are correct
+        assert_eq!(
+            app_path,
+            app_dir.join("existing.log"),
+            "App path does not match expected: {}",
+            app_path.display()
+        );
+        assert_eq!(
+            test_path,
+            test_dir.join("existing.log"),
+            "Test path does not match expected: {}",
+            test_path.display()
+        );
+        
+        // Clean up
+        std::fs::remove_dir_all(temp_dir).ok();
+    }
+    
+    #[test]
+    fn test_log_path_resolver_permission_error() {
+        // This test only makes sense on Unix systems where we can set restricted permissions
+        #[cfg(target_family = "unix")]
+        {
+            use std::fs::Permissions;
+            use std::os::unix::fs::PermissionsExt;
+            
+            // Create a temporary directory with restricted permissions
+            let temp_dir = env::temp_dir().join("switchboard_restricted_test");
+            
+            // Create the directory
+            std::fs::create_dir_all(&temp_dir).expect("Failed to create test directory");
+            
+            // Make it read-only (no write access)
+            std::fs::set_permissions(&temp_dir, Permissions::from_mode(0o500))
+                .expect("Failed to set test directory permissions");
+            
+            // Skip if we're running as root (permission restrictions won't apply)
+            let uid = unsafe { libc::getuid() };
+            if uid != 0 {
+                // Create a test resolver with the restricted base directory
+                let resolver = LogPathResolver {
+                    base_dir: temp_dir.clone(),
+                    log_type: LogType::Application,
+                    file_name: "permission_test.log".to_string(),
+                };
+                
+                // Try to resolve - should fail with permission error when it tries to create subdirectory
+                let result = resolver.resolve();
+                
+                // Verify we get a directory creation error
+                assert!(
+                    matches!(result, Err(LogInitError::DirectoryCreationFailed { .. })),
+                    "Expected DirectoryCreationFailed error, got {:?}",
+                    result
+                );
+            }
+            
+            // Reset permissions for cleanup
+            // Ignoring errors because we expect this to fail on some systems
+            let _ = std::fs::set_permissions(&temp_dir, Permissions::from_mode(0o755));
+            let _ = std::fs::remove_dir_all(temp_dir);
+        }
     }
 }
