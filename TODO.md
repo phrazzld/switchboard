@@ -177,7 +177,7 @@
 
 ## Testing
 
-- [ ] **T016 · Test · P2: add unit tests for environment detection**
+- [x] **T016 · Test · P2: add unit tests for environment detection**
     - **Context:** PLAN.md § 7.1 Unit Tests
     - **Action:**
         1. Write unit tests for `detect_environment()` function
