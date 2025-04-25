@@ -59,7 +59,7 @@
 
 ## Path Resolution
 
-- [ ] **T006 · Feature · P1: implement `LogPathResolver` struct and `new` method**
+- [x] **T006 · Feature · P1: implement `LogPathResolver` struct and `new` method**
     - **Context:** PLAN.md § 3.1 Create LogPathResolver
     - **Action:**
         1. Define the `LogPathResolver` struct (with fields for `base_dir`, `log_type`, `file_name`)
