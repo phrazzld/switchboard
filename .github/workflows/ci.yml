@@ -39,6 +39,25 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --check # Check if code needs formatting
 
+  log-check:
+    name: Log Files Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for log files
+        run: |
+          # Check if any log files would be staged or committed
+          log_files=$(find . -type f -name "*.log" -o -name "*.log.*" | grep -v "target/")
+          
+          if [ -n "$log_files" ]; then
+            echo "Error: Log files detected in the repository:"
+            echo "$log_files"
+            echo "Log files should not be committed. Please ensure they are properly ignored."
+            exit 1
+          else
+            echo "No log files detected in the repository."
+          fi
+
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
@@ -85,6 +104,19 @@ jobs:
         # Run all tests, including unit tests, integration tests, and doctests
         # --all-features ensures features are enabled if needed for tests
         run: cargo test --all-features
+      - name: Check for leftover log files after tests
+        run: |
+          # Verify no log files remain after tests
+          leftover_logs=$(find ./logs -type f -name "*.log" -o -name "*.log.*" 2>/dev/null || true)
+          
+          if [ -n "$leftover_logs" ]; then
+            echo "Warning: Test log files were not properly cleaned up:"
+            echo "$leftover_logs"
+            echo "These will be removed before continuing."
+            rm -f ./logs/**/*.log ./logs/**/*.log.*
+          else
+            echo "No leftover log files found after tests. Cleanup successful."
+          fi
 
   build:
     name: Build Verification

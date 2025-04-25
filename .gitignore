@@ -34,9 +34,11 @@ CODE_REVIEW.md
 diff.md
 
 # Log files
-*.log*
-logs/**/*.log*
-logs/*.log*
-benchmark.log.*
-switchboard.log.*
-test_switchboard.log.*
+*.log
+*.log.*
+/logs/
+/logs/**/*.log
+/logs/**/*.log.*
+/switchboard.log*
+/benchmark.log*
+/test_switchboard.log*
