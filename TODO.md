@@ -86,7 +86,7 @@
 
 ## Configuration
 
-- [ ] **T008 · Feature · P2: define `LogDirectoryMode` enum**
+- [x] **T008 · Feature · P2: define `LogDirectoryMode` enum**
     - **Context:** PLAN.md § 4.1 Update Config Structure
     - **Action:**
         1. Define the `LogDirectoryMode` enum (`Default`, `XDG`, `System`) in `config.rs`
@@ -95,7 +95,7 @@
         2. Code compiles successfully
     - **Depends-on:** none
 
-- [ ] **T009 · Feature · P2: add `log_dir_mode` field to `Config` struct**
+- [x] **T009 · Feature · P2: add `log_dir_mode` field to `Config` struct**
     - **Context:** PLAN.md § 4.1 Update Config Structure
     - **Action:**
         1. Add `pub log_dir_mode: LogDirectoryMode` field to the `Config` struct in `config.rs`
@@ -106,8 +106,9 @@
         3. Default value is correctly applied
         4. Unit tests for config loading pass
     - **Depends-on:** [T008]
+    - **Note:** Implemented as `log_directory_mode` in T008 for better clarity
 
-- [ ] **T010 · Feature · P2: add environment variable support for `log_dir_mode`**
+- [x] **T010 · Feature · P2: add environment variable support for `log_dir_mode`**
     - **Context:** PLAN.md § 4.2 Environment Variable Support
     - **Action:**
         1. Implement parsing of environment variable (e.g., `LOG_DIR_MODE`) during config loading
@@ -116,8 +117,9 @@
         1. Environment variable correctly affects `Config.log_dir_mode` when set
         2. Unit tests verify environment variable override behavior
     - **Depends-on:** [T009]
+    - **Note:** Implemented as `LOG_DIRECTORY_MODE` in T008 with tests in `test_log_directory_mode_parsing`
 
-- [ ] **T011 · Chore · P3: document new log configuration options**
+- [x] **T011 · Chore · P3: document new log configuration options**
     - **Context:** PLAN.md § 4.2 Environment Variable Support
     - **Action:**
         1. Update documentation with new config options and environment variables

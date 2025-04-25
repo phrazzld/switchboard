@@ -39,6 +39,7 @@ For contributing to the project, you'll need the following additional tools:
 | `LOG_FILE_PATH` | Path to the log file with daily rotation | ./switchboard.log |
 | `LOG_BODIES` | Whether to log full request and response bodies | true |
 | `LOG_MAX_BODY_SIZE` | Maximum size in bytes for logged bodies before truncation | 20480 |
+| `LOG_DIRECTORY_MODE` | Controls how the log directory is determined (default, xdg, system) | default |
 
 ## Getting Started
 
@@ -60,6 +61,7 @@ LOG_FORMAT=pretty               # Stdout format (pretty or json)
 LOG_FILE_PATH=./switchboard.log # Log file path with daily rotation
 LOG_BODIES=true                 # Log request/response bodies
 LOG_MAX_BODY_SIZE=20480         # Max size of logged bodies in bytes
+LOG_DIRECTORY_MODE=default      # Log directory selection mode (default, xdg, system)
 ```
 
 ### Building
@@ -173,7 +175,8 @@ Logs can be filtered by level, from most to least verbose:
 ```
 LOG_LEVEL=warn                   # Show only warnings and errors on stdout
 LOG_FILE_LEVEL=info              # Keep file logs at info level for troubleshooting
-LOG_FILE_PATH=/var/log/switchboard/app.log  # Use a system log directory
+LOG_DIRECTORY_MODE=system        # Use system logs directory (/var/log/switchboard)
+LOG_FILE_PATH=app.log            # Log file name (will be placed in the system directory)
 LOG_BODIES=false                 # Disable body logging for privacy and performance
 ```
 
@@ -182,8 +185,18 @@ LOG_BODIES=false                 # Disable body logging for privacy and performa
 ```
 LOG_LEVEL=debug                  # Show detailed logs on stdout
 LOG_FORMAT=pretty                # Use human-readable format
-LOG_FILE_PATH=./dev.log          # Local log file
+LOG_DIRECTORY_MODE=default       # Auto-detect (will use ./logs/ in development)
+LOG_FILE_PATH=dev.log            # Log file name (will be placed in ./logs/)
 LOG_BODIES=true                  # Log bodies for debugging
+```
+
+#### User Installation
+
+```
+LOG_LEVEL=info                   # Standard logging level for general usage
+LOG_FILE_LEVEL=debug             # More verbose file logs for troubleshooting
+LOG_DIRECTORY_MODE=xdg           # Use XDG directory (e.g., ~/.local/share/switchboard/logs on Linux)
+LOG_FILE_PATH=switchboard.log     # Log file name (will be placed in the XDG directory)
 ```
 
 #### Performance Testing
@@ -191,6 +204,7 @@ LOG_BODIES=true                  # Log bodies for debugging
 ```
 LOG_LEVEL=error                  # Minimize stdout logging
 LOG_FILE_LEVEL=error             # Minimize file logging
+LOG_DIRECTORY_MODE=default       # Use default directory
 LOG_BODIES=false                 # Disable body logging
 ```
 
@@ -201,6 +215,26 @@ File logs are automatically rotated daily with date suffixes:
 - `switchboard.log.2023-04-24`
 
 This prevents log files from growing too large and makes it easier to find logs from a specific date.
+
+### Log Directory Mode
+
+The `LOG_DIRECTORY_MODE` environment variable controls how the application selects the base directory for logs, allowing for different deployment scenarios:
+
+- **default**: Automatically determines the log directory based on environment detection
+  - **Development**: Uses `./logs/` in the current directory
+  - **User Installation**: Uses XDG-compliant directory for the current user
+  - **System Service**: Uses system log path (`/var/log/switchboard` on Unix-like systems)
+
+- **xdg**: Forces use of XDG Base Directory specification
+  - **Linux**: `~/.local/share/switchboard/logs`
+  - **macOS**: `~/Library/Application Support/switchboard/logs`
+  - **Windows**: `C:\Users\<user>\AppData\Roaming\switchboard\logs`
+
+- **system**: Forces use of system log directories
+  - **Unix-like**: `/var/log/switchboard`
+  - **Windows**: `C:\ProgramData\Switchboard\Logs`
+
+This allows for seamless operation in different environments without requiring manual configuration changes.
 
 ### Troubleshooting with Logs
 
