@@ -178,6 +178,7 @@ impl LogPathResolver {
     ///     # log_file_level: "debug".to_string(),
     ///     # log_max_body_size: 20480,
     ///     # log_directory_mode: LogDirectoryMode::Default,
+    ///     # log_max_age_days: None,
     /// };
     ///
     /// // Create a resolver for application logs
@@ -297,6 +298,7 @@ impl LogPathResolver {
     ///     # log_file_level: "debug".to_string(),
     ///     # log_max_body_size: 20480,
     ///     # log_directory_mode: LogDirectoryMode::Default,
+    ///     # log_max_age_days: None,
     /// };
     ///
     /// // Create a resolver for application logs and resolve the path
@@ -764,6 +766,7 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 /// #     log_file_level: "debug".to_string(),
 /// #     log_max_body_size: 20480,
 /// #     log_directory_mode: LogDirectoryMode::Default,
+/// #     log_max_age_days: None,
 /// # };
 /// // Initialize logging and keep the guard alive
 /// let _guard = logger::init_tracing(&mock_config).expect("Failed to initialize logging");
@@ -790,6 +793,7 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 ///     # log_bodies: true,
 ///     # log_max_body_size: 20480,
 ///     # log_directory_mode: LogDirectoryMode::Default,
+///     # log_max_age_days: None,
 /// };
 ///
 /// let _guard = logger::init_tracing(&config).expect("Failed to initialize logging");
@@ -812,6 +816,7 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 ///     # log_bodies: true,
 ///     # log_max_body_size: 20480,
 ///     # log_directory_mode: LogDirectoryMode::Default,
+///     # log_max_age_days: None,
 /// };
 ///
 /// let _guard = logger::init_tracing(&config).expect("Failed to initialize logging");
@@ -1272,6 +1277,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Initialize logging using our mock function
@@ -1345,6 +1351,7 @@ mod tests {
                 log_file_level: "debug".to_string(),
                 log_max_body_size: 1024,
                 log_directory_mode: crate::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             };
 
             // Initialize logging using our mock function - should return an error
@@ -1375,6 +1382,7 @@ mod tests {
                 log_file_level: "debug".to_string(),
                 log_max_body_size: 1024,
                 log_directory_mode: crate::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             };
 
             let result = mock_init_tracing(&config);
@@ -1405,6 +1413,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Initialize logging using our mock function - should return an error
@@ -1606,6 +1615,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Create resolvers for both application and test logs
@@ -1641,6 +1651,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Create a resolver
@@ -1665,6 +1676,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Create a resolver
@@ -1688,6 +1700,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Test app log resolution
@@ -1793,6 +1806,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Create custom resolvers with our test paths
@@ -1954,6 +1968,7 @@ mod tests {
             log_file_level: "debug".to_string(),
             log_max_body_size: 1024,
             log_directory_mode: crate::config::LogDirectoryMode::Default,
+            log_max_age_days: None,
         };
 
         // Initialize logging with the legacy path

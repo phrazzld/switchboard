@@ -7,13 +7,14 @@ use tracing::info;
 /// This enum controls how the application selects the base directory for logs,
 /// allowing for different deployment scenarios (development, user installation,
 /// system service).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum LogDirectoryMode {
     /// Automatically determine the log directory based on environment detection
     ///
     /// - Development: Uses "./logs/" (DEFAULT_LOG_DIR)
     /// - User Installation: Uses XDG-compliant directory
     /// - System Service: Uses system log path (/var/log/switchboard on Unix)
+    #[default]
     Default,
 
     /// Forces use of XDG Base Directory specification
@@ -58,6 +59,33 @@ pub struct Config {
     pub log_max_body_size: usize,
     /// How to determine the log directory (Default|XDG|System)
     pub log_directory_mode: LogDirectoryMode,
+    /// Maximum age for log files before cleanup (days)
+    /// When set to Some(days), logs older than this will be deleted automatically in development
+    /// When set to None (default), no automatic cleanup occurs
+    pub log_max_age_days: Option<u32>,
+}
+
+/// Default implementation for Config
+///
+/// Provides sensible defaults for a Config instance.
+/// Note: anthropic_api_key will be an empty string in the default implementation
+/// and needs to be set explicitly for API requests to work.
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            port: "8080".to_string(),
+            anthropic_api_key: "".to_string(),
+            anthropic_target_url: "https://api.anthropic.com".to_string(),
+            log_stdout_level: "info".to_string(),
+            log_format: "pretty".to_string(),
+            log_bodies: true,
+            log_file_path: "./switchboard.log".to_string(),
+            log_file_level: "debug".to_string(),
+            log_max_body_size: 20480,
+            log_directory_mode: LogDirectoryMode::Default,
+            log_max_age_days: None,
+        }
+    }
 }
 
 /// Global static configuration instance, initialized once on first access
@@ -124,6 +152,17 @@ pub fn load_config() -> &'static Config {
             })
             .unwrap_or(LogDirectoryMode::Default);
 
+        // Parse LOG_MAX_AGE_DAYS with error handling
+        let log_max_age_days = env::var("LOG_MAX_AGE_DAYS").ok().and_then(|days_str| {
+            days_str.parse::<u32>().ok().or_else(|| {
+                eprintln!(
+                    "Failed to parse LOG_MAX_AGE_DAYS: '{}', using no cleanup",
+                    days_str
+                );
+                None
+            })
+        });
+
         let loaded_config = Config {
             port,
             anthropic_api_key,
@@ -135,6 +174,7 @@ pub fn load_config() -> &'static Config {
             log_file_level,
             log_max_body_size,
             log_directory_mode,
+            log_max_age_days,
         };
 
         // Log configuration values, but omit the API key for security
@@ -148,6 +188,7 @@ pub fn load_config() -> &'static Config {
             log_file_level = %loaded_config.log_file_level,
             log_max_body_size = loaded_config.log_max_body_size,
             log_directory_mode = ?loaded_config.log_directory_mode,
+            log_max_age_days = ?loaded_config.log_max_age_days,
             "Configuration loaded"
         );
 
@@ -243,6 +284,7 @@ mod tests {
             log_file_level,
             log_max_body_size,
             log_directory_mode,
+            log_max_age_days: None,
         };
 
         // Restore old environment

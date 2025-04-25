@@ -23,6 +23,7 @@ fn create_test_config(log_filename: &str, dir_mode: LogDirectoryMode) -> Config 
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: dir_mode,
+        log_max_age_days: None,
     }
 }
 

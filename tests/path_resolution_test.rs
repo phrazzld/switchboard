@@ -20,6 +20,7 @@ fn create_test_config(log_file_path: &str, log_directory_mode: LogDirectoryMode)
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode,
+        log_max_age_days: None,
     }
 }
 
@@ -267,6 +268,7 @@ fn test_subdir_creation() {
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     let resolver = LogPathResolver::new(&config, LogType::Application);
@@ -394,6 +396,7 @@ fn test_unix_directory_permissions() {
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     let resolver = LogPathResolver::new(&config, LogType::Application);

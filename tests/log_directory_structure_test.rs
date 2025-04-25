@@ -29,6 +29,7 @@ fn generate_log_paths(base_name: &str) -> LogPaths {
         log_file_level: "trace".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Create resolvers for both app and test logs
@@ -210,6 +211,7 @@ fn test_all_log_types() {
         log_file_level: "trace".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Get app log path
@@ -231,6 +233,7 @@ fn test_all_log_types() {
         log_file_level: "trace".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Get test log path

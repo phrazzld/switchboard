@@ -1,8 +1,10 @@
 mod config;
+mod log_cleanup;
 mod logger;
 mod proxy_handler;
 
 use axum::Server;
+use clap::{Arg, Command};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -14,6 +16,18 @@ use proxy_handler::create_router;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Parse command line arguments
+    let matches = Command::new("switchboard")
+        .version(env!("CARGO_PKG_VERSION"))
+        .about("Anthropic API proxy with enhanced logging")
+        .arg(
+            Arg::new("clean-logs")
+                .long("clean-logs")
+                .action(clap::ArgAction::SetTrue)
+                .help("Clean old log files based on configured max age and exit"),
+        )
+        .get_matches();
+
     // Main application entry point
     println!("Starting switchboard...");
 
@@ -29,6 +43,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })?;
 
     info!("switchboard initialized");
+
+    // Check if we should just clean logs and exit
+    if matches.get_flag("clean-logs") {
+        info!("Running log cleanup due to --clean-logs flag");
+        let result = log_cleanup::cleanup_logs(config);
+        info!(
+            files_removed = result.files_removed,
+            bytes_removed = result.bytes_removed,
+            "Log cleanup completed - exiting"
+        );
+        return Ok(());
+    }
+
+    // Perform automatic log cleanup if configured
+    if let Some(max_age) = config.log_max_age_days {
+        if max_age > 0 {
+            info!(max_age, "Performing automatic log cleanup at startup");
+            let result = log_cleanup::cleanup_logs(config);
+            info!(
+                files_removed = result.files_removed,
+                bytes_removed = result.bytes_removed,
+                "Automatic log cleanup completed"
+            );
+        }
+    }
 
     // Create HTTP client with appropriate settings
     // Using rustls (instead of native-tls) for TLS implementation

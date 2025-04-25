@@ -74,6 +74,7 @@ pub async fn setup_test_environment() -> TestSetup {
         log_file_level: "trace".to_string(), // Most verbose for file logs in tests
         log_max_body_size: 20480, // Default size for tests
         log_directory_mode: switchboard::config::LogDirectoryMode::Default, // Use automatic detection for tests
+        log_max_age_days: None,
     };
 
     // Create a reqwest client with appropriate timeouts for testing
@@ -130,6 +131,7 @@ pub fn setup_test_logging(test_name: &str) -> TestLoggingSetup {
         log_file_level: "trace".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Use LogPathResolver to get the correct path for test logs
@@ -177,6 +179,7 @@ pub fn generate_test_log_path(test_name: &str) -> PathBuf {
         log_file_level: "trace".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Use LogPathResolver to get the correct path for test logs
@@ -227,6 +230,7 @@ pub fn verify_log_directory() -> bool {
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Create resolvers for both app and test logs

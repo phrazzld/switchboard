@@ -373,6 +373,7 @@ fn test_logger_json_format() {
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Initialize the logger (this should succeed with JSON format)

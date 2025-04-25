@@ -19,6 +19,7 @@ fn create_test_config(log_filename: &str) -> Config {
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
         log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     }
 }
 
