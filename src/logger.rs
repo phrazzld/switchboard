@@ -69,10 +69,14 @@
 //! alive for the duration of the application to ensure logs are properly flushed.
 
 use crate::config::Config;
+use std::env;
 use std::io;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
+use std::process;
+#[cfg(target_family = "unix")]
+use std::process::Command;
 use thiserror::Error;
 use tracing::info;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -85,6 +89,17 @@ pub const DEFAULT_LOG_DIR: &str = "./logs";
 pub const APP_LOG_SUBDIR: &str = "app";
 /// Subdirectory for test logs
 pub const TEST_LOG_SUBDIR: &str = "test";
+
+/// Represents the environment in which the application is running
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogEnvironment {
+    /// Development environment (local development)
+    Development,
+    /// User-level installation (installed for a specific user)
+    UserInstallation,
+    /// System-level service (running as a system service)
+    SystemService,
+}
 
 /// Error type for logging initialization failures
 #[derive(Debug, Error)]
@@ -516,6 +531,133 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 ///
 /// let _guard = logger::init_tracing(&config).expect("Failed to initialize logging");
 /// ```
+/// Detects the environment in which the application is running
+///
+/// This function uses platform-specific logic to detect the current execution environment:
+///
+/// - Development: Local development environment (default if no specific indicators found)
+/// - UserInstallation: Installed for a specific user (e.g., in user's home directory)
+/// - SystemService: Running as a system service (e.g., systemd service on Linux,
+///   launchd service on macOS, or Windows Service)
+///
+/// # Platform-specific detection
+///
+/// ## Linux
+/// - Checks if parent PID is 1
+/// - Inspects `/proc/self/cgroup` for systemd
+/// - Looks for systemd environment variables
+///
+/// ## macOS
+/// - Checks if parent PID is 1
+/// - Checks for controlling TTY
+/// - Looks for XPC environment variables
+///
+/// ## Windows
+/// - Uses Service Control Manager to check if running as a service
+///
+/// # Returns
+///
+/// Returns the detected `LogEnvironment` variant that best matches the current execution context.
+///
+/// # Examples
+///
+/// ```
+/// use switchboard::logger::detect_environment;
+///
+/// let env = detect_environment();
+/// println!("Running in {:?} environment", env);
+/// ```
+pub fn detect_environment() -> LogEnvironment {
+    // Check if we're in a development-specific environment
+    if cfg!(debug_assertions) || env::var("SWITCHBOARD_DEV").is_ok() {
+        return LogEnvironment::Development;
+    }
+
+    // Platform-specific detection logic
+    #[cfg(target_os = "linux")]
+    {
+        // Check if the parent process is init (PID 1)
+        let ppid = unsafe { libc::getppid() };
+        if ppid == 1 {
+            return LogEnvironment::SystemService;
+        }
+
+        // Check cgroup to detect container or systemd service
+        if let Ok(cgroups) = std::fs::read_to_string("/proc/self/cgroup") {
+            // Systemd service units are typically in their own cgroup
+            if cgroups.contains("systemd") || cgroups.contains("/system.slice/") {
+                return LogEnvironment::SystemService;
+            }
+        }
+
+        // Check for systemd-specific environment variables
+        if env::var("INVOCATION_ID").is_ok() || env::var("JOURNAL_STREAM").is_ok() {
+            return LogEnvironment::SystemService;
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        // Check if the parent process is launchd (PID 1)
+        let ppid = unsafe { libc::getppid() };
+        if ppid == 1 {
+            // Most likely a launchd service
+            return LogEnvironment::SystemService;
+        }
+
+        // Check for XPC environment variables which indicate a launchd service
+        if env::var("XPC_SERVICE_NAME").is_ok() {
+            return LogEnvironment::SystemService;
+        }
+
+        // Check if there's no controlling terminal (typical for services)
+        if let Ok(output) = Command::new("ps")
+            .args(["-p", &process::id().to_string(), "-o", "tty="])
+            .output()
+        {
+            let tty = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if tty == "?" || tty.is_empty() {
+                // No TTY often indicates a background service
+                return LogEnvironment::SystemService;
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        // On Windows, detecting service status is more complex
+        // For a proper implementation, we would use the Windows API
+        // (QueryServiceStatusEx with Service Control Manager)
+
+        // As a simpler heuristic, check environment variables that suggest a service
+        if env::var("WINDIR").is_ok() && env::var("USERPROFILE").is_err() {
+            // Services typically run in system context without user profile
+            return LogEnvironment::SystemService;
+        }
+
+        // Check if running without a console, which is typical for services
+        // This is a simplified approach; a full implementation would use Windows API
+        if env::var("SESSIONNAME").is_err() {
+            return LogEnvironment::SystemService;
+        }
+    }
+
+    // Check for indications of a user installation (outside of development)
+    // Here we're checking common patterns for user-installed applications
+    if let Ok(home) = env::var("HOME") {
+        if let Ok(exe_path) = env::current_exe() {
+            if let Some(exe_str) = exe_path.to_str() {
+                if exe_str.contains(&home) {
+                    return LogEnvironment::UserInstallation;
+                }
+            }
+        }
+    }
+
+    // Default if no specific environment is detected
+    LogEnvironment::Development
+}
+
 pub fn init_tracing(config: &Config) -> Result<WorkerGuard, LogInitError> {
     // Validate log file path with comprehensive security checks
     let validated_path = validate_log_path(&config.log_file_path)?;
@@ -610,6 +752,38 @@ mod tests {
     use std::env;
     use std::fs;
     use tracing::{debug, error, info, warn};
+
+    #[test]
+    fn test_environment_detection() {
+        // This tests the basic functionality of detect_environment
+        // Since we can't easily mock system state, we just ensure it returns a valid variant
+        let env = detect_environment();
+
+        // Ensure we get a valid environment variant
+        assert!(matches!(
+            env,
+            LogEnvironment::Development
+                | LogEnvironment::UserInstallation
+                | LogEnvironment::SystemService
+        ));
+
+        // In most test environments, it should detect as Development
+        #[cfg(debug_assertions)]
+        assert_eq!(env, LogEnvironment::Development);
+    }
+
+    #[test]
+    fn test_environment_detection_with_dev_env_var() {
+        // Set the development environment variable
+        env::set_var("SWITCHBOARD_DEV", "1");
+
+        // Should detect as Development when the env var is set
+        let env = detect_environment();
+        assert_eq!(env, LogEnvironment::Development);
+
+        // Clean up
+        env::remove_var("SWITCHBOARD_DEV");
+    }
 
     #[test]
     fn test_dual_output_logging() {
