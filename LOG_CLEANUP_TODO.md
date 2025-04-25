@@ -48,7 +48,7 @@ This document outlines tasks for cleaning up existing log files and ensuring all
         3. Tests continue to pass
     - **Depends-on:** none
 
-- [ ] **LC004 · Fix · P1: Clean up orphaned logs in logger_directory_test.rs and logger_file_test.rs**
+- [x] **LC004 · Fix · P1: Clean up orphaned logs in logger_directory_test.rs and logger_file_test.rs**
     - **Context:** These test files create log files that may not be properly cleaned up
     - **Action:**
         1. Review test cleanup code in these files

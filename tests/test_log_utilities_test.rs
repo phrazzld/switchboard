@@ -5,8 +5,8 @@ use switchboard::logger::TEST_LOG_SUBDIR;
 // Import the test utilities from common module
 mod common;
 use common::{
-    count_lines, generate_test_log_path, is_valid_json, verify_log_directory,
-    verify_log_file_exists,
+    cleanup_test_log_file, count_lines, generate_test_log_path, is_valid_json,
+    verify_log_directory, verify_log_file_exists,
 };
 
 /// Test that the generate_test_log_path function correctly resolves paths.
@@ -45,8 +45,8 @@ fn test_logging_setup() {
         "Log file does not contain valid JSON"
     );
 
-    // Clean up
-    let _ = fs::remove_file(&log_path);
+    // Clean up created files including any rotated versions
+    cleanup_test_log_file(&log_path);
 }
 
 /// Test that the generate_test_log_path function produces paths in the test subdirectory.

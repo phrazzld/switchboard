@@ -1,4 +1,4 @@
-use crate::common::{generate_test_log_path, verify_log_directory};
+use crate::common::{cleanup_test_log_file, generate_test_log_path, verify_log_directory};
 use std::fs;
 use std::io::Write;
 
@@ -47,6 +47,6 @@ fn test_directory_creation() {
         "Log file was not created in test directory"
     );
 
-    // Clean up
-    let _ = fs::remove_file(&log_path);
+    // Clean up created files including any rotated versions
+    cleanup_test_log_file(&log_path);
 }

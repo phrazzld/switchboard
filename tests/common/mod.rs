@@ -337,3 +337,56 @@ pub fn is_valid_json(path: &Path) -> bool {
         false
     }
 }
+
+/// Helper function to clean up a log file and its rotated versions
+///
+/// This function removes a test log file and also checks for any rotated
+/// versions of the file (with date suffixes) that might need to be cleaned up.
+///
+/// # Arguments
+/// * `log_path` - Path to the log file to clean up
+pub fn cleanup_test_log_file(log_path: &Path) {
+    // Remove the main log file
+    match fs::remove_file(log_path) {
+        Ok(_) => println!("Successfully removed test log file: {}", log_path.display()),
+        Err(e) => println!(
+            "Warning: Failed to remove test log file {}: {}",
+            log_path.display(),
+            e
+        ),
+    }
+
+    // Also check for date-suffixed rotated files that might have been created
+    if let Some(parent) = log_path.parent() {
+        if let Some(file_name) = log_path.file_name() {
+            let base_name = file_name.to_string_lossy().to_string();
+            if let Ok(entries) = fs::read_dir(parent) {
+                for entry in entries {
+                    if let Ok(entry) = entry {
+                        let path = entry.path();
+                        if path.is_file() {
+                            if let Some(current_name) = path.file_name() {
+                                let current_filename = current_name.to_string_lossy().to_string();
+                                if current_filename.starts_with(&base_name)
+                                    && current_filename != base_name
+                                {
+                                    // This is likely a dated copy - also remove it
+                                    match fs::remove_file(&path) {
+                                        Ok(_) => {
+                                            println!("Removed rotated log file: {}", path.display())
+                                        }
+                                        Err(e) => println!(
+                                            "Warning: Failed to remove rotated log file {}: {}",
+                                            path.display(),
+                                            e
+                                        ),
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

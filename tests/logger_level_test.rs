@@ -2,6 +2,7 @@ use std::fs::{self};
 use std::io::Write;
 
 mod common;
+use common::cleanup_test_log_file;
 
 // Check if a specific level is in a log file
 fn check_log_level_present(content: &str, level: &str) -> bool {
@@ -57,6 +58,6 @@ fn test_log_level_filtering() {
         "ERROR level missing in log"
     );
 
-    // Clean up
-    let _ = fs::remove_file(&log_path);
+    // Clean up created files including any rotated versions
+    cleanup_test_log_file(&log_path);
 }

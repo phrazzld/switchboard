@@ -1,4 +1,4 @@
-use crate::common::{count_lines, generate_test_log_path, is_valid_json};
+use crate::common::{cleanup_test_log_file, count_lines, generate_test_log_path, is_valid_json};
 use std::fs;
 use std::io::Write;
 
@@ -49,6 +49,6 @@ fn test_file_creation_and_json_format() {
         "Log file should be in the test subdirectory"
     );
 
-    // Clean up
-    let _ = fs::remove_file(&log_path);
+    // Clean up created files including any rotated versions
+    cleanup_test_log_file(&log_path);
 }
