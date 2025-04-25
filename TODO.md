@@ -209,7 +209,7 @@
         2. All tests pass
     - **Depends-on:** [T007]
 
-- [ ] **T019 · Test · P1: write integration test for app/test log separation**
+- [x] **T019 · Test · P1: write integration test for app/test log separation**
     - **Context:** PLAN.md § 7.2 Integration Tests
     - **Action:**
         1. Create integration test scenario with both app and test logs
