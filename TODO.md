@@ -197,7 +197,7 @@
         2. All tests pass
     - **Depends-on:** [T007]
 
-- [ ] **T018 · Test · P2: add unit tests for directory creation and permissions**
+- [x] **T018 · Test · P2: add unit tests for directory creation and permissions**
     - **Context:** PLAN.md § 7.1 Unit Tests
     - **Action:**
         1. Write tests for directory creation logic
