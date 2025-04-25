@@ -184,6 +184,10 @@ impl LogPathResolver {
     /// let app_resolver = LogPathResolver::new(&config, LogType::Application);
     /// ```
     pub fn new(config: &Config, log_type: LogType) -> Self {
+        // Check if the provided path is a legacy path (used for debugging and logging)
+        // The variable is intentionally unused here but the check is useful for debugging
+        let _is_legacy = Self::is_legacy_path(&config.log_file_path);
+
         // Detect the current environment
         let environment = detect_environment();
 
@@ -203,6 +207,59 @@ impl LogPathResolver {
         }
     }
 
+    /// Detects if a path is in legacy format
+    ///
+    /// Legacy paths are those that don't conform to the new directory structure,
+    /// such as paths that:
+    /// - Don't use the new logs/app or logs/test subdirectories
+    /// - Use old hardcoded locations
+    /// - Don't follow environment-specific conventions
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path string to check
+    ///
+    /// # Returns
+    ///
+    /// `true` if the path is detected as a legacy path, `false` otherwise
+    pub fn is_legacy_path(path: &str) -> bool {
+        // Check for paths that directly match the new directory patterns
+
+        // Check for app subdirectory with correct structure
+        let app_pattern_unix = format!("{}/{}/", DEFAULT_LOG_DIR, APP_LOG_SUBDIR);
+        let app_pattern_windows = format!("{}\\{}\\/", DEFAULT_LOG_DIR, APP_LOG_SUBDIR);
+        let path_contains_app_subdir =
+            path.contains(&app_pattern_unix) || path.contains(&app_pattern_windows);
+
+        // Check for test subdirectory with correct structure
+        let test_pattern_unix = format!("{}/{}/", DEFAULT_LOG_DIR, TEST_LOG_SUBDIR);
+        let test_pattern_windows = format!("{}\\{}\\/", DEFAULT_LOG_DIR, TEST_LOG_SUBDIR);
+        let path_contains_test_subdir =
+            path.contains(&test_pattern_unix) || path.contains(&test_pattern_windows);
+
+        // Check for XDG paths (simplified check for the most common patterns)
+        let path_contains_xdg_pattern = path.contains(".local/share/switchboard/logs") ||    // Linux
+                                       path.contains("Library/Application Support/switchboard/logs") || // macOS
+                                       path.contains("AppData\\Roaming\\switchboard\\logs"); // Windows
+
+        // Check for system paths
+        let path_contains_system_pattern = path.contains(SYSTEM_LOG_DIR);
+
+        // Special case - check for logs/app/ or logs/test/ patterns more generically
+        // This helps catch paths that might use the right structure with different base paths
+        let generic_app_pattern = format!("logs/{}/", APP_LOG_SUBDIR);
+        let generic_test_pattern = format!("logs/{}/", TEST_LOG_SUBDIR);
+        let path_contains_generic_pattern =
+            path.contains(&generic_app_pattern) || path.contains(&generic_test_pattern);
+
+        // A path is legacy if it doesn't match any of the new directory patterns
+        !(path_contains_app_subdir
+            || path_contains_test_subdir
+            || path_contains_xdg_pattern
+            || path_contains_system_pattern
+            || path_contains_generic_pattern)
+    }
+
     /// Resolves the complete log file path and creates necessary directories
     ///
     /// This method:
@@ -212,6 +269,8 @@ impl LogPathResolver {
     ///    - Filename
     /// 2. Creates the directory structure if it doesn't exist
     /// 3. Sets appropriate permissions based on platform
+    ///
+    /// If the original path is detected as a legacy path, a warning is logged.
     ///
     /// # Returns
     ///
@@ -246,6 +305,9 @@ impl LogPathResolver {
     /// println!("App logs will be stored at: {}", app_log_path.display());
     /// ```
     pub fn resolve(&self) -> Result<PathBuf, LogInitError> {
+        // Check if the original path is a legacy path
+        let is_legacy = Self::is_legacy_path(&self.file_name);
+
         // Determine the appropriate subdirectory based on log type
         let subdir = match self.log_type {
             LogType::Application => APP_LOG_SUBDIR,
@@ -291,6 +353,30 @@ impl LogPathResolver {
 
         // Combine directory path with filename to get the full path
         let file_path = dir_path.join(&self.file_name);
+
+        // If we detected a legacy path, log a warning about it
+        if is_legacy {
+            // We use eprintln here because normal logging might not be initialized yet
+            // This ensures the warning is visible even during initialization
+            eprintln!(
+                "WARNING: Legacy log path detected: '{}'. It will be stored at '{}' instead. \
+                 Please update your configuration to use the new directory structure.",
+                self.file_name,
+                file_path.display()
+            );
+
+            // Once logging is established, this will be available in the logs too
+            if let Ok(metadata) = std::fs::metadata(&dir_path) {
+                if metadata.is_dir() {
+                    tracing::warn!(
+                        legacy_path = %self.file_name,
+                        new_path = %file_path.display(),
+                        "Legacy log path detected - using new directory structure. \
+                         Please update your configuration."
+                    );
+                }
+            }
+        }
 
         // Return the resolved path
         Ok(file_path)
@@ -938,7 +1024,10 @@ pub fn init_tracing(config: &Config) -> Result<WorkerGuard, LogInitError> {
             "Log file path cannot be empty".to_string(),
         ));
     }
-    
+
+    // Check if the original path is in legacy format
+    let is_legacy = LogPathResolver::is_legacy_path(&config.log_file_path);
+
     // Use LogPathResolver to get the correct path based on environment and config
     let resolver = LogPathResolver::new(config, LogType::Application);
     let resolved_path = resolver.resolve()?;
@@ -1004,15 +1093,27 @@ pub fn init_tracing(config: &Config) -> Result<WorkerGuard, LogInitError> {
         subscriber.with(pretty_layer).init();
     }
 
-    // Log initialization
-    info!(
-        log_stdout_level = %config.log_stdout_level,
-        log_format = %config.log_format,
-        log_file_path = %resolved_path.display(),
-        log_file_level = %config.log_file_level,
-        log_directory_mode = ?config.log_directory_mode,
-        "Dual logging initialized"
-    );
+    // Enhanced initialization log with information about legacy paths
+    if is_legacy {
+        info!(
+            log_stdout_level = %config.log_stdout_level,
+            log_format = %config.log_format,
+            original_path = %config.log_file_path,
+            resolved_path = %resolved_path.display(),
+            log_file_level = %config.log_file_level,
+            log_directory_mode = ?config.log_directory_mode,
+            "Dual logging initialized with legacy path adaptation"
+        );
+    } else {
+        info!(
+            log_stdout_level = %config.log_stdout_level,
+            log_format = %config.log_format,
+            log_file_path = %resolved_path.display(),
+            log_file_level = %config.log_file_level,
+            log_directory_mode = ?config.log_directory_mode,
+            "Dual logging initialized"
+        );
+    }
 
     // Return guard to keep it alive
     Ok(guard)
@@ -1024,7 +1125,7 @@ mod tests {
     use std::env;
     use std::fs;
     use tracing::{debug, error, info, warn};
-    
+
     // For the purpose of testing, we'll mock the init_tracing function to avoid global conflicts
     // This function essentially replicates init_tracing but doesn't set a global subscriber
     fn mock_init_tracing(config: &Config) -> Result<WorkerGuard, LogInitError> {
@@ -1034,10 +1135,13 @@ mod tests {
                 "Log file path cannot be empty".to_string(),
             ));
         }
-        
+
         // Check for restricted paths before actual resolution
         let path_str = &config.log_file_path;
-        
+
+        // Check if the original path is in legacy format
+        let is_legacy = LogPathResolver::is_legacy_path(path_str);
+
         // Reserved system paths that should not be used for logging
         let reserved_paths = [
             #[cfg(target_family = "unix")]
@@ -1057,7 +1161,7 @@ mod tests {
             #[cfg(target_family = "unix")]
             "/sys",
             #[cfg(target_family = "unix")]
-            "/var/lib",  // Added since this is used in test
+            "/var/lib", // Added since this is used in test
             #[cfg(target_family = "windows")]
             "C:\\Windows",
             #[cfg(target_family = "windows")]
@@ -1065,9 +1169,9 @@ mod tests {
             #[cfg(target_family = "windows")]
             "C:\\Program Files (x86)",
             #[cfg(target_family = "windows")]
-            "C:\\Windows\\System32",  // Added since this is used in test
+            "C:\\Windows\\System32", // Added since this is used in test
         ];
-        
+
         for reserved in &reserved_paths {
             if path_str.starts_with(reserved) {
                 return Err(LogInitError::ReservedSystemPath(format!(
@@ -1076,7 +1180,7 @@ mod tests {
                 )));
             }
         }
-        
+
         // Use LogPathResolver to get the correct path based on environment and config
         let resolver = LogPathResolver::new(config, LogType::Application);
         let resolved_path = resolver.resolve()?;
@@ -1090,18 +1194,31 @@ mod tests {
 
         // Create non-blocking writer and get the guard
         let (_non_blocking_writer, guard) = tracing_appender::non_blocking(file_appender);
-        
+
         // We'll skip setting the global subscriber here since it causes conflicts
         // This is just for testing - we'll just return the guard
 
-        info!(
-            log_stdout_level = %config.log_stdout_level,
-            log_format = %config.log_format,
-            log_file_path = %resolved_path.display(),
-            log_file_level = %config.log_file_level,
-            log_directory_mode = ?config.log_directory_mode,
-            "Test logging initialized (no global subscriber)"
-        );
+        // Enhanced initialization log with information about legacy paths
+        if is_legacy {
+            info!(
+                log_stdout_level = %config.log_stdout_level,
+                log_format = %config.log_format,
+                original_path = %config.log_file_path,
+                resolved_path = %resolved_path.display(),
+                log_file_level = %config.log_file_level,
+                log_directory_mode = ?config.log_directory_mode,
+                "Test logging initialized with legacy path adaptation (no global subscriber)"
+            );
+        } else {
+            info!(
+                log_stdout_level = %config.log_stdout_level,
+                log_format = %config.log_format,
+                log_file_path = %resolved_path.display(),
+                log_file_level = %config.log_file_level,
+                log_directory_mode = ?config.log_directory_mode,
+                "Test logging initialized (no global subscriber)"
+            );
+        }
 
         Ok(guard)
     }
@@ -1761,5 +1878,109 @@ mod tests {
             let _ = std::fs::set_permissions(&temp_dir, Permissions::from_mode(0o755));
             let _ = std::fs::remove_dir_all(temp_dir);
         }
+    }
+
+    #[test]
+    fn test_legacy_path_detection() {
+        // Test cases for legacy paths
+        let legacy_paths = [
+            // Basic paths without proper structure
+            "./switchboard.log",
+            "/tmp/logs.txt",
+            "app.log",
+            // Old style paths
+            "switchboard_app.log",
+            "./logs/app.log", // Missing app or test subdirectory
+        ];
+
+        // Test cases for non-legacy paths (as strings slice)
+        let non_legacy_paths_str = [
+            // Paths with the new structure
+            "./logs/app/switchboard.log",
+            "./logs/test/test_log.log",
+            // XDG paths
+            ".local/share/switchboard/logs/app.log",
+            "Library/Application Support/switchboard/logs/switchboard.log",
+            "AppData\\Roaming\\switchboard\\logs\\app.log",
+        ];
+
+        // Format strings into a vector for the dynamic paths
+        let formatted_paths = vec![
+            format!("{}/{}/app.log", DEFAULT_LOG_DIR, APP_LOG_SUBDIR),
+            format!("{}/{}/test.log", DEFAULT_LOG_DIR, TEST_LOG_SUBDIR),
+            format!("{}/application.log", SYSTEM_LOG_DIR),
+        ];
+
+        // Verify legacy path detection
+        for path in &legacy_paths {
+            assert!(
+                LogPathResolver::is_legacy_path(path),
+                "Path should be detected as legacy: {}",
+                path
+            );
+        }
+
+        // Verify non-legacy path detection for static strings
+        for path in &non_legacy_paths_str {
+            assert!(
+                !LogPathResolver::is_legacy_path(path),
+                "Path should NOT be detected as legacy: {}",
+                path
+            );
+        }
+
+        // Verify non-legacy path detection for formatted strings
+        for path in &formatted_paths {
+            assert!(
+                !LogPathResolver::is_legacy_path(path),
+                "Path should NOT be detected as legacy: {}",
+                path
+            );
+        }
+    }
+
+    #[test]
+    fn test_legacy_path_adaptation() {
+        // Create a configuration with a legacy path
+        let config = Config {
+            port: "0".to_string(),
+            anthropic_api_key: "test-api-key".to_string(),
+            anthropic_target_url: "https://example.com".to_string(),
+            log_stdout_level: "info".to_string(),
+            log_format: "pretty".to_string(),
+            log_bodies: true,
+            // Legacy path without proper structure
+            log_file_path: "./legacy_app.log".to_string(),
+            log_file_level: "debug".to_string(),
+            log_max_body_size: 1024,
+            log_directory_mode: crate::config::LogDirectoryMode::Default,
+        };
+
+        // Initialize logging with the legacy path
+        let resolver = LogPathResolver::new(&config, LogType::Application);
+        let resolved_path = resolver.resolve().expect("Failed to resolve path");
+
+        // Verify the path was adapted correctly
+        let path_str = resolved_path.to_string_lossy();
+
+        // Should contain the app subdirectory
+        assert!(
+            path_str.contains(APP_LOG_SUBDIR),
+            "Resolved path should contain app subdirectory: {}",
+            path_str
+        );
+
+        // Should end with the original filename
+        assert!(
+            path_str.ends_with("legacy_app.log"),
+            "Resolved path should end with original filename: {}",
+            path_str
+        );
+
+        // Initialize mock logging to test warning message
+        let _guard = mock_init_tracing(&config).expect("Failed to initialize mock logging");
+
+        // We can't easily test the warning message since it goes to stdout/stderr
+        // and we'd need to capture that output, but we can verify the function succeeds
     }
 }

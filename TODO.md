@@ -163,7 +163,7 @@
         2. Logs are created in correct locations based on configuration and environment
     - **Depends-on:** [T007, T009]
 
-- [ ] **T015 · Feature · P2: implement backward compatibility for legacy log paths**
+- [x] **T015 · Feature · P2: implement backward compatibility for legacy log paths**
     - **Context:** PLAN.md § 6.2 Update Path Validation, Backward Compatibility
     - **Action:**
         1. Enhance path validation/resolution logic
