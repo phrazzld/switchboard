@@ -38,7 +38,7 @@
         2. Unit tests verify detection logic for each environment
     - **Depends-on:** none
 
-- [ ] **T004 · Chore · P2: add `directories` crate dependency**
+- [x] **T004 · Chore · P2: add `directories` crate dependency**
     - **Context:** PLAN.md § 2.2 Add XDG Directory Support
     - **Action:**
         1. Add the `directories` crate to `Cargo.toml`
