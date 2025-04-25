@@ -219,7 +219,7 @@
         2. Log files exist in correct subdirectories
     - **Depends-on:** [T013, T014]
 
-- [ ] **T020 · Test · P1: write integration tests for environment-specific paths**
+- [x] **T020 · Test · P1: write integration tests for environment-specific paths**
     - **Context:** PLAN.md § 7.2 Integration Tests
     - **Action:**
         1. Create tests simulating different environments
