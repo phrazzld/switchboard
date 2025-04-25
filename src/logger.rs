@@ -75,6 +75,7 @@ use std::io;
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
+#[cfg(target_family = "unix")]
 use std::process;
 #[cfg(target_family = "unix")]
 use std::process::Command;
@@ -114,6 +115,7 @@ pub enum LogEnvironment {
 /// test logs (generated during test runs), allowing them to be stored in
 /// separate directories.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum LogType {
     /// Normal application logs (production, development)
     Application,
@@ -387,6 +389,7 @@ impl LogPathResolver {
 
 /// Error type for logging initialization failures
 #[derive(Debug, Error)]
+#[allow(dead_code)]
 pub enum LogInitError {
     /// Failed to create the log directory
     #[error("Failed to create log directory at {path}: {source}")]
@@ -480,6 +483,7 @@ pub enum LogInitError {
 /// let invalid_path = "../etc/passwd";
 /// assert!(validate_log_path(invalid_path).is_err());
 /// ```
+#[allow(dead_code)]
 pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
     // Check for empty path
     if path_str.is_empty() {

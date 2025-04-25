@@ -263,7 +263,7 @@ fn test_directory_creation_for_different_environments() {
     let system_path = temp_dir.join("system.log").to_string_lossy().to_string();
 
     let default_config = create_test_config(&default_path, LogDirectoryMode::Default);
-    let xdg_config = create_test_config(&xdg_path, LogDirectoryMode::XDG);
+    let xdg_config = create_test_config(&xdg_path, LogDirectoryMode::Xdg);
     let system_config = create_test_config(&system_path, LogDirectoryMode::System);
 
     // Create resolvers

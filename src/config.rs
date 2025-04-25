@@ -23,7 +23,7 @@ pub enum LogDirectoryMode {
     /// - Linux: ~/.local/share/switchboard/logs
     /// - macOS: ~/Library/Application Support/switchboard/logs
     /// - Windows: C:\Users\<user>\AppData\Roaming\switchboard\logs
-    XDG,
+    Xdg,
 
     /// Forces use of system log directories
     ///
@@ -146,7 +146,7 @@ pub fn load_config() -> &'static Config {
         // Parse LOG_DIRECTORY_MODE environment variable
         let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
             .map(|mode| match mode.to_lowercase().as_str() {
-                "xdg" => LogDirectoryMode::XDG,
+                "xdg" => LogDirectoryMode::Xdg,
                 "system" => LogDirectoryMode::System,
                 _ => LogDirectoryMode::Default,
             })
@@ -267,7 +267,7 @@ mod tests {
         // Parse LOG_DIRECTORY_MODE
         let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
             .map(|mode| match mode.to_lowercase().as_str() {
-                "xdg" => LogDirectoryMode::XDG,
+                "xdg" => LogDirectoryMode::Xdg,
                 "system" => LogDirectoryMode::System,
                 _ => LogDirectoryMode::Default,
             })
@@ -363,7 +363,7 @@ mod tests {
         assert_eq!(config.log_file_path, "/tmp/custom.log");
         assert_eq!(config.log_file_level, "trace");
         assert_eq!(config.log_max_body_size, 10240);
-        assert_eq!(config.log_directory_mode, LogDirectoryMode::XDG);
+        assert_eq!(config.log_directory_mode, LogDirectoryMode::Xdg);
     }
 
     #[test]
@@ -479,7 +479,7 @@ mod tests {
         let config = create_test_config_with_env(env_vars.clone());
         assert_eq!(
             config.log_directory_mode,
-            LogDirectoryMode::XDG,
+            LogDirectoryMode::Xdg,
             "XDG mode should be used when LOG_DIRECTORY_MODE is 'xdg'"
         );
 
@@ -497,7 +497,7 @@ mod tests {
         let config = create_test_config_with_env(env_vars.clone());
         assert_eq!(
             config.log_directory_mode,
-            LogDirectoryMode::XDG,
+            LogDirectoryMode::Xdg,
             "XDG mode should be used when LOG_DIRECTORY_MODE is 'XDG' (uppercase)"
         );
 

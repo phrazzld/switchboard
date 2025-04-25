@@ -128,7 +128,7 @@ fn test_default_mode_test_logs() {
 #[test]
 fn test_xdg_mode_application_logs() {
     // Test XDG mode with application logs
-    let config = create_test_config("app-xdg.log", LogDirectoryMode::XDG);
+    let config = create_test_config("app-xdg.log", LogDirectoryMode::Xdg);
     let resolver = TestLogResolver::new(config, LogType::Application);
 
     // In our test environment, log directory mode doesn't change the actual directory
@@ -207,7 +207,7 @@ fn test_resolve_with_legacy_path() {
 fn test_multiple_resolvers_with_different_configs() {
     // Create configs with different modes
     let config_default = create_test_config("default.log", LogDirectoryMode::Default);
-    let config_xdg = create_test_config("xdg.log", LogDirectoryMode::XDG);
+    let config_xdg = create_test_config("xdg.log", LogDirectoryMode::Xdg);
     let config_system = create_test_config("system.log", LogDirectoryMode::System);
 
     // Create resolvers with different configs and log types
@@ -338,7 +338,7 @@ fn test_different_environments() {
     let path_dev = resolver_dev.resolve_and_verify();
 
     // User with XDG mode
-    let config_user = create_test_config("user.log", LogDirectoryMode::XDG);
+    let config_user = create_test_config("user.log", LogDirectoryMode::Xdg);
     let resolver_user = TestLogResolver::new(config_user, LogType::Application);
     let path_user = resolver_user.resolve_and_verify();
 

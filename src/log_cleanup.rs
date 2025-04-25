@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
 
 /// Results from the log cleanup operation
+#[derive(Default)]
 pub struct CleanupResult {
     /// Number of files that were successfully deleted
     pub files_removed: usize,
@@ -24,16 +25,6 @@ pub struct CleanupResult {
     pub bytes_removed: u64,
     /// Any files that couldn't be removed (with reasons)
     pub failed_files: Vec<(PathBuf, String)>,
-}
-
-impl Default for CleanupResult {
-    fn default() -> Self {
-        CleanupResult {
-            files_removed: 0,
-            bytes_removed: 0,
-            failed_files: Vec::new(),
-        }
-    }
 }
 
 impl CleanupResult {
