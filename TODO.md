@@ -47,7 +47,7 @@
         2. Project compiles successfully (`cargo check`)
     - **Depends-on:** none
 
-- [ ] **T005 · Feature · P2: implement XDG-compliant path retrieval utility**
+- [x] **T005 · Feature · P2: implement XDG-compliant path retrieval utility**
     - **Context:** PLAN.md § 2.2 Add XDG Directory Support
     - **Action:**
         1. Create a utility function using the `directories` crate

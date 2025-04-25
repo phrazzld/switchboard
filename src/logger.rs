@@ -69,6 +69,7 @@
 //! alive for the duration of the application to ensure logs are properly flushed.
 
 use crate::config::Config;
+use directories::ProjectDirs;
 use std::env;
 use std::io;
 #[cfg(target_family = "unix")]
@@ -89,6 +90,12 @@ pub const DEFAULT_LOG_DIR: &str = "./logs";
 pub const APP_LOG_SUBDIR: &str = "app";
 /// Subdirectory for test logs
 pub const TEST_LOG_SUBDIR: &str = "test";
+/// System log directory for Unix-like platforms
+#[cfg(target_family = "unix")]
+pub const SYSTEM_LOG_DIR: &str = "/var/log/switchboard";
+/// System log directory for Windows
+#[cfg(target_family = "windows")]
+pub const SYSTEM_LOG_DIR: &str = "C:\\ProgramData\\Switchboard\\Logs";
 
 /// Represents the environment in which the application is running
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -658,6 +665,80 @@ pub fn detect_environment() -> LogEnvironment {
     LogEnvironment::Development
 }
 
+/// Returns the XDG-compliant log directory for the application
+///
+/// This function uses the `directories` crate to retrieve the platform-specific
+/// data directory according to XDG Base Directory Specification on Linux and
+/// equivalent standards on macOS and Windows.
+///
+/// The function returns a path in the following format:
+/// - Linux: `~/.local/share/switchboard/logs`
+/// - macOS: `~/Library/Application Support/switchboard/logs`
+/// - Windows: `C:\Users\<user>\AppData\Roaming\switchboard\logs`
+///
+/// # Returns
+///
+/// A `PathBuf` containing the XDG-compliant path for storing log files
+///
+/// # Examples
+///
+/// ```
+/// use switchboard::logger::get_xdg_log_directory;
+///
+/// let xdg_path = get_xdg_log_directory();
+/// println!("XDG log directory: {}", xdg_path.display());
+/// ```
+pub fn get_xdg_log_directory() -> PathBuf {
+    // Use the directories crate to get platform-specific data directory
+    // We use "switchboard" as the organization and application name
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "switchboard") {
+        // Get the data directory and append logs subdirectory
+        proj_dirs.data_dir().join("logs")
+    } else {
+        // Fallback to a reasonable default if we can't get XDG directory
+        // This should be rare but could happen in constrained environments
+        PathBuf::from(DEFAULT_LOG_DIR)
+    }
+}
+
+/// Returns the appropriate log directory path based on the environment
+///
+/// This function determines the appropriate log directory path based on the
+/// current execution environment:
+///
+/// - `Development`: Uses `DEFAULT_LOG_DIR` (./logs/)
+/// - `UserInstallation`: Uses XDG-compliant directory from `get_xdg_log_directory`
+/// - `SystemService`: Uses system log path (e.g., /var/log/switchboard/ on Unix)
+///
+/// # Arguments
+///
+/// * `environment` - The `LogEnvironment` value to determine the path for
+///
+/// # Returns
+///
+/// A `PathBuf` containing the appropriate log directory path
+///
+/// # Examples
+///
+/// ```
+/// use switchboard::logger::{get_environment_log_directory, LogEnvironment};
+///
+/// // Get log directory for development environment
+/// let dev_path = get_environment_log_directory(LogEnvironment::Development);
+/// assert_eq!(dev_path.to_str().unwrap(), "./logs");
+///
+/// // Get log directory for user installation (XDG-compliant)
+/// let user_path = get_environment_log_directory(LogEnvironment::UserInstallation);
+/// // Path will vary by platform and username
+/// ```
+pub fn get_environment_log_directory(environment: LogEnvironment) -> PathBuf {
+    match environment {
+        LogEnvironment::Development => PathBuf::from(DEFAULT_LOG_DIR),
+        LogEnvironment::UserInstallation => get_xdg_log_directory(),
+        LogEnvironment::SystemService => PathBuf::from(SYSTEM_LOG_DIR),
+    }
+}
+
 pub fn init_tracing(config: &Config) -> Result<WorkerGuard, LogInitError> {
     // Validate log file path with comprehensive security checks
     let validated_path = validate_log_path(&config.log_file_path)?;
@@ -822,6 +903,38 @@ mod tests {
         // We don't attempt to verify the content of the logs due to the complexity
         // of capturing and parsing both stdout and file output in a unit test.
         // The real test is that the code doesn't panic or crash.
+    }
+
+    #[test]
+    fn test_xdg_log_directory() {
+        // Just verify that the function returns a non-empty path
+        let xdg_dir = get_xdg_log_directory();
+        assert!(!xdg_dir.to_string_lossy().is_empty());
+
+        // Verify that the path ends with "logs"
+        let path_str = xdg_dir.to_string_lossy();
+        assert!(
+            path_str.ends_with("logs")
+                || path_str.ends_with("logs/")
+                || path_str.ends_with("logs\\"),
+            "Path should end with 'logs': {}",
+            path_str
+        );
+    }
+
+    #[test]
+    fn test_environment_log_directory() {
+        // Test Development environment
+        let dev_dir = get_environment_log_directory(LogEnvironment::Development);
+        assert_eq!(dev_dir, PathBuf::from(DEFAULT_LOG_DIR));
+
+        // Test UserInstallation environment (should use XDG)
+        let user_dir = get_environment_log_directory(LogEnvironment::UserInstallation);
+        assert_eq!(user_dir, get_xdg_log_directory());
+
+        // Test SystemService environment
+        let system_dir = get_environment_log_directory(LogEnvironment::SystemService);
+        assert_eq!(system_dir, PathBuf::from(SYSTEM_LOG_DIR));
     }
 
     #[test]
