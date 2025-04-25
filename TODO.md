@@ -130,7 +130,7 @@
 
 ## Test Infrastructure
 
-- [ ] **T012 · Test · P2: implement test log directory utilities**
+- [x] **T012 · Test · P2: implement test log directory utilities**
     - **Context:** PLAN.md § 5.1 Test Directory Implementation
     - **Action:**
         1. Create helper functions for test setup/teardown
