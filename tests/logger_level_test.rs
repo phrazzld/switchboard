@@ -1,6 +1,5 @@
 use std::fs::{self};
 use std::io::Write;
-use std::path::PathBuf;
 
 mod common;
 
@@ -13,7 +12,7 @@ fn check_log_level_present(content: &str, level: &str) -> bool {
 fn test_log_level_filtering() {
     // Create a test-specific log file in the test directory
     let test_name = "level_filtering_test";
-    let log_path = PathBuf::from("./logs/test").join(format!("{}_test.log", test_name));
+    let log_path = common::generate_test_log_path(test_name);
     println!("Log path: {}", log_path.display());
 
     // Ensure the parent directory exists

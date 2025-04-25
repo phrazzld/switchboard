@@ -1,15 +1,12 @@
 use std::fs;
 use std::io::Write;
-use std::path::Path;
-use std::time::Duration;
-use switchboard::logger::{APP_LOG_SUBDIR, DEFAULT_LOG_DIR, TEST_LOG_SUBDIR};
-use tracing::{debug, error, info, warn};
+use switchboard::logger::TEST_LOG_SUBDIR;
 
 // Import the test utilities from common module
 mod common;
 use common::{
-    count_lines, find_log_file, generate_test_log_path, is_valid_json, setup_test_logging,
-    verify_log_directory, verify_log_file_exists,
+    count_lines, generate_test_log_path, is_valid_json, verify_log_directory,
+    verify_log_file_exists,
 };
 
 /// Test that the generate_test_log_path function correctly resolves paths.
@@ -77,13 +74,18 @@ fn test_generate_test_log_path() {
 /// Test that the verify_log_directory function correctly checks directory structure.
 #[test]
 fn test_verify_log_directory() {
-    // Ensure the log directories exist
-    let base_dir = Path::new(DEFAULT_LOG_DIR);
-    let app_dir = base_dir.join(APP_LOG_SUBDIR);
-    let test_dir = base_dir.join(TEST_LOG_SUBDIR);
+    // We'll use generate_test_log_path to get a proper path which ensures directories are created
+    let app_test_file = generate_test_log_path("app_dir_test");
+    let test_log_file = generate_test_log_path("test_dir_test");
 
-    fs::create_dir_all(&app_dir).expect("Failed to create app directory");
-    fs::create_dir_all(&test_dir).expect("Failed to create test directory");
+    // Create the parent directories
+    if let Some(app_parent) = app_test_file.parent() {
+        fs::create_dir_all(app_parent).expect("Failed to create app directory");
+    }
+
+    if let Some(test_parent) = test_log_file.parent() {
+        fs::create_dir_all(test_parent).expect("Failed to create test directory");
+    }
 
     // Verify the directory structure
     assert!(

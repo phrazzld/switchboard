@@ -207,7 +207,7 @@ pub fn verify_log_file_exists(log_path: &Path) -> bool {
 
 /// Verifies that the log directory structure is correctly set up.
 ///
-/// This function checks if the log directory structure matches expectations:
+/// This function checks if the log directory structure matches expectations using LogPathResolver:
 /// - Base log directory exists
 /// - Test subdirectory exists
 /// - App subdirectory exists
@@ -215,15 +215,48 @@ pub fn verify_log_file_exists(log_path: &Path) -> bool {
 /// # Returns
 /// true if the directory structure is correct, false otherwise
 pub fn verify_log_directory() -> bool {
-    let base_dir = PathBuf::from(logger::DEFAULT_LOG_DIR);
-    if !base_dir.exists() {
-        return false;
-    }
+    // Create a dummy config with LogDirectoryMode::Default
+    let config = Config {
+        port: "0".to_string(),
+        anthropic_api_key: "test-key".to_string(),
+        anthropic_target_url: "https://example.com".to_string(),
+        log_stdout_level: "info".to_string(),
+        log_format: "pretty".to_string(),
+        log_bodies: true,
+        log_file_path: "test.log".to_string(),
+        log_file_level: "debug".to_string(),
+        log_max_body_size: 1024,
+        log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+    };
 
-    let test_dir = base_dir.join(logger::TEST_LOG_SUBDIR);
-    let app_dir = base_dir.join(logger::APP_LOG_SUBDIR);
+    // Create resolvers for both app and test logs
+    let app_resolver = LogPathResolver::new(&config, LogType::Application);
+    let test_resolver = LogPathResolver::new(&config, LogType::Test);
 
-    test_dir.exists() && app_dir.exists()
+    // Resolve paths to get the directories
+    let app_path = match app_resolver.resolve() {
+        Ok(path) => path,
+        Err(_) => return false,
+    };
+
+    let test_path = match test_resolver.resolve() {
+        Ok(path) => path,
+        Err(_) => return false,
+    };
+
+    // Check if the parent directories exist
+    let app_dir = match app_path.parent() {
+        Some(dir) => dir,
+        None => return false,
+    };
+
+    let test_dir = match test_path.parent() {
+        Some(dir) => dir,
+        None => return false,
+    };
+
+    // Verify both directories exist
+    app_dir.exists() && test_dir.exists()
 }
 
 /// Helper function to find a log file, accounting for date suffixes.

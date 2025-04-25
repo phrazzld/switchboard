@@ -1,7 +1,6 @@
-use crate::common::verify_log_directory;
+use crate::common::{generate_test_log_path, verify_log_directory};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
 
 mod common;
 
@@ -9,7 +8,7 @@ mod common;
 fn test_directory_creation() {
     // Create a test-specific log file in the test directory
     let test_name = "nested_directory_test";
-    let log_path = PathBuf::from("./logs/test").join(format!("{}_test.log", test_name));
+    let log_path = generate_test_log_path(test_name);
     println!("Log path: {}", log_path.display());
 
     // Ensure the parent directory exists
