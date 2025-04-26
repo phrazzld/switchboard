@@ -161,7 +161,7 @@
     - **Depends-on:** T011, T012
 
 ## Test Helper (`tests/common/mod.rs`)
-- [ ] **T014 · Feature · P2: implement `verify_directory_permissions` helper**
+- [x] **T014 · Feature · P2: implement `verify_directory_permissions` helper**
     - **Context:** PLAN.md > Detailed Build Steps > 5. Implement Test Helper
     - **Action:**
         1. In `tests/common/mod.rs`, add:
@@ -176,7 +176,7 @@
         1. Helper compiles and returns `Ok`/`Err(String)` appropriately.
     - **Depends-on:** none
 
-- [ ] **T015 · Test · P2: add unit tests for `verify_directory_permissions`**
+- [x] **T015 · Test · P2: add unit tests for `verify_directory_permissions`**
     - **Context:** PLAN.md > Detailed Build Steps > 7. Add Unit Tests
     - **Action:**
         1. Write tests using `tempfile::TempDir` and `fs::set_permissions` to:
@@ -186,7 +186,7 @@
         1. Tests cover both pass and fail scenarios on Unix.
     - **Depends-on:** T014
 
-- [ ] **T016 · Refactor · P2: update existing tests to use `verify_directory_permissions`**
+- [x] **T016 · Refactor · P2: update existing tests to use `verify_directory_permissions`**
     - **Context:** PLAN.md > Detailed Build Steps > 6. Refactor Tests
     - **Action:**
         1. Search all tests for manual permission checks or `set_permissions` calls.

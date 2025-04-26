@@ -1,13 +1,13 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use switchboard::config::Config;
+use switchboard::config::{Config, DEFAULT_LOG_DIRECTORY_MODE};
 use switchboard::logger::{
     LogPathResolver, LogType, APP_LOG_SUBDIR, DEFAULT_LOG_DIR, TEST_LOG_SUBDIR,
 };
 
 mod common;
-use common::{cleanup_test_log_file, verify_log_directory};
+use common::{cleanup_test_log_file, verify_directory_permissions, verify_log_directory};
 
 // Structure to hold paths for different log types
 struct LogPaths {
@@ -110,59 +110,52 @@ fn test_log_directory_structure() {
         test_dir.display()
     );
 
-    // Verify directory permissions (Unix-specific)
+    // Verify directory permissions
     #[cfg(target_family = "unix")]
     {
         use std::os::unix::fs::PermissionsExt;
 
         // Check app directory permissions
-        let app_dir_perms = fs::metadata(app_dir)
-            .expect("Failed to get app directory metadata")
-            .permissions()
-            .mode();
+        let app_metadata = fs::metadata(app_dir).expect("Failed to get app directory metadata");
+        let app_mode = app_metadata.permissions().mode() & 0o777;
 
         // Check test directory permissions
-        let test_dir_perms = fs::metadata(test_dir)
-            .expect("Failed to get test directory metadata")
-            .permissions()
-            .mode();
+        let test_metadata = fs::metadata(test_dir).expect("Failed to get test directory metadata");
+        let test_mode = test_metadata.permissions().mode() & 0o777;
 
-        // Instead of checking exact permissions which differ between environments,
-        // check that the owner and group permissions are correct (rwxr-x)
-        // and be more flexible about the "others" permissions
+        // Print the actual modes for debugging
+        println!("App directory permissions: 0o{:o}", app_mode);
+        println!("Test directory permissions: 0o{:o}", test_mode);
+
+        // For owner and group permissions, they should be at least rwxr-x
+        let owner_group_bits = 0o770;
 
         // Check app directory permissions
-        let app_perms = app_dir_perms & 0o777;
-        let test_perms = test_dir_perms & 0o777;
-
-        // Check owner and group permissions bits (should be rwxr-x in both cases)
         assert_eq!(
-            app_perms & 0o770,
-            0o750 & 0o770,
-            "App directory owner/group permissions are incorrect: {:o}",
-            app_perms
+            app_mode & owner_group_bits,
+            DEFAULT_LOG_DIRECTORY_MODE & owner_group_bits,
+            "App directory owner/group permissions should match DEFAULT_LOG_DIRECTORY_MODE"
         );
 
-        // Verify that either 0o750 or 0o755 permissions are used
+        // Either 0o750 or 0o755 is acceptable for app directory
         assert!(
-            app_perms == 0o750 || app_perms == 0o755,
-            "App directory permissions should be either 0o750 or 0o755, got: {:o}",
-            app_perms
+            app_mode == 0o750 || app_mode == 0o755,
+            "App directory permissions should be either 0o750 or 0o755, got 0o{:o}",
+            app_mode
         );
 
-        // Similar checks for test directory
+        // Check test directory permissions
         assert_eq!(
-            test_perms & 0o770,
-            0o750 & 0o770,
-            "Test directory owner/group permissions are incorrect: {:o}",
-            test_perms
+            test_mode & owner_group_bits,
+            DEFAULT_LOG_DIRECTORY_MODE & owner_group_bits,
+            "Test directory owner/group permissions should match DEFAULT_LOG_DIRECTORY_MODE"
         );
 
-        // Verify that either 0o750 or 0o755 permissions are used
+        // Either 0o750 or 0o755 is acceptable for test directory
         assert!(
-            test_perms == 0o750 || test_perms == 0o755,
-            "Test directory permissions should be either 0o750 or 0o755, got: {:o}",
-            test_perms
+            test_mode == 0o750 || test_mode == 0o755,
+            "Test directory permissions should be either 0o750 or 0o755, got 0o{:o}",
+            test_mode
         );
     }
 
