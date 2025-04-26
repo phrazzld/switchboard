@@ -228,7 +228,7 @@
         1. CI step flags new hardcoded literals outside config.
     - **Depends-on:** T001
 
-- [ ] **T020 · Test · P1: verify all tests pass across CI platforms**
+- [x] **T020 · Test · P1: verify all tests pass across CI platforms**
     - **Context:** PLAN.md > Detailed Build Steps > 9. Quality Gates; PLAN.md > Testing Strategy
     - **Action:**
         1. Run CI pipeline on PR.
