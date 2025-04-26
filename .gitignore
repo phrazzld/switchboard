@@ -36,9 +36,17 @@ diff.md
 # Log files
 *.log
 *.log.*
-/logs/
 /logs/**/*.log
 /logs/**/*.log.*
+/logs/app/*
+/logs/test/*
 /switchboard.log*
 /benchmark.log*
 /test_switchboard.log*
+
+# Make sure logs directories exist but are empty
+!/logs/
+!/logs/app/
+!/logs/test/
+!/logs/app/.gitkeep
+!/logs/test/.gitkeep
