@@ -384,6 +384,13 @@ impl LogPathResolver {
 }
 
 /// Error type for logging initialization failures
+///
+/// This enum represents all possible error conditions that can occur during log initialization,
+/// including file system errors, permission issues, path validation problems, and configuration
+/// parsing errors.
+///
+/// Each variant includes detailed information about the specific error condition, allowing
+/// for proper error handling and reporting throughout the application.
 #[derive(Debug, Error)]
 #[allow(dead_code)]
 pub enum LogInitError {
@@ -422,6 +429,16 @@ pub enum LogInitError {
         reason: String,
     },
 
+    /// Permission denied when accessing a path
+    #[error("Permission denied when accessing {path}: {source}")]
+    PermissionDenied {
+        /// Path to which permission was denied
+        path: String,
+        /// Source IO error
+        #[source]
+        source: io::Error,
+    },
+
     /// Path canonicalization error
     #[error("Failed to canonicalize path {path}: {source}")]
     PathCanonicalizationError {
@@ -431,6 +448,10 @@ pub enum LogInitError {
         #[source]
         source: io::Error,
     },
+
+    /// Generic I/O error during log initialization
+    #[error("I/O error during log initialization: {0}")]
+    IoError(#[from] io::Error),
 }
 
 /// Validate a log file path for security and usability concerns, creating directories as needed

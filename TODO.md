@@ -124,7 +124,7 @@
     - **Depends-on:** T007
 
 ## Logging Integration (`src/logger.rs`)
-- [ ] **T011 · Feature · P2: define `LogInitError` enum**
+- [x] **T011 · Feature · P2: define `LogInitError` enum**
     - **Context:** PLAN.md > Architecture Blueprint > Public Interfaces / Contracts
     - **Action:**
         1. In `src/logger.rs`, add:
