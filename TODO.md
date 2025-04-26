@@ -220,7 +220,7 @@
         2. Tests run on all platforms.
     - **Depends-on:** none
 
-- [ ] **T019 · Chore · P3: add CI lint to detect hardcoded default literals**
+- [x] **T019 · Chore · P3: add CI lint to detect hardcoded default literals**
     - **Context:** PLAN.md > Risk Matrix: Incomplete sweep of hardcoded literals
     - **Action:**
         1. Introduce a CI step (script or `grep`) that fails if default literal patterns (e.g., `"INFO"`, numeric defaults, `"0o750"`) appear outside `src/config.rs`.

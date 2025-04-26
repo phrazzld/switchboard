@@ -109,6 +109,77 @@ jobs:
             echo "✅ No committed log files found."
           fi
 
+  hardcoded-literals-check:
+    name: Hardcoded Literals Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for hardcoded default literals
+        run: |
+          echo "🔍 Checking for hardcoded default literals outside of config.rs..."
+
+          # Store all error findings in this variable
+          error_found=false
+          literals_found=""
+
+          # Helper function to check for literals and exclude appropriate files
+          check_literal() {
+            local pattern="$1"
+            local name="$2"
+            local files_with_pattern
+
+            # Find files with pattern excluding config.rs, tests, documentation, and CI files
+            files_with_pattern=$(grep -l "$pattern" --include="*.rs" --exclude="config.rs" \
+              --exclude-dir={target,tests,benches} . 2>/dev/null || true)
+
+            if [ -n "$files_with_pattern" ]; then
+              error_found=true
+              echo "⚠️ Found potential hardcoded $name literals in these files:"
+
+              # For each file found, show the exact line with the pattern
+              for file in $files_with_pattern; do
+                echo "File: $file"
+                grep -n "$pattern" "$file" | sed 's/^/  Line /'
+                echo ""
+              done
+
+              literals_found+="- Hardcoded $name literals\n"
+            fi
+          }
+
+          # Check for hardcoded log levels
+          check_literal '"info"' "LOG_STDOUT_LEVEL"
+          check_literal '"debug"' "LOG_FILE_LEVEL"
+          check_literal '"pretty"' "LOG_FORMAT"
+          check_literal '"warn"' "log level"
+          check_literal '"error"' "log level"
+          check_literal '"trace"' "log level"
+
+          # Check for hardcoded port
+          check_literal '"8080"' "PORT"
+
+          # Check for hardcoded URL
+          check_literal '"https://api.anthropic.com"' "ANTHROPIC_TARGET_URL"
+
+          # Check for hardcoded log file path
+          check_literal '"./switchboard.log"' "LOG_FILE_PATH"
+
+          # Check for hardcoded file sizes
+          check_literal '\b20480\b' "LOG_MAX_BODY_SIZE"
+
+          # Check for hardcoded permission modes
+          check_literal '\b0o750\b' "LOG_DIRECTORY_MODE"
+
+          # Summarize findings
+          if [ "$error_found" = true ]; then
+            echo "❌ Error: Detected hardcoded literals that should be using constants from config.rs"
+            echo -e "Literals found:\n$literals_found"
+            echo "Please update the code to use the appropriate constants from src/config.rs"
+            exit 1
+          else
+            echo "✅ No problematic hardcoded literals detected!"
+          fi
+
   lint-linux:
     name: Lint Check (Linux)
     runs-on: ubuntu-latest
@@ -368,7 +439,7 @@ jobs:
       lint-linux, lint-macos, lint-windows,
       test-linux, test-macos, test-windows,
       build-linux, build-macos, build-windows,
-      log-check
+      log-check, hardcoded-literals-check
     ]
     runs-on: ubuntu-latest
     steps:
@@ -381,3 +452,5 @@ jobs:
           echo "- Code linting with cargo clippy"
           echo "- All tests with cargo test"
           echo "- Release build with cargo build --release"
+          echo "- No log files committed to the repository"
+          echo "- No hardcoded default literals outside of config.rs"
