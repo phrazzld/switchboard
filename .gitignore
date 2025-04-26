@@ -33,20 +33,17 @@ TASK-PROMPT.md
 CODE_REVIEW.md
 diff.md
 
-# Log files
-*.log
-*.log.*
-/logs/**/*.log
-/logs/**/*.log.*
-/logs/app/*
-/logs/test/*
+# ------------------------------------------------------
+# Keep empty log dirs in Git, but ignore every .log file
+logs/app/.gitkeep
+logs/test/.gitkeep
+
+# Ignore everything else in logs/ 
+logs/**/*.log
+logs/**/*.log.*
+
+# Specific log files sometimes generated in root
 /switchboard.log*
 /benchmark.log*
 /test_switchboard.log*
-
-# Make sure logs directories exist but are empty
-!/logs/
-!/logs/app/
-!/logs/test/
-!/logs/app/.gitkeep
-!/logs/test/.gitkeep
+# ------------------------------------------------------

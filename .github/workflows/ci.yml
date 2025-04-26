@@ -44,26 +44,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Clean any log files before check
+      - name: Verify no committed log files
         run: |
-          # Ensure log directories exist
-          mkdir -p ./logs/app
-          mkdir -p ./logs/test
-          
-          # Clean up any log files - silently fail if no matches are found
-          find ./logs -type f -name "*.log" -o -name "*.log.*" -delete 2>/dev/null || true
-      - name: Check for log files
-        run: |
-          # Check if any log files would be staged or committed
-          log_files=$(find . -type f -name "*.log" -o -name "*.log.*" | grep -v "target/" | grep -v ".gitkeep")
-          
+          echo "🔍 Checking for .log files in the repository..."
+          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \) \
+            -not -path "./target/*" -not -name ".gitkeep")
           if [ -n "$log_files" ]; then
-            echo "Error: Log files detected in the repository:"
+            echo "❌ Error: detected committed log files:"
             echo "$log_files"
-            echo "Log files should not be committed. Please ensure they are properly ignored."
             exit 1
           else
-            echo "No log files detected in the repository."
+            echo "✅ No committed log files found."
           fi
 
   lint:
@@ -113,23 +104,22 @@ jobs:
         # --all-features ensures features are enabled if needed for tests
         run: cargo test --all-features
       - name: Clean up log files after tests
+        if: always()
         run: |
-          # Run the cleanup script to ensure all log files are removed
-          echo "Cleaning up log files after tests..."
-          
-          # Use a more robust cleanup approach that works even with deeply nested directories
-          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) -delete || true
+          echo "🧹 Removing test-generated logs..."
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) \
+            -not -name ".gitkeep" -delete || true
           
           # Verify all logs have been removed
           leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
           
           if [ -n "$leftover_logs" ]; then
-            echo "Warning: Some test log files could not be removed:"
+            echo "⚠️ Warning: Some test log files could not be removed:"
             echo "$leftover_logs"
             # Try to force remove with more privileges
             sudo rm -f $leftover_logs 2>/dev/null || true
           else
-            echo "Log cleanup successful - no log files remaining."
+            echo "✅ Log cleanup successful - no log files remaining."
           fi
 
   build:
