@@ -198,7 +198,7 @@
     - **Depends-on:** T001, T014
 
 ## Documentation & CI
-- [ ] **T017 · Chore · P3: update README logging table with constants**
+- [x] **T017 · Chore · P3: update README logging table with constants**
     - **Context:** PLAN.md > Detailed Build Steps > 8. Update Documentation
     - **Action:**
         1. In `README.md`, replace hardcoded default values in the logging section with references to `src/config.rs` constants.
