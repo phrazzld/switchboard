@@ -352,15 +352,16 @@ fn test_stdout_format_pretty() {
 // Test that verifies logger initialization with JSON format
 #[test]
 fn test_logger_json_format() {
-    // Create a unique temp file path to avoid conflicts with other tests
-    let temp_file = std::env::temp_dir().join(format!(
-        "switchboard_json_test_{}.log",
+    // Use common function to generate a unique test log path
+    let test_name = format!(
+        "json_test_{}",
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_nanos()
-    ));
+    );
 
+    // Create a test configuration
     let config = Config {
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
@@ -368,9 +369,11 @@ fn test_logger_json_format() {
         log_stdout_level: "info".to_string(),
         log_format: "json".to_string(),
         log_bodies: true,
-        log_file_path: temp_file.to_string_lossy().to_string(),
+        log_file_path: format!("{}.log", test_name),
         log_file_level: "debug".to_string(),
         log_max_body_size: 1024,
+        log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     };
 
     // Initialize the logger (this should succeed with JSON format)

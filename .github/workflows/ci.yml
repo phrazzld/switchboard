@@ -39,6 +39,24 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --check # Check if code needs formatting
 
+  log-check:
+    name: Log Files Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify no committed log files
+        run: |
+          echo "🔍 Checking for .log files in the repository..."
+          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \) \
+            -not -path "./target/*" -not -name ".gitkeep")
+          if [ -n "$log_files" ]; then
+            echo "❌ Error: detected committed log files:"
+            echo "$log_files"
+            exit 1
+          else
+            echo "✅ No committed log files found."
+          fi
+
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
@@ -85,6 +103,24 @@ jobs:
         # Run all tests, including unit tests, integration tests, and doctests
         # --all-features ensures features are enabled if needed for tests
         run: cargo test --all-features
+      - name: Clean up log files after tests
+        if: always()
+        run: |
+          echo "🧹 Removing test-generated logs..."
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) \
+            -not -name ".gitkeep" -delete || true
+          
+          # Verify all logs have been removed
+          leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
+          
+          if [ -n "$leftover_logs" ]; then
+            echo "⚠️ Warning: Some test log files could not be removed:"
+            echo "$leftover_logs"
+            # Try to force remove with more privileges
+            sudo rm -f $leftover_logs 2>/dev/null || true
+          else
+            echo "✅ Log cleanup successful - no log files remaining."
+          fi
 
   build:
     name: Build Verification

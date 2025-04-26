@@ -81,6 +81,8 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
                 log_file_path: "/dev/null".to_string(),
                 log_file_level: "off".to_string(), // Disable file logging
                 log_max_body_size: 20480,
+                log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             });
 
             match logger::init_tracing(&config) {
@@ -104,6 +106,8 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
                     .to_string(),
                 log_file_level: "info".to_string(),
                 log_max_body_size: 20480,
+                log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             });
 
             match logger::init_tracing(&config) {
@@ -127,6 +131,8 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
                     .to_string(),
                 log_file_level: "info".to_string(),
                 log_max_body_size: 20480,
+                log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             });
 
             match logger::init_tracing(&config) {
@@ -218,6 +224,8 @@ fn test_nonblocking_io() {
             .to_string(),
         log_file_level: "debug".to_string(),
         log_max_body_size: 20480,
+        log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+        log_max_age_days: None,
     });
 
     let guard = logger::init_tracing(&config);

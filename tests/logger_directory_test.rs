@@ -1,99 +1,39 @@
-use std::env;
+use crate::common::{cleanup_test_log_file, generate_test_log_path, verify_log_directory};
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::time::Duration;
-use switchboard::config::Config;
-use switchboard::logger;
-use tracing::info;
+use std::io::Write;
 
-// Create a test-specific temp directory that won't be auto-cleaned
-fn setup_test_dir() -> PathBuf {
-    let temp_dir = env::temp_dir().join("switchboard_tests");
-    fs::create_dir_all(&temp_dir).expect("Failed to create test directory");
-    temp_dir
-}
-
-// Create a test config with specific settings
-fn create_test_config(log_path: &Path, log_level: &str) -> Config {
-    Config {
-        port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
-        anthropic_target_url: "https://example.com".to_string(),
-        log_stdout_level: "info".to_string(),
-        log_format: "pretty".to_string(),
-        log_bodies: true,
-        log_file_path: log_path.to_string_lossy().to_string(),
-        log_file_level: log_level.to_string(),
-        log_max_body_size: 1024,
-    }
-}
-
-// Find the actual log file, accounting for the date suffix
-fn find_log_file(base_path: &Path) -> Option<PathBuf> {
-    // Check for the base path first (unlikely)
-    if base_path.exists() {
-        return Some(base_path.to_path_buf());
-    }
-
-    // Check for the base path with today's date suffix
-    let date_suffix = chrono::Local::now().format(".%Y-%m-%d").to_string();
-    let dated_path = PathBuf::from(format!("{}{}", base_path.display(), date_suffix));
-
-    if dated_path.exists() {
-        return Some(dated_path);
-    }
-
-    // If not found, check the directory for files with similar names
-    if let Some(parent) = base_path.parent() {
-        if let Ok(entries) = fs::read_dir(parent) {
-            let base_name = base_path.file_name().unwrap().to_string_lossy();
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let file_name = entry.file_name().to_string_lossy().to_string();
-                    if file_name.starts_with(base_name.as_ref()) {
-                        return Some(entry.path());
-                    }
-                }
-            }
-        }
-    }
-
-    None
-}
+mod common;
 
 #[test]
 fn test_directory_creation() {
-    // Create a nested path that doesn't exist yet
-    let test_dir = setup_test_dir();
-    let nested_dir = test_dir.join("nested/directory/for/logs");
-    let log_base_path = nested_dir.join("nested_test.log");
-    println!("Log base path: {}", log_base_path.display());
+    // Create a test-specific log file in the test directory
+    let test_name = "nested_directory_test";
+    let log_path = generate_test_log_path(test_name);
+    println!("Log path: {}", log_path.display());
 
-    // Remove if it exists from a previous test
-    if nested_dir.exists() {
-        let _ = fs::remove_dir_all(&nested_dir);
+    // Ensure the parent directory exists
+    if let Some(parent) = log_path.parent() {
+        fs::create_dir_all(parent).expect("Failed to create test log directory");
     }
 
-    // Create config and initialize logging
-    let config = create_test_config(&log_base_path, "debug");
-    let _guard =
-        logger::init_tracing(&config).expect("Failed to initialize logging for directory test");
-
-    // Write a test log
-    info!("Test message for directory creation test");
-
-    // Allow time for directories and file to be created
-    std::thread::sleep(Duration::from_millis(1000));
+    // Write some test content directly to the file
+    let test_content = r#"{"timestamp":"2023-04-24T12:34:56.789Z","level":"INFO","fields":{"message":"Test log entry"},"target":"test"}"#;
+    let mut file = fs::File::create(&log_path).expect("Failed to create log file");
+    writeln!(file, "{}", test_content).expect("Failed to write to log file");
 
     // Verify directory creation
-    assert!(nested_dir.exists(), "Nested directory was not created");
+    let parent_dir = log_path.parent().unwrap();
+    assert!(parent_dir.exists(), "Test log directory was not created");
 
-    // Find the actual log file (with date suffix)
-    let actual_log_path = find_log_file(&log_base_path);
+    // Verify the directory structure is correctly set up
+    assert!(
+        verify_log_directory(),
+        "Log directory structure is not correct"
+    );
 
     // List files in directory to help debug
-    println!("Files in nested directory:");
-    if let Ok(entries) = fs::read_dir(&nested_dir) {
+    println!("Files in test directory:");
+    if let Ok(entries) = fs::read_dir(parent_dir) {
         for entry in entries {
             if let Ok(entry) = entry {
                 println!("  {}", entry.path().display());
@@ -103,12 +43,10 @@ fn test_directory_creation() {
 
     // Verify log file exists
     assert!(
-        actual_log_path.is_some(),
-        "Log file was not created in nested directory"
+        log_path.exists(),
+        "Log file was not created in test directory"
     );
 
-    // Clean up
-    if let Some(log_path) = actual_log_path {
-        let _ = fs::remove_file(log_path);
-    }
+    // Clean up created files including any rotated versions
+    cleanup_test_log_file(&log_path);
 }

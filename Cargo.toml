@@ -46,6 +46,10 @@ futures-util = "0.3.28"
 dotenvy = "0.15.7"
 thiserror = "1.0.48"
 libc = "0.2.153"
+directories = "6.0.0"
+clap = { version = "4.4.6", features = ["derive", "cargo"] }
+filetime = "0.2.21"  # For manipulating file timestamps in tests
+chrono = "0.4.31"  # For date handling in log cleanup
 
 [dev-dependencies]
 # Testing dependencies for integration tests

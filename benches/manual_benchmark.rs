@@ -217,6 +217,8 @@ fn setup_logging(
                 log_file_path,
                 log_file_level: "off".to_string(), // Disable file logging
                 log_max_body_size: 20480,
+                log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             });
 
             match logger::init_tracing(&config) {
@@ -238,6 +240,8 @@ fn setup_logging(
                 log_file_path,
                 log_file_level: "debug".to_string(),
                 log_max_body_size: 20480,
+                log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             });
 
             match logger::init_tracing(&config) {
@@ -259,6 +263,8 @@ fn setup_logging(
                 log_file_path,
                 log_file_level: "debug".to_string(),
                 log_max_body_size: 20480,
+                log_directory_mode: switchboard::config::LogDirectoryMode::Default,
+                log_max_age_days: None,
             });
 
             match logger::init_tracing(&config) {
