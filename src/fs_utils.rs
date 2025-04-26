@@ -225,12 +225,11 @@ pub fn check_writable(path: &Path) -> io::Result<()> {
             ))
         }
     }
-    
+
     #[cfg(not(target_family = "unix"))]
     {
         check_writable_internal(path)
     }
-
 }
 
 /// Platform-specific implementation for Windows systems
