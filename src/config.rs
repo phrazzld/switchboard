@@ -2,6 +2,59 @@ use std::env;
 use std::sync::OnceLock;
 use tracing::info;
 
+// Configuration Default Constants
+
+/// Default HTTP port to listen on (8080)
+///
+/// A standard non-privileged port commonly used for development web servers
+pub const DEFAULT_PORT: &str = "8080";
+
+/// Default URL for Anthropic API (https://api.anthropic.com)
+///
+/// The official endpoint for Anthropic's API services
+pub const DEFAULT_ANTHROPIC_TARGET_URL: &str = "https://api.anthropic.com";
+
+/// Default log level for stdout (info)
+///
+/// INFO provides sufficient operational detail without overwhelming output in normal operation
+pub const DEFAULT_LOG_STDOUT_LEVEL: &str = "info";
+
+/// Default log level for file output (debug)
+///
+/// DEBUG provides more verbose logs to file for detailed troubleshooting when needed
+pub const DEFAULT_LOG_FILE_LEVEL: &str = "debug";
+
+/// Default log format (pretty)
+///
+/// Human-readable format for development; can be switched to 'json' for production
+pub const DEFAULT_LOG_FORMAT: &str = "pretty";
+
+/// Whether to log full request/response bodies by default (true)
+///
+/// Enables comprehensive logging of request/response bodies for debugging
+pub const DEFAULT_LOG_BODIES: bool = true;
+
+/// Default log file path (./switchboard.log)
+///
+/// Relative path that works in development environments
+pub const DEFAULT_LOG_FILE_PATH: &str = "./switchboard.log";
+
+/// Default maximum body size to log in bytes (20KB)
+///
+/// Prevents excessive log file growth while retaining meaningful content
+pub const DEFAULT_LOG_MAX_BODY_SIZE: usize = 20480;
+
+/// Default directory permission mode on Unix-like systems (0o750)
+///
+/// Provides owner read/write/execute, group read/execute, and no permissions for others
+/// This balances security with necessary access for the application
+pub const DEFAULT_LOG_DIRECTORY_MODE: u32 = 0o750;
+
+/// Default maximum age for log files in days (None = no cleanup)
+///
+/// By default, no automatic log cleanup is performed
+pub const DEFAULT_LOG_MAX_AGE_DAYS: Option<u32> = None;
+
 /// Specifies how log directory should be determined
 ///
 /// This enum controls how the application selects the base directory for logs,
@@ -73,17 +126,17 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            port: "8080".to_string(),
+            port: DEFAULT_PORT.to_string(),
             anthropic_api_key: "".to_string(),
-            anthropic_target_url: "https://api.anthropic.com".to_string(),
-            log_stdout_level: "info".to_string(),
-            log_format: "pretty".to_string(),
-            log_bodies: true,
-            log_file_path: "./switchboard.log".to_string(),
-            log_file_level: "debug".to_string(),
-            log_max_body_size: 20480,
+            anthropic_target_url: DEFAULT_ANTHROPIC_TARGET_URL.to_string(),
+            log_stdout_level: DEFAULT_LOG_STDOUT_LEVEL.to_string(),
+            log_format: DEFAULT_LOG_FORMAT.to_string(),
+            log_bodies: DEFAULT_LOG_BODIES,
+            log_file_path: DEFAULT_LOG_FILE_PATH.to_string(),
+            log_file_level: DEFAULT_LOG_FILE_LEVEL.to_string(),
+            log_max_body_size: DEFAULT_LOG_MAX_BODY_SIZE,
             log_directory_mode: LogDirectoryMode::Default,
-            log_max_age_days: None,
+            log_max_age_days: DEFAULT_LOG_MAX_AGE_DAYS,
         }
     }
 }
@@ -109,25 +162,27 @@ pub fn load_config() -> &'static Config {
         info!("Loading configuration from environment...");
 
         // Load configuration values with sensible defaults
-        let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+        let port = env::var("PORT").unwrap_or_else(|_| DEFAULT_PORT.to_string());
 
         // API key is mandatory
         let anthropic_api_key =
             env::var("ANTHROPIC_API_KEY").expect("ANTHROPIC_API_KEY must be set for forwarding");
 
         let anthropic_target_url = env::var("ANTHROPIC_TARGET_URL")
-            .unwrap_or_else(|_| "https://api.anthropic.com".to_string());
+            .unwrap_or_else(|_| DEFAULT_ANTHROPIC_TARGET_URL.to_string());
 
-        let log_stdout_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
-        let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
+        let log_stdout_level =
+            env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_STDOUT_LEVEL.to_string());
+        let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| DEFAULT_LOG_FORMAT.to_string());
         let log_bodies = env::var("LOG_BODIES")
             .map(|v| v.to_lowercase() != "false" && v != "0")
-            .unwrap_or(true);
+            .unwrap_or(DEFAULT_LOG_BODIES);
 
         // Load file logging configuration
         let log_file_path =
-            env::var("LOG_FILE_PATH").unwrap_or_else(|_| "./switchboard.log".to_string());
-        let log_file_level = env::var("LOG_FILE_LEVEL").unwrap_or_else(|_| "debug".to_string());
+            env::var("LOG_FILE_PATH").unwrap_or_else(|_| DEFAULT_LOG_FILE_PATH.to_string());
+        let log_file_level =
+            env::var("LOG_FILE_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_FILE_LEVEL.to_string());
 
         // Parse LOG_MAX_BODY_SIZE with error handling
         let log_max_body_size = env::var("LOG_MAX_BODY_SIZE")
@@ -135,13 +190,13 @@ pub fn load_config() -> &'static Config {
             .and_then(|size_str| {
                 size_str.parse::<usize>().ok().or_else(|| {
                     eprintln!(
-                        "Failed to parse LOG_MAX_BODY_SIZE: '{}', using default 20480",
-                        size_str
+                        "Failed to parse LOG_MAX_BODY_SIZE: '{}', using default {}",
+                        size_str, DEFAULT_LOG_MAX_BODY_SIZE
                     );
                     None
                 })
             })
-            .unwrap_or(20480); // Default to 20KB if not set or invalid
+            .unwrap_or(DEFAULT_LOG_MAX_BODY_SIZE); // Default if not set or invalid
 
         // Parse LOG_DIRECTORY_MODE environment variable
         let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
@@ -156,8 +211,12 @@ pub fn load_config() -> &'static Config {
         let log_max_age_days = env::var("LOG_MAX_AGE_DAYS").ok().and_then(|days_str| {
             days_str.parse::<u32>().ok().or_else(|| {
                 eprintln!(
-                    "Failed to parse LOG_MAX_AGE_DAYS: '{}', using no cleanup",
-                    days_str
+                    "Failed to parse LOG_MAX_AGE_DAYS: '{}', using default {}",
+                    days_str,
+                    match DEFAULT_LOG_MAX_AGE_DAYS {
+                        Some(days) => days.to_string(),
+                        None => "no cleanup".to_string(),
+                    }
                 );
                 None
             })
@@ -238,31 +297,33 @@ mod tests {
         }
 
         // Create the config (similar to create_test_config but cleaner)
-        let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+        let port = env::var("PORT").unwrap_or_else(|_| DEFAULT_PORT.to_string());
         let anthropic_api_key =
             env::var("ANTHROPIC_API_KEY").unwrap_or_else(|_| "test-api-key".to_string());
         let anthropic_target_url = env::var("ANTHROPIC_TARGET_URL")
-            .unwrap_or_else(|_| "https://api.anthropic.com".to_string());
-        let log_stdout_level = env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
-        let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
+            .unwrap_or_else(|_| DEFAULT_ANTHROPIC_TARGET_URL.to_string());
+        let log_stdout_level =
+            env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_STDOUT_LEVEL.to_string());
+        let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| DEFAULT_LOG_FORMAT.to_string());
         let log_bodies = env::var("LOG_BODIES")
             .map(|v| v.to_lowercase() != "false" && v != "0")
-            .unwrap_or(true);
+            .unwrap_or(DEFAULT_LOG_BODIES);
         let log_file_path =
-            env::var("LOG_FILE_PATH").unwrap_or_else(|_| "./switchboard.log".to_string());
-        let log_file_level = env::var("LOG_FILE_LEVEL").unwrap_or_else(|_| "debug".to_string());
+            env::var("LOG_FILE_PATH").unwrap_or_else(|_| DEFAULT_LOG_FILE_PATH.to_string());
+        let log_file_level =
+            env::var("LOG_FILE_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_FILE_LEVEL.to_string());
         let log_max_body_size = env::var("LOG_MAX_BODY_SIZE")
             .ok()
             .and_then(|size_str| {
                 size_str.parse::<usize>().ok().or_else(|| {
                     eprintln!(
-                        "Failed to parse LOG_MAX_BODY_SIZE: '{}', using default 20480",
-                        size_str
+                        "Failed to parse LOG_MAX_BODY_SIZE: '{}', using default {}",
+                        size_str, DEFAULT_LOG_MAX_BODY_SIZE
                     );
                     None
                 })
             })
-            .unwrap_or(20480);
+            .unwrap_or(DEFAULT_LOG_MAX_BODY_SIZE);
 
         // Parse LOG_DIRECTORY_MODE
         let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
