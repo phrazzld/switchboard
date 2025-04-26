@@ -60,7 +60,7 @@
         1. Project compiles with empty `fs_utils` module present.
     - **Depends-on:** none
 
-- [ ] **T006 · Feature · P2: implement `ensure_directory` in fs_utils**
+- [x] **T006 · Feature · P2: implement `ensure_directory` in fs_utils**
     - **Context:** PLAN.md > Detailed Build Steps > 3. Create `fs_utils` Module; PLAN.md > Logging & Observability; PLAN.md > Security & Config
     - **Action:**
         1. In `src/fs_utils.rs`, implement:
