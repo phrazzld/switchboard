@@ -35,12 +35,15 @@
 //! use std::path::Path;
 //! use switchboard::fs_utils;
 //!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! // Create a directory with specific permissions on Unix (no-op on Windows)
 //! let log_dir = Path::new("/var/log/switchboard");
 //! fs_utils::ensure_directory(log_dir, Some(0o750))?;
 //!
 //! // Check if a directory is writable
 //! fs_utils::check_writable(log_dir)?;
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Error handling

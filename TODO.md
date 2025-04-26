@@ -140,7 +140,7 @@
         1. `LogInitError` compiles with variants and trait impls.
     - **Depends-on:** none
 
-- [ ] **T012 · Refactor · P2: use `ensure_directory` in `LogPathResolver::resolve`**
+- [x] **T012 · Refactor · P2: use `ensure_directory` in `LogPathResolver::resolve`**
     - **Context:** PLAN.md > Detailed Build Steps > 4. Refactor `src/logger.rs`
     - **Action:**
         1. Remove inline `create_dir_all` and `set_permissions` from `resolve()`.

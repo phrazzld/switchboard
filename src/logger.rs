@@ -68,7 +68,8 @@
 //! performance under high loads. The `WorkerGuard` returned by `init_tracing()` must be kept
 //! alive for the duration of the application to ensure logs are properly flushed.
 
-use crate::config::Config;
+use crate::config::{Config, DEFAULT_LOG_DIRECTORY_MODE};
+use crate::fs_utils;
 use directories::ProjectDirs;
 use std::env;
 use std::io;
@@ -317,37 +318,14 @@ impl LogPathResolver {
         // Construct the directory path by combining base dir and subdirectory
         let dir_path = self.base_dir.join(subdir);
 
-        // Create the directory if it doesn't exist
+        // Create the directory with appropriate permissions if it doesn't exist
         if !dir_path.exists() {
-            if let Err(e) = std::fs::create_dir_all(&dir_path) {
+            if let Err(e) = fs_utils::ensure_directory(&dir_path, Some(DEFAULT_LOG_DIRECTORY_MODE))
+            {
                 return Err(LogInitError::DirectoryCreationFailed {
                     path: dir_path.display().to_string(),
                     source: e,
                 });
-            }
-
-            // Set directory permissions (platform-specific)
-            #[cfg(target_family = "unix")]
-            {
-                use std::fs::Permissions;
-                use std::os::unix::fs::PermissionsExt;
-
-                // Set directory permissions to 0o750 (rwxr-x---)
-                if let Err(e) = std::fs::set_permissions(&dir_path, Permissions::from_mode(0o750)) {
-                    return Err(LogInitError::PermissionIssue {
-                        path: dir_path.display().to_string(),
-                        reason: format!("Failed to set directory permissions: {}", e),
-                    });
-                }
-            }
-
-            // Windows: default permissions are generally appropriate
-            // But we could add ACL tightening here if needed in the future
-            #[cfg(target_family = "windows")]
-            {
-                // Windows default permissions for newly created directories are
-                // typically inherited from parent, which is usually appropriate
-                // For advanced ACL support, we would need to use the windows-rs crate
             }
         }
 

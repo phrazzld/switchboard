@@ -1,4 +1,5 @@
 mod config;
+mod fs_utils;
 mod log_cleanup;
 mod logger;
 mod proxy_handler;
