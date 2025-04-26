@@ -51,7 +51,7 @@
     - **Depends-on:** T001
 
 ## Filesystem Utilities (`src/fs_utils.rs`)
-- [ ] **T005 · Feature · P2: create fs_utils module skeleton**
+- [x] **T005 · Feature · P2: create fs_utils module skeleton**
     - **Context:** PLAN.md > Detailed Build Steps > 3. Create `fs_utils` Module
     - **Action:**
         1. Add new file `src/fs_utils.rs`.
