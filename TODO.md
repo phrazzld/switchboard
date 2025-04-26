@@ -75,7 +75,7 @@
         3. INFO log is emitted on creation.
     - **Depends-on:** T005
 
-- [ ] **T007 · Feature · P2: implement `check_writable` in fs_utils**
+- [x] **T007 · Feature · P2: implement `check_writable` in fs_utils**
     - **Context:** PLAN.md > Detailed Build Steps > 3. Create `fs_utils` Module; PLAN.md > Security & Config
     - **Action:**
         1. In `src/fs_utils.rs`, implement:
