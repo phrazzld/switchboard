@@ -91,6 +91,7 @@ use std::os::unix::fs::PermissionsExt;
 /// # Logging
 ///
 /// Emits an INFO log when a directory is created, including the path.
+#[cfg(target_family = "unix")]
 pub fn ensure_directory(path: &Path, mode: Option<u32>) -> io::Result<()> {
     // Check if the directory already exists
     if path.exists() {
@@ -224,40 +225,76 @@ pub fn check_writable(path: &Path) -> io::Result<()> {
             ))
         }
     }
-
+    
     #[cfg(not(target_family = "unix"))]
     {
-        // On non-Unix platforms (e.g., Windows), try to create a temp file
+        check_writable_internal(path)
+    }
+
+}
+
+/// Platform-specific implementation for Windows systems
+#[cfg(not(target_family = "unix"))]
+pub fn ensure_directory(path: &Path, _mode: Option<u32>) -> io::Result<()> {
+    // Check if the directory already exists
+    if path.exists() {
         if path.is_dir() {
-            // For directories, try to create a temporary file inside
-            use rand::Rng;
-            use std::fs::File;
-            use std::io::Write;
-
-            let mut rng = rand::thread_rng();
-            let random_suffix: u32 = rng.gen();
-            let temp_filename = format!(".tmp_write_test_{}.tmp", random_suffix);
-            let test_path = path.join(temp_filename);
-
-            let result = (|| {
-                let mut file = File::create(&test_path)?;
-                file.write_all(b"test")?;
-                file.sync_all()?;
-                Ok(())
-            })();
-
-            // Clean up regardless of success
-            let _ = fs::remove_file(&test_path);
-
-            return result;
+            // Directory already exists, we're done
+            return Ok(());
         } else {
-            // For files, try to open in write mode
-            use std::fs::OpenOptions;
+            // Path exists but is not a directory
+            return Err(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                format!("Path exists but is not a directory: {:?}", path),
+            ));
+        }
+    }
 
-            match OpenOptions::new().write(true).open(path) {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e),
-            }
+    // Create the directory and its parents
+    fs::create_dir_all(path)?;
+
+    // Log the creation
+    info!(
+        event = "create_dir",
+        path = ?path,
+        "Created directory"
+    );
+
+    Ok(())
+}
+
+#[cfg(not(target_family = "unix"))]
+fn check_writable_internal(path: &Path) -> io::Result<()> {
+    // On non-Unix platforms (e.g., Windows), try to create a temp file
+    if path.is_dir() {
+        // For directories, try to create a temporary file inside
+        use rand::Rng;
+        use std::fs::File;
+        use std::io::Write;
+
+        let mut rng = rand::thread_rng();
+        let random_suffix: u32 = rng.gen();
+        let temp_filename = format!(".tmp_write_test_{}.tmp", random_suffix);
+        let test_path = path.join(temp_filename);
+
+        let result = (|| {
+            let mut file = File::create(&test_path)?;
+            file.write_all(b"test")?;
+            file.sync_all()?;
+            Ok(())
+        })();
+
+        // Clean up regardless of success
+        let _ = fs::remove_file(&test_path);
+
+        result
+    } else {
+        // For files, try to open in write mode
+        use std::fs::OpenOptions;
+
+        match OpenOptions::new().write(true).open(path) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
         }
     }
 }

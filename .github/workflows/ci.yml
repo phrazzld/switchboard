@@ -99,8 +99,7 @@ jobs:
       - name: Verify no committed log files
         run: |
           echo "🔍 Checking for .log files in the repository..."
-          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \)
-            -not -path "./target/*" -not -name ".gitkeep")
+          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v "./target/" | grep -v ".gitkeep" || true)
           if [ -n "$log_files" ]; then
             echo "❌ Error: detected committed log files:"
             echo "$log_files"
@@ -130,7 +129,7 @@ jobs:
 
             # Find files with pattern excluding config.rs, tests, documentation, and CI files
             files_with_pattern=$(grep -l "$pattern" --include="*.rs" --exclude="config.rs" \
-              --exclude-dir={target,tests,benches} . 2>/dev/null || true)
+                --exclude-dir=target --exclude-dir=tests --exclude-dir=benches . 2>/dev/null || true)
 
             if [ -n "$files_with_pattern" ]; then
               error_found=true
@@ -278,11 +277,10 @@ jobs:
         if: always()
         run: |
           echo "🧹 Removing test-generated logs..."
-          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \)
-            -not -name ".gitkeep" -delete || true
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v ".gitkeep" | xargs rm -f || true
 
           # Verify all logs have been removed
-          leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
+          leftover_logs=$(find ./logs -type f | grep -v ".gitkeep" 2>/dev/null || true)
 
           if [ -n "$leftover_logs" ]; then
             echo "⚠️ Warning: Some test log files could not be removed:"
@@ -318,11 +316,10 @@ jobs:
         if: always()
         run: |
           echo "🧹 Removing test-generated logs..."
-          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \)
-            -not -name ".gitkeep" -delete || true
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v ".gitkeep" | xargs rm -f || true
 
           # Verify all logs have been removed
-          leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
+          leftover_logs=$(find ./logs -type f | grep -v ".gitkeep" 2>/dev/null || true)
 
           if [ -n "$leftover_logs" ]; then
             echo "⚠️ Warning: Some test log files could not be removed:"
