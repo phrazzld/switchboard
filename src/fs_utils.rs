@@ -258,3 +258,138 @@ pub fn check_writable(path: &Path) -> io::Result<()> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use tempfile::TempDir;
+
+    /// Test creating a directory that doesn't exist
+    #[test]
+    fn test_create_nonexistent_directory() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let test_dir = temp_dir.path().join("new_dir");
+
+        // Ensure directory doesn't exist yet
+        assert!(!test_dir.exists());
+
+        // Create the directory
+        ensure_directory(&test_dir, None).expect("Failed to create directory");
+
+        // Verify directory exists
+        assert!(test_dir.exists());
+        assert!(test_dir.is_dir());
+    }
+
+    /// Test creating a directory with Unix permissions (mode)
+    #[test]
+    #[cfg(target_family = "unix")]
+    fn test_create_directory_with_mode() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let test_dir = temp_dir.path().join("mode_dir");
+        let test_mode = 0o751; // rwxr-x--x
+
+        // Create directory with specific mode
+        ensure_directory(&test_dir, Some(test_mode)).expect("Failed to create directory with mode");
+
+        // Verify directory exists
+        assert!(test_dir.exists());
+        assert!(test_dir.is_dir());
+
+        // Verify permissions
+        let metadata = fs::metadata(&test_dir).expect("Failed to get metadata");
+        let mode = metadata.permissions().mode() & 0o777; // Get only permission bits
+        assert_eq!(
+            mode, test_mode,
+            "Directory permissions don't match requested mode"
+        );
+    }
+
+    /// Test no-op behavior when directory already exists
+    #[test]
+    fn test_existing_directory_noop() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        // Directory already exists
+        assert!(temp_dir.path().exists());
+        assert!(temp_dir.path().is_dir());
+
+        // Should be a no-op and not fail
+        ensure_directory(temp_dir.path(), None).expect("Failed on existing directory");
+
+        // Directory should still exist
+        assert!(temp_dir.path().exists());
+        assert!(temp_dir.path().is_dir());
+    }
+
+    /// Test error when path exists but is not a directory
+    #[test]
+    fn test_error_on_existing_file() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let file_path = temp_dir.path().join("existing_file.txt");
+
+        // Create a file
+        File::create(&file_path).expect("Failed to create test file");
+        assert!(file_path.exists());
+        assert!(!file_path.is_dir());
+
+        // Should fail because path exists but is not a directory
+        let result = ensure_directory(&file_path, None);
+        assert!(result.is_err());
+
+        // Verify error type
+        match result {
+            Err(e) => {
+                assert_eq!(e.kind(), io::ErrorKind::AlreadyExists);
+                assert!(e.to_string().contains("not a directory"));
+            }
+            Ok(_) => panic!("Expected error for path that exists but is not a directory"),
+        }
+    }
+
+    /// Test updating permissions on existing directory
+    #[test]
+    #[cfg(target_family = "unix")]
+    fn test_update_permissions_on_existing_directory() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let test_dir = temp_dir.path().join("perm_update_dir");
+
+        // Create directory with initial permissions
+        let initial_mode = 0o755;
+        ensure_directory(&test_dir, Some(initial_mode)).expect("Failed to create directory");
+
+        // Verify initial permissions
+        let metadata = fs::metadata(&test_dir).expect("Failed to get metadata");
+        let mode = metadata.permissions().mode() & 0o777;
+        assert_eq!(mode, initial_mode);
+
+        // Update to new permissions
+        let new_mode = 0o700;
+        ensure_directory(&test_dir, Some(new_mode)).expect("Failed to update permissions");
+
+        // Verify new permissions
+        let metadata = fs::metadata(&test_dir).expect("Failed to get metadata");
+        let mode = metadata.permissions().mode() & 0o777;
+        assert_eq!(mode, new_mode, "Directory permissions weren't updated");
+    }
+
+    // This test simulates an unwritable parent directory scenario
+    // Note: We can't easily create truly unwritable directories in tests
+    // without admin privileges, so this test mocks the behavior using
+    // a non-existent path at an invalid location
+    #[test]
+    fn test_error_on_invalid_parent() {
+        // Try to create a directory in a location that's invalid or doesn't exist
+        // This varies by platform but /proc/none is typically invalid on Unix systems
+        // and C:\Windows\System32\NonExistentLocation is invalid on Windows
+        #[cfg(target_family = "unix")]
+        let invalid_path = Path::new("/proc/none/invalid_dir");
+        #[cfg(not(target_family = "unix"))]
+        let invalid_path = Path::new("C:\\Windows\\System32\\NonExistentLocation\\invalid_dir");
+
+        // Should fail because parent doesn't exist or isn't a directory
+        let result = ensure_directory(invalid_path, None);
+        assert!(result.is_err());
+    }
+}

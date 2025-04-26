@@ -98,7 +98,7 @@
     - **Depends-on:** T006, T007
 
 ## Testing fs_utils & Helper
-- [ ] **T009 · Test · P2: add unit tests for `ensure_directory`**
+- [x] **T009 · Test · P2: add unit tests for `ensure_directory`**
     - **Context:** PLAN.md > Detailed Build Steps > 7. Add Unit Tests
     - **Action:**
         1. Write tests using `tempfile::TempDir` to cover:
