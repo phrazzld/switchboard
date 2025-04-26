@@ -150,7 +150,7 @@
         2. Inline filesystem code is removed.
     - **Depends-on:** T006
 
-- [ ] **T013 · Refactor · P2: map `io::Error` to `LogInitError` in `resolve`**
+- [x] **T013 · Refactor · P2: map `io::Error` to `LogInitError` in `resolve`**
     - **Context:** PLAN.md > Detailed Build Steps > 4. Refactor `src/logger.rs`; PLAN.md > Logging & Observability
     - **Action:**
         1. Change return type of `resolve()` to `Result<PathBuf, LogInitError>`.

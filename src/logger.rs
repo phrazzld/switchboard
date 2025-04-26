@@ -77,7 +77,7 @@ use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
-use tracing::info;
+use tracing::{error, info};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling;
 use tracing_subscriber::{fmt as tracing_fmt, prelude::*, registry, EnvFilter};
@@ -322,10 +322,67 @@ impl LogPathResolver {
         if !dir_path.exists() {
             if let Err(e) = fs_utils::ensure_directory(&dir_path, Some(DEFAULT_LOG_DIRECTORY_MODE))
             {
-                return Err(LogInitError::DirectoryCreationFailed {
-                    path: dir_path.display().to_string(),
-                    source: e,
-                });
+                // Get information for logging before we move the error
+                let error_kind = e.kind();
+                let error_display = e.to_string();
+                let path_display = dir_path.display().to_string();
+
+                // Log the error before returning
+                error!(
+                    error_kind = ?error_kind,
+                    path = %path_display,
+                    error = %error_display,
+                    "Failed to create log directory"
+                );
+
+                // Map the error to appropriate LogInitError variants
+                let log_error = match error_kind {
+                    io::ErrorKind::PermissionDenied => LogInitError::PermissionDenied {
+                        path: path_display,
+                        source: e,
+                    },
+                    io::ErrorKind::AlreadyExists => LogInitError::DirectoryCreationFailed {
+                        path: path_display,
+                        source: e,
+                    },
+                    // Map any other IO errors to DirectoryCreationFailed
+                    _ => LogInitError::DirectoryCreationFailed {
+                        path: path_display,
+                        source: e,
+                    },
+                };
+
+                return Err(log_error);
+            }
+        } else {
+            // Directory exists, but verify it's writable
+            if let Err(e) = fs_utils::check_writable(&dir_path) {
+                // Get information for logging before we move the error
+                let error_kind = e.kind();
+                let error_display = e.to_string();
+                let path_display = dir_path.display().to_string();
+
+                // Log the error before returning
+                error!(
+                    error_kind = ?error_kind,
+                    path = %path_display,
+                    error = %error_display,
+                    "Existing log directory is not writable"
+                );
+
+                // Map the error to appropriate LogInitError variants
+                let log_error = match error_kind {
+                    io::ErrorKind::PermissionDenied => LogInitError::PermissionDenied {
+                        path: path_display,
+                        source: e,
+                    },
+                    _ => LogInitError::PermissionIssue {
+                        path: path_display,
+                        reason: format!("Directory exists but is not writable: {}", error_display),
+                    },
+                };
+
+                return Err(log_error);
             }
         }
 
@@ -1887,10 +1944,14 @@ mod tests {
                 // Try to resolve - should fail with permission error when it tries to create subdirectory
                 let result = resolver.resolve();
 
-                // Verify we get a directory creation error
+                // Verify we get either a directory creation error or a permission denied error
                 assert!(
-                    matches!(result, Err(LogInitError::DirectoryCreationFailed { .. })),
-                    "Expected DirectoryCreationFailed error, got {:?}",
+                    matches!(
+                        result,
+                        Err(LogInitError::DirectoryCreationFailed { .. })
+                            | Err(LogInitError::PermissionDenied { .. })
+                    ),
+                    "Expected DirectoryCreationFailed or PermissionDenied error, got {:?}",
                     result
                 );
             }
