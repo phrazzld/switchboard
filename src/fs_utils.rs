@@ -265,6 +265,9 @@ mod tests {
     use std::fs::File;
     use tempfile::TempDir;
 
+    #[cfg(not(target_family = "unix"))]
+    use std::io::Write;
+
     /// Test creating a directory that doesn't exist
     #[test]
     fn test_create_nonexistent_directory() {
@@ -391,5 +394,167 @@ mod tests {
         // Should fail because parent doesn't exist or isn't a directory
         let result = ensure_directory(invalid_path, None);
         assert!(result.is_err());
+    }
+
+    // Tests for check_writable function
+
+    /// Test check_writable on a writable directory
+    #[test]
+    fn test_writable_directory() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        // Directory should be writable
+        let result = check_writable(temp_dir.path());
+        assert!(result.is_ok(), "Expected temp directory to be writable");
+    }
+
+    /// Test check_writable on a writable file
+    #[test]
+    fn test_writable_file() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let file_path = temp_dir.path().join("writable_file.txt");
+
+        // Create a writable file
+        File::create(&file_path).expect("Failed to create test file");
+
+        // File should be writable
+        let result = check_writable(&file_path);
+        assert!(result.is_ok(), "Expected file to be writable");
+    }
+
+    /// Test check_writable on a non-existent path
+    #[test]
+    fn test_nonexistent_path() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let nonexistent_path = temp_dir.path().join("nonexistent/path");
+
+        // Should fail with NotFound
+        let result = check_writable(&nonexistent_path);
+        assert!(result.is_err());
+
+        // Verify error type
+        match result {
+            Err(e) => {
+                assert_eq!(e.kind(), io::ErrorKind::NotFound);
+                assert!(e.to_string().contains("does not exist"));
+            }
+            Ok(_) => panic!("Expected NotFound error for non-existent path"),
+        }
+    }
+
+    /// Test check_writable on a directory with restricted permissions (Unix only)
+    #[test]
+    #[cfg(target_family = "unix")]
+    fn test_non_writable_directory_unix() {
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let restricted_dir = temp_dir.path().join("restricted_dir");
+
+        // Create directory first with normal permissions
+        fs::create_dir(&restricted_dir).expect("Failed to create test directory");
+
+        // Set read-only permissions (no write permission for anyone)
+        let read_only_mode = 0o555; // r-xr-xr-x
+        let mut perms = fs::metadata(&restricted_dir)
+            .expect("Failed to get metadata")
+            .permissions();
+        perms.set_mode(read_only_mode);
+        fs::set_permissions(&restricted_dir, perms).expect("Failed to set permissions");
+
+        // If we're running as root, we can still write regardless of permissions
+        // so we should skip this test
+        use nix::unistd::Uid;
+        if Uid::current().is_root() {
+            println!("Skipping test_non_writable_directory_unix because we're running as root");
+            return;
+        }
+
+        // Try to check if it's writable
+        let result = check_writable(&restricted_dir);
+
+        // Should fail with PermissionDenied
+        assert!(result.is_err());
+        match result {
+            Err(e) => {
+                assert_eq!(e.kind(), io::ErrorKind::PermissionDenied);
+                assert!(e.to_string().contains("permission denied"));
+            }
+            Ok(_) => panic!("Expected PermissionDenied error for non-writable directory"),
+        }
+    }
+
+    /// On Windows, we simulate a non-writable path by using a system directory
+    /// that is typically not writable by normal users
+    #[test]
+    #[cfg(not(target_family = "unix"))]
+    fn test_non_writable_path_windows() {
+        // On Windows, system directories like C:\Windows are typically not writable
+        // by normal users
+        let system_dir = Path::new("C:\\Windows\\System32\\config");
+
+        // Skip test if running with admin privileges or if the path doesn't exist
+        if !system_dir.exists() {
+            println!(
+                "Skipping test_non_writable_path_windows because system directory doesn't exist"
+            );
+            return;
+        }
+
+        // Try to check writability - this might pass if running as admin, so we have
+        // an alternative approach in the test below
+        let result = check_writable(system_dir);
+        if result.is_ok() {
+            println!("Warning: Expected system directory to be non-writable, but it appears writable. Test might be running with elevated privileges.");
+        }
+    }
+
+    /// Alternative test for Windows using a file opened by another process
+    /// This simulates a non-writable situation on Windows
+    #[test]
+    #[cfg(not(target_family = "unix"))]
+    fn test_readonly_file_windows() {
+        use std::fs::OpenOptions;
+
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+        let readonly_file_path = temp_dir.path().join("readonly_file.txt");
+
+        // Create a file first
+        {
+            let mut file = File::create(&readonly_file_path).expect("Failed to create test file");
+            file.write_all(b"test content")
+                .expect("Failed to write to test file");
+        }
+
+        // Make it read-only on Windows
+        let mut perms = fs::metadata(&readonly_file_path)
+            .expect("Failed to get metadata")
+            .permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(&readonly_file_path, perms).expect("Failed to set permissions");
+
+        // Try to check write access - should fail since it's read-only
+        let result = OpenOptions::new().write(true).open(&readonly_file_path);
+
+        // If the file is truly read-only, this should fail
+        // But skip asserting if it somehow works (maybe due to high privileges)
+        if result.is_ok() {
+            println!("Warning: Expected read-only file to be non-writable, but it appears writable. Test might be running with elevated privileges.");
+            return;
+        }
+
+        // Now check with our function
+        let result = check_writable(&readonly_file_path);
+        assert!(result.is_err(), "Expected error for read-only file");
+    }
+
+    /// Test check_writable with special paths
+    #[test]
+    fn test_special_paths() {
+        // Try with root directory, which may or may not be writable depending on the system
+        // We're not asserting the result, just checking that it doesn't panic
+        let _root_result = check_writable(Path::new("/"));
+
+        // Try with current directory, which should typically be writable
+        // Again, not asserting the result, just checking for panics
+        let _current_result = check_writable(Path::new("."));
     }
 }

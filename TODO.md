@@ -111,7 +111,7 @@
         2. CI passes on all platforms.
     - **Depends-on:** T006
 
-- [ ] **T010 · Test · P2: add unit tests for `check_writable`**
+- [x] **T010 · Test · P2: add unit tests for `check_writable`**
     - **Context:** PLAN.md > Detailed Build Steps > 7. Add Unit Tests
     - **Action:**
         1. Write tests using `tempfile::TempDir` to cover:
