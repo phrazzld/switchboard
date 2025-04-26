@@ -41,7 +41,7 @@
         2. A warning is logged on parse failure before defaulting.
     - **Depends-on:** T001
 
-- [ ] **T004 · Chore · P3: add module-level docs for config.rs**
+- [x] **T004 · Chore · P3: add module-level docs for config.rs**
     - **Context:** PLAN.md > Detailed Build Steps > 8. Update Documentation
     - **Action:**
         1. Insert `//!` comments at the top of `src/config.rs` summarizing module purpose and default constants.

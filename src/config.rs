@@ -1,3 +1,57 @@
+//! Configuration management for the Switchboard application
+//!
+//! This module provides a centralized configuration system that supports:
+//! - Loading values from environment variables with sensible defaults
+//! - Thread-safe global configuration singleton (`CONFIG`)
+//! - Typed configuration values with appropriate conversions
+//! - Environment-aware log directory structure
+//!
+//! # Configuration Defaults
+//!
+//! All default values are defined as constants in this module:
+//! - `DEFAULT_PORT` - HTTP listen port (8080)
+//! - `DEFAULT_ANTHROPIC_TARGET_URL` - API endpoint (<https://api.anthropic.com>)
+//! - `DEFAULT_LOG_STDOUT_LEVEL` - Console logging level (info)
+//! - `DEFAULT_LOG_FILE_LEVEL` - File logging level (debug)
+//! - `DEFAULT_LOG_FORMAT` - Log format (pretty or json)
+//! - `DEFAULT_LOG_BODIES` - Whether to log request/response bodies
+//! - `DEFAULT_LOG_FILE_PATH` - Default log file path
+//! - `DEFAULT_LOG_MAX_BODY_SIZE` - Maximum log size for bodies
+//! - `DEFAULT_LOG_DIRECTORY_MODE` - Permissions for log directories on Unix
+//! - `DEFAULT_LOG_MAX_AGE_DAYS` - How long to retain logs (None = indefinite)
+//!
+//! # Usage
+//!
+//! The recommended way to access configuration is through the global singleton:
+//!
+//! ```rust
+//! use switchboard::config;
+//!
+//! // Load configuration (only needed once at startup)
+//! let cfg = config::load_config();
+//!
+//! // Use configuration values
+//! println!("Listening on port {}", cfg.port);
+//! ```
+//!
+//! # Environment Variables
+//!
+//! The following environment variables can be set to override defaults:
+//!
+//! | Variable | Purpose | Default |
+//! |----------|---------|---------|
+//! | `PORT` | HTTP server port | 8080 |
+//! | `ANTHROPIC_API_KEY` | API key (required) | None |
+//! | `ANTHROPIC_TARGET_URL` | API endpoint | <https://api.anthropic.com> |
+//! | `LOG_LEVEL` | Console log level | info |
+//! | `LOG_FORMAT` | Log format (pretty/json) | pretty |
+//! | `LOG_BODIES` | Log request/response bodies | true |
+//! | `LOG_FILE_PATH` | Path to log file | ./switchboard.log |
+//! | `LOG_FILE_LEVEL` | File log level | debug |
+//! | `LOG_MAX_BODY_SIZE` | Max body size to log | 20480 |
+//! | `LOG_DIRECTORY_MODE` | Directory mode | Default |
+//! | `LOG_MAX_AGE_DAYS` | Log retention period | None |
+
 use std::env;
 use std::sync::OnceLock;
 use tracing::{info, warn};
@@ -9,7 +63,7 @@ use tracing::{info, warn};
 /// A standard non-privileged port commonly used for development web servers
 pub const DEFAULT_PORT: &str = "8080";
 
-/// Default URL for Anthropic API (https://api.anthropic.com)
+/// Default URL for Anthropic API (<https://api.anthropic.com>)
 ///
 /// The official endpoint for Anthropic's API services
 pub const DEFAULT_ANTHROPIC_TARGET_URL: &str = "https://api.anthropic.com";
