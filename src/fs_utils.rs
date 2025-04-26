@@ -1,13 +1,61 @@
 //! Filesystem utilities for directory management and permissions
 //!
 //! This module provides cross-platform abstractions for common filesystem
-//! operations needed by the application, including:
+//! operations needed by the application's logging and configuration systems.
+//! These utilities safely handle platform-specific behaviors while providing
+//! a consistent API.
 //!
-//! - Creating directories with proper permissions
-//! - Checking if directories are writable
+//! ## Functions
 //!
-//! Functions handle platform-specific behavior (Unix vs Windows) where relevant,
-//! particularly for permission management.
+//! - [`ensure_directory`] - Creates a directory (and parent directories) with specified permissions
+//! - [`check_writable`] - Verifies that a path exists and is writable by the current process
+//!
+//! ## Platform-specific behavior
+//!
+//! This module handles platform differences transparently for callers:
+//!
+//! **Unix systems**:
+//! - Permission management using Unix permission bits (0o777, etc.)
+//! - UID/GID-based access control
+//! - Special handling for root permissions
+//!
+//! **Windows systems**:
+//! - Graceful fallback for permission operations
+//! - Runtime writability tests instead of permission bits
+//!
+//! ## Integration
+//!
+//! These utilities are primarily used by:
+//! - The logging system (`logger.rs`) for log directory management
+//! - Configuration validation to ensure specified paths are valid
+//!
+//! ## Example usage
+//!
+//! ```no_run
+//! use std::path::Path;
+//! use switchboard::fs_utils;
+//!
+//! // Create a directory with specific permissions on Unix (no-op on Windows)
+//! let log_dir = Path::new("/var/log/switchboard");
+//! fs_utils::ensure_directory(log_dir, Some(0o750))?;
+//!
+//! // Check if a directory is writable
+//! fs_utils::check_writable(log_dir)?;
+//! ```
+//!
+//! ## Error handling
+//!
+//! All functions return `io::Result<()>` with appropriate error kinds:
+//! - `NotFound` for missing paths
+//! - `PermissionDenied` for permission issues
+//! - `AlreadyExists` when a non-directory exists at the target path
+//!
+//! ## Logging
+//!
+//! Functions emit structured logs using the `tracing` crate for observability:
+//! - Directory creation events
+//! - Permission changes
+//!
 
 use std::fs;
 use std::io;

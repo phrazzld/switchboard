@@ -88,7 +88,7 @@
         2. Returns `Err(io::Error)` when not writable or missing.
     - **Depends-on:** T005
 
-- [ ] **T008 · Chore · P3: add module-level docs for fs_utils.rs**
+- [x] **T008 · Chore · P3: add module-level docs for fs_utils.rs**
     - **Context:** PLAN.md > Detailed Build Steps > 8. Update Documentation
     - **Action:**
         1. Insert `//!` comments at the top of `src/fs_utils.rs` describing its functions and cross-platform behavior.
