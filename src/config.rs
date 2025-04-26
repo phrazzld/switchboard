@@ -1,6 +1,6 @@
 use std::env;
 use std::sync::OnceLock;
-use tracing::info;
+use tracing::{info, warn};
 
 // Configuration Default Constants
 
@@ -174,9 +174,31 @@ pub fn load_config() -> &'static Config {
         let log_stdout_level =
             env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_STDOUT_LEVEL.to_string());
         let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| DEFAULT_LOG_FORMAT.to_string());
-        let log_bodies = env::var("LOG_BODIES")
-            .map(|v| v.to_lowercase() != "false" && v != "0")
-            .unwrap_or(DEFAULT_LOG_BODIES);
+
+        // Parse LOG_BODIES with error handling for non-boolean values
+        let log_bodies = match env::var("LOG_BODIES") {
+            Ok(value) => {
+                // Check if it's a valid boolean representation
+                if value.to_lowercase() == "true"
+                    || value.to_lowercase() == "false"
+                    || value == "0"
+                    || value == "1"
+                {
+                    // Only consider "false" and "0" as false values (maintain existing behavior)
+                    value.to_lowercase() != "false" && value != "0"
+                } else {
+                    // Non-standard boolean value, log a warning
+                    warn!(
+                        var = "LOG_BODIES",
+                        value = %value,
+                        default = DEFAULT_LOG_BODIES,
+                        "Ambiguous boolean value in environment variable, using default"
+                    );
+                    DEFAULT_LOG_BODIES
+                }
+            }
+            Err(_) => DEFAULT_LOG_BODIES, // Use default if not set
+        };
 
         // Load file logging configuration
         let log_file_path =
@@ -189,9 +211,11 @@ pub fn load_config() -> &'static Config {
             .ok()
             .and_then(|size_str| {
                 size_str.parse::<usize>().ok().or_else(|| {
-                    eprintln!(
-                        "Failed to parse LOG_MAX_BODY_SIZE: '{}', using default {}",
-                        size_str, DEFAULT_LOG_MAX_BODY_SIZE
+                    warn!(
+                        var = "LOG_MAX_BODY_SIZE",
+                        value = %size_str,
+                        default = DEFAULT_LOG_MAX_BODY_SIZE,
+                        "Failed to parse numeric environment variable, using default"
                     );
                     None
                 })
@@ -210,13 +234,18 @@ pub fn load_config() -> &'static Config {
         // Parse LOG_MAX_AGE_DAYS with error handling
         let log_max_age_days = env::var("LOG_MAX_AGE_DAYS").ok().and_then(|days_str| {
             days_str.parse::<u32>().ok().or_else(|| {
-                eprintln!(
-                    "Failed to parse LOG_MAX_AGE_DAYS: '{}', using default {}",
-                    days_str,
-                    match DEFAULT_LOG_MAX_AGE_DAYS {
-                        Some(days) => days.to_string(),
-                        None => "no cleanup".to_string(),
-                    }
+                // Format default value for human-readable log message
+                let default_display = match DEFAULT_LOG_MAX_AGE_DAYS {
+                    Some(days) => days.to_string(),
+                    None => "no cleanup".to_string(),
+                };
+
+                warn!(
+                    var = "LOG_MAX_AGE_DAYS",
+                    value = %days_str,
+                    default = ?DEFAULT_LOG_MAX_AGE_DAYS,
+                    default_display = %default_display,
+                    "Failed to parse numeric environment variable, using default"
                 );
                 None
             })
