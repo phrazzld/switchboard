@@ -13,8 +13,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  format:
-    name: Format Check
+  format-linux:
+    name: Format Check (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +39,58 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --check # Check if code needs formatting
 
+  format-macos:
+    name: Format Check (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt # Ensure rustfmt component is installed
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          # Cache paths for cargo registry, git dependencies, and target directory
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          # Create a unique key based on OS, job name, and Cargo.lock hash
+          key: ${{ runner.os }}-cargo-fmt-${{ hashFiles('**/Cargo.lock') }}
+          # Fallback keys if the exact key is not found
+          restore-keys: |
+            ${{ runner.os }}-cargo-fmt-
+      - name: Run cargo fmt check
+        run: cargo fmt --check # Check if code needs formatting
+
+  format-windows:
+    name: Format Check (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt # Ensure rustfmt component is installed
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          # Cache paths for cargo registry, git dependencies, and target directory
+          path: |
+            ~\.cargo\bin\
+            ~\.cargo\registry\index\
+            ~\.cargo\registry\cache\
+            ~\.cargo\git\db\
+            target\
+          # Create a unique key based on OS, job name, and Cargo.lock hash
+          key: ${{ runner.os }}-cargo-fmt-${{ hashFiles('**/Cargo.lock') }}
+          # Fallback keys if the exact key is not found
+          restore-keys: |
+            ${{ runner.os }}-cargo-fmt-
+      - name: Run cargo fmt check
+        run: cargo fmt --check # Check if code needs formatting
+
   log-check:
     name: Log Files Check
     runs-on: ubuntu-latest
@@ -47,7 +99,7 @@ jobs:
       - name: Verify no committed log files
         run: |
           echo "🔍 Checking for .log files in the repository..."
-          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \) \
+          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \)
             -not -path "./target/*" -not -name ".gitkeep")
           if [ -n "$log_files" ]; then
             echo "❌ Error: detected committed log files:"
@@ -57,8 +109,8 @@ jobs:
             echo "✅ No committed log files found."
           fi
 
-  lint:
-    name: Lint Check
+  lint-linux:
+    name: Lint Check (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,8 +133,56 @@ jobs:
         # Enforce all clippy warnings as errors to ensure high code quality
         run: cargo clippy -- -D warnings
 
-  test:
-    name: Run Tests
+  lint-macos:
+    name: Lint Check (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy # Ensure clippy component is installed
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-
+      - name: Run cargo clippy
+        # Enforce all clippy warnings as errors to ensure high code quality
+        run: cargo clippy -- -D warnings
+
+  lint-windows:
+    name: Lint Check (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy # Ensure clippy component is installed
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\.cargo\bin\
+            ~\.cargo\registry\index\
+            ~\.cargo\registry\cache\
+            ~\.cargo\git\db\
+            target\
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-
+      - name: Run cargo clippy
+        # Enforce all clippy warnings as errors to ensure high code quality
+        run: cargo clippy -- -D warnings
+
+  test-linux:
+    name: Run Tests (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,18 +201,18 @@ jobs:
             ${{ runner.os }}-cargo-test-
       - name: Run cargo test
         # Run all tests, including unit tests, integration tests, and doctests
-        # --all-features ensures features are enabled if needed for tests
-        run: cargo test --all-features
+        # --all-targets ensures all test targets are checked
+        run: cargo test --all-targets
       - name: Clean up log files after tests
         if: always()
         run: |
           echo "🧹 Removing test-generated logs..."
-          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) \
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \)
             -not -name ".gitkeep" -delete || true
-          
+
           # Verify all logs have been removed
           leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
-          
+
           if [ -n "$leftover_logs" ]; then
             echo "⚠️ Warning: Some test log files could not be removed:"
             echo "$leftover_logs"
@@ -122,8 +222,78 @@ jobs:
             echo "✅ Log cleanup successful - no log files remaining."
           fi
 
-  build:
-    name: Build Verification
+  test-macos:
+    name: Run Tests (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
+      - name: Run cargo test
+        # Run all tests on macOS
+        run: cargo test --all-targets
+      - name: Clean up log files after tests
+        if: always()
+        run: |
+          echo "🧹 Removing test-generated logs..."
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \)
+            -not -name ".gitkeep" -delete || true
+
+          # Verify all logs have been removed
+          leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
+
+          if [ -n "$leftover_logs" ]; then
+            echo "⚠️ Warning: Some test log files could not be removed:"
+            echo "$leftover_logs"
+          else
+            echo "✅ Log cleanup successful - no log files remaining."
+          fi
+
+  test-windows:
+    name: Run Tests (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\.cargo\bin\
+            ~\.cargo\registry\index\
+            ~\.cargo\registry\cache\
+            ~\.cargo\git\db\
+            target\
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
+      - name: Run cargo test
+        # Run all tests on Windows
+        run: cargo test --all-targets
+      - name: Clean up log files after tests
+        if: always()
+        run: |
+          echo "🧹 Removing test-generated logs..."
+          # Windows-compatible command to remove log files
+          Get-ChildItem -Path .\logs -Recurse -Include *.log,"*.log.*" -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -ne ".gitkeep" } |
+            Remove-Item -Force -ErrorAction SilentlyContinue
+
+          echo "✅ Log cleanup attempted - any remaining logs will be left for inspection."
+
+  build-linux:
+    name: Build Verification (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -144,3 +314,70 @@ jobs:
         # Build the release artifact to verify compilation in release mode
         # --verbose provides more output if the build fails
         run: cargo build --release --verbose
+
+  build-macos:
+    name: Build Verification (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+      - name: Run cargo build (release)
+        # Build the release artifact to verify compilation in release mode
+        # --verbose provides more output if the build fails
+        run: cargo build --release --verbose
+
+  build-windows:
+    name: Build Verification (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\.cargo\bin\
+            ~\.cargo\registry\index\
+            ~\.cargo\registry\cache\
+            ~\.cargo\git\db\
+            target\
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+      - name: Run cargo build (release)
+        # Build the release artifact to verify compilation in release mode
+        # --verbose provides more output if the build fails
+        run: cargo build --release --verbose
+
+  cross-platform-verification:
+    name: Cross-Platform Verification
+    needs: [
+      format-linux, format-macos, format-windows,
+      lint-linux, lint-macos, lint-windows,
+      test-linux, test-macos, test-windows,
+      build-linux, build-macos, build-windows,
+      log-check
+    ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verification Summary
+        run: |
+          echo "✅ All cross-platform checks have passed successfully!"
+          echo ""
+          echo "The following checks were verified on Linux, macOS, and Windows:"
+          echo "- Code formatting with cargo fmt"
+          echo "- Code linting with cargo clippy"
+          echo "- All tests with cargo test"
+          echo "- Release build with cargo build --release"

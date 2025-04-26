@@ -207,7 +207,7 @@
         1. README values match constants.
     - **Depends-on:** T001
 
-- [ ] **T018 · Chore · P2: enforce formatting, linting, and cross-platform tests in CI**
+- [x] **T018 · Chore · P2: enforce formatting, linting, and cross-platform tests in CI**
     - **Context:** PLAN.md > Detailed Build Steps > 9. Quality Gates
     - **Action:**
         1. Update CI config to run:
