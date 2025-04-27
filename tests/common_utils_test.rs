@@ -115,8 +115,17 @@ mod tests {
 
     #[test]
     fn test_directory_permissions_nonexistent_path() {
-        // Create a path that doesn't exist
+        // Skip test on Windows
+        if cfg!(target_family = "windows") {
+            println!("Skipping test on Windows platform");
+            return;
+        }
+
+        // Use a platform-specific nonexistent path
+        #[cfg(target_family = "unix")]
         let nonexistent_path = Path::new("/tmp/nonexistent_directory_for_testing");
+        #[cfg(not(target_family = "unix"))]
+        let nonexistent_path = Path::new("./nonexistent_directory_for_testing");
 
         // Ensure the path doesn't exist
         if nonexistent_path.exists() {
