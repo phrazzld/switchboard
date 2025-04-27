@@ -260,11 +260,12 @@ fn test_xdg_path_format() {
 
     #[cfg(target_os = "windows")]
     {
-        // Windows XDG path should contain AppData/Roaming
+        // Windows XDG path should contain AppData\Roaming
+        // Note: Path separators could be either \ or / based on how they're handled
+        let path_str = xdg_path.to_string_lossy().to_string();
         assert!(
-            xdg_path
-                .to_string_lossy()
-                .contains("AppData\\Roaming\\switchboard\\logs"),
+            path_str.contains("AppData\\Roaming\\switchboard\\logs")
+                || path_str.contains("AppData/Roaming/switchboard/logs"),
             "Windows XDG path should follow Windows standards: {}",
             xdg_path.display()
         );
