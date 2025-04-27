@@ -7,3 +7,9 @@ repos:
       language: system
       types: [rust]
       pass_filenames: false # Run against the whole project state if any .rs file changed
+    - id: clippy
+      name: Rust Linter Check
+      entry: cargo clippy --all-targets -- -D warnings # Fail on any warnings
+      language: system
+      types: [rust]
+      pass_filenames: false
