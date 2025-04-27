@@ -1,1 +1,9 @@
-repos: []
+repos:
+- repo: local
+  hooks:
+    - id: rustfmt
+      name: Rust Formatter Check
+      entry: cargo fmt -- --check
+      language: system
+      types: [rust]
+      pass_filenames: false # Run against the whole project state if any .rs file changed
