@@ -68,7 +68,8 @@
 //! performance under high loads. The `WorkerGuard` returned by `init_tracing()` must be kept
 //! alive for the duration of the application to ensure logs are properly flushed.
 
-use crate::config::Config;
+use crate::config::{Config, DEFAULT_LOG_DIRECTORY_MODE};
+use crate::fs_utils;
 use directories::ProjectDirs;
 use std::env;
 use std::io;
@@ -76,7 +77,7 @@ use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
-use tracing::info;
+use tracing::{error, info};
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling;
 use tracing_subscriber::{fmt as tracing_fmt, prelude::*, registry, EnvFilter};
@@ -317,37 +318,71 @@ impl LogPathResolver {
         // Construct the directory path by combining base dir and subdirectory
         let dir_path = self.base_dir.join(subdir);
 
-        // Create the directory if it doesn't exist
+        // Create the directory with appropriate permissions if it doesn't exist
         if !dir_path.exists() {
-            if let Err(e) = std::fs::create_dir_all(&dir_path) {
-                return Err(LogInitError::DirectoryCreationFailed {
-                    path: dir_path.display().to_string(),
-                    source: e,
-                });
-            }
-
-            // Set directory permissions (platform-specific)
-            #[cfg(target_family = "unix")]
+            if let Err(e) = fs_utils::ensure_directory(&dir_path, Some(DEFAULT_LOG_DIRECTORY_MODE))
             {
-                use std::fs::Permissions;
-                use std::os::unix::fs::PermissionsExt;
+                // Get information for logging before we move the error
+                let error_kind = e.kind();
+                let error_display = e.to_string();
+                let path_display = dir_path.display().to_string();
 
-                // Set directory permissions to 0o750 (rwxr-x---)
-                if let Err(e) = std::fs::set_permissions(&dir_path, Permissions::from_mode(0o750)) {
-                    return Err(LogInitError::PermissionIssue {
-                        path: dir_path.display().to_string(),
-                        reason: format!("Failed to set directory permissions: {}", e),
-                    });
-                }
+                // Log the error before returning
+                error!(
+                    error_kind = ?error_kind,
+                    path = %path_display,
+                    error = %error_display,
+                    "Failed to create log directory"
+                );
+
+                // Map the error to appropriate LogInitError variants
+                let log_error = match error_kind {
+                    io::ErrorKind::PermissionDenied => LogInitError::PermissionDenied {
+                        path: path_display,
+                        source: e,
+                    },
+                    io::ErrorKind::AlreadyExists => LogInitError::DirectoryCreationFailed {
+                        path: path_display,
+                        source: e,
+                    },
+                    // Map any other IO errors to DirectoryCreationFailed
+                    _ => LogInitError::DirectoryCreationFailed {
+                        path: path_display,
+                        source: e,
+                    },
+                };
+
+                return Err(log_error);
             }
+        } else {
+            // Directory exists, but verify it's writable
+            if let Err(e) = fs_utils::check_writable(&dir_path) {
+                // Get information for logging before we move the error
+                let error_kind = e.kind();
+                let error_display = e.to_string();
+                let path_display = dir_path.display().to_string();
 
-            // Windows: default permissions are generally appropriate
-            // But we could add ACL tightening here if needed in the future
-            #[cfg(target_family = "windows")]
-            {
-                // Windows default permissions for newly created directories are
-                // typically inherited from parent, which is usually appropriate
-                // For advanced ACL support, we would need to use the windows-rs crate
+                // Log the error before returning
+                error!(
+                    error_kind = ?error_kind,
+                    path = %path_display,
+                    error = %error_display,
+                    "Existing log directory is not writable"
+                );
+
+                // Map the error to appropriate LogInitError variants
+                let log_error = match error_kind {
+                    io::ErrorKind::PermissionDenied => LogInitError::PermissionDenied {
+                        path: path_display,
+                        source: e,
+                    },
+                    _ => LogInitError::PermissionIssue {
+                        path: path_display,
+                        reason: format!("Directory exists but is not writable: {}", error_display),
+                    },
+                };
+
+                return Err(log_error);
             }
         }
 
@@ -384,6 +419,13 @@ impl LogPathResolver {
 }
 
 /// Error type for logging initialization failures
+///
+/// This enum represents all possible error conditions that can occur during log initialization,
+/// including file system errors, permission issues, path validation problems, and configuration
+/// parsing errors.
+///
+/// Each variant includes detailed information about the specific error condition, allowing
+/// for proper error handling and reporting throughout the application.
 #[derive(Debug, Error)]
 #[allow(dead_code)]
 pub enum LogInitError {
@@ -422,6 +464,16 @@ pub enum LogInitError {
         reason: String,
     },
 
+    /// Permission denied when accessing a path
+    #[error("Permission denied when accessing {path}: {source}")]
+    PermissionDenied {
+        /// Path to which permission was denied
+        path: String,
+        /// Source IO error
+        #[source]
+        source: io::Error,
+    },
+
     /// Path canonicalization error
     #[error("Failed to canonicalize path {path}: {source}")]
     PathCanonicalizationError {
@@ -431,6 +483,10 @@ pub enum LogInitError {
         #[source]
         source: io::Error,
     },
+
+    /// Generic I/O error during log initialization
+    #[error("I/O error during log initialization: {0}")]
+    IoError(#[from] io::Error),
 }
 
 /// Validate a log file path for security and usability concerns, creating directories as needed
@@ -1888,10 +1944,14 @@ mod tests {
                 // Try to resolve - should fail with permission error when it tries to create subdirectory
                 let result = resolver.resolve();
 
-                // Verify we get a directory creation error
+                // Verify we get either a directory creation error or a permission denied error
                 assert!(
-                    matches!(result, Err(LogInitError::DirectoryCreationFailed { .. })),
-                    "Expected DirectoryCreationFailed error, got {:?}",
+                    matches!(
+                        result,
+                        Err(LogInitError::DirectoryCreationFailed { .. })
+                            | Err(LogInitError::PermissionDenied { .. })
+                    ),
+                    "Expected DirectoryCreationFailed or PermissionDenied error, got {:?}",
                     result
                 );
             }

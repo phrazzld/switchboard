@@ -1,8 +1,11 @@
 use std::{env, fs, path::PathBuf};
 use switchboard::{
-    config::{Config, LogDirectoryMode},
+    config::{Config, LogDirectoryMode, DEFAULT_LOG_DIRECTORY_MODE},
     logger::{LogPathResolver, LogType, APP_LOG_SUBDIR, TEST_LOG_SUBDIR},
 };
+
+mod common;
+use common::verify_directory_permissions;
 
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::PermissionsExt;
@@ -137,24 +140,34 @@ fn test_unix_directory_permissions_for_new_directories() {
         "Directory should be created"
     );
 
-    // Check directory permissions - should be either 0o750 (rwxr-x---) or 0o755 (rwxr-xr-x)
-    let metadata = fs::metadata(parent_dir).expect("Failed to get directory metadata");
-    let mode = metadata.permissions().mode() & 0o777; // Mask out non-permission bits
+    // On some systems, the permissions might be set to 0o755 instead of 0o750
+    // So we'll be more flexible in our test
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::fs::PermissionsExt;
 
-    // Check owner and group permissions bits (should be rwxr-x in both cases)
-    assert_eq!(
-        mode & 0o770,
-        0o750 & 0o770,
-        "Directory owner/group permissions are incorrect: {:o}",
-        mode
-    );
+        // Get the actual permissions
+        let metadata = fs::metadata(parent_dir).expect("Failed to get directory metadata");
+        let mode = metadata.permissions().mode() & 0o777;
 
-    // Verify that either 0o750 or 0o755 permissions are used
-    assert!(
-        mode == 0o750 || mode == 0o755,
-        "Directory permissions should be either 0o750 or 0o755, got {:o}",
-        mode
-    );
+        // Print the actual mode for debugging
+        println!("Actual directory permissions: 0o{:o}", mode);
+
+        // For owner and group permissions, they should be at least rwxr-x
+        let owner_group_bits = 0o770;
+        assert_eq!(
+            mode & owner_group_bits,
+            DEFAULT_LOG_DIRECTORY_MODE & owner_group_bits,
+            "Owner and group permissions should match DEFAULT_LOG_DIRECTORY_MODE"
+        );
+
+        // Either 0o750 or 0o755 is acceptable
+        assert!(
+            mode == 0o750 || mode == 0o755,
+            "Directory permissions should be either 0o750 or 0o755, got 0o{:o}",
+            mode
+        );
+    }
 
     // Clean up
     let _ = fs::remove_dir_all(temp_dir);
@@ -192,14 +205,16 @@ fn test_unix_permissions_on_existing_directory() {
         "Directory should still exist"
     );
 
-    // Check directory permissions - should now be 0o750
-    let metadata = fs::metadata(parent_dir).expect("Failed to get directory metadata");
-    let mode = metadata.permissions().mode() & 0o777;
-
-    // NOTE: The actual behavior depends on how LogPathResolver handles existing directories.
-    // If it doesn't modify permissions of existing directories, this test needs adjustment.
-    // The test documents either behavior: either permissions are fixed or left unchanged.
-    println!("Existing directory permissions: {:o}", mode);
+    // Check directory permissions using the verify_directory_permissions helper
+    // Note: We just print the result since the behavior may vary depending on the implementation
+    // Some implementations may update permissions on existing directories, others may not
+    match verify_directory_permissions(parent_dir, DEFAULT_LOG_DIRECTORY_MODE) {
+        Ok(_) => println!(
+            "Directory permissions match expected mode: 0o{:o}",
+            DEFAULT_LOG_DIRECTORY_MODE
+        ),
+        Err(err) => println!("Directory permissions check: {}", err),
+    };
 
     // Clean up
     let _ = fs::remove_dir_all(temp_dir);

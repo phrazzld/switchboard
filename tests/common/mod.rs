@@ -14,6 +14,9 @@ use switchboard::proxy_handler::create_router;
 use tracing_appender::non_blocking::WorkerGuard;
 use wiremock::MockServer;
 
+#[cfg(target_family = "unix")]
+use std::os::unix::fs::PermissionsExt;
+
 /// Represents the setup needed for integration tests.
 pub struct TestSetup {
     /// HTTP client for the application to use
@@ -340,6 +343,52 @@ pub fn is_valid_json(path: &Path) -> bool {
     } else {
         false
     }
+}
+
+/// Verifies that a directory has the required permissions on Unix systems.
+///
+/// On Unix systems, compares the actual permission bits with the required ones.
+/// On non-Unix systems, this is a no-op that always returns Ok.
+///
+/// # Arguments
+/// * `path` - The path to the directory to check
+/// * `required_mode` - The required permission mode in octal (e.g., 0o750)
+///
+/// # Returns
+/// * `Ok(())` - If the permissions match or on non-Unix systems
+/// * `Err(String)` - With a descriptive error message if permissions don't match
+#[cfg(target_family = "unix")]
+pub fn verify_directory_permissions(path: &Path, required_mode: u32) -> Result<(), String> {
+    // Ensure the path exists and get its metadata
+    let metadata = fs::metadata(path)
+        .map_err(|e| format!("Failed to get metadata for {}: {}", path.display(), e))?;
+
+    // Ensure it's a directory
+    if !metadata.is_dir() {
+        return Err(format!("{} is not a directory", path.display()));
+    }
+
+    // Get the current permission mode
+    let current_mode = metadata.permissions().mode() & 0o777; // Apply the permission mask
+
+    // Compare with required mode (only comparing the permission bits)
+    if current_mode == required_mode {
+        Ok(())
+    } else {
+        Err(format!(
+            "Directory {} has incorrect permissions: expected {:o}, found {:o}",
+            path.display(),
+            required_mode,
+            current_mode
+        ))
+    }
+}
+
+/// Non-Unix implementation is a no-op that always succeeds
+#[cfg(not(target_family = "unix"))]
+pub fn verify_directory_permissions(_path: &Path, _required_mode: u32) -> Result<(), String> {
+    // Permissions are not applicable on non-Unix systems
+    Ok(())
 }
 
 /// Helper function to clean up a log file and its rotated versions

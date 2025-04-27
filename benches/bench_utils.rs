@@ -38,10 +38,8 @@ pub fn setup_logging(
 
     match mode {
         LoggingMode::Disabled => {
-            // Set up a no-op subscriber
-            let subscriber = registry().with(LevelFilter::OFF);
-            tracing::subscriber::set_global_default(subscriber)
-                .expect("Failed to set tracing subscriber");
+            // For disabled mode, just return None values without setting up a subscriber
+            // This avoids the SetGlobalDefaultError when running in CI
             (None, None)
         }
         LoggingMode::StdoutOnly => {
@@ -149,7 +147,7 @@ pub fn teardown_logging(
         drop(g);
     }
 
-    // Reset the global default subscriber to a no-op subscriber
-    let subscriber = registry().with(LevelFilter::OFF);
-    let _ = tracing::subscriber::set_global_default(subscriber);
+    // Note: We don't try to reset the global default subscriber here anymore
+    // Setting it multiple times causes a panic with SetGlobalDefaultError
+    // Each benchmark should ideally run in its own process to avoid this issue
 }

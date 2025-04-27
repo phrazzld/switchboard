@@ -13,8 +13,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  format:
-    name: Format Check
+  format-linux:
+    name: Format Check (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +39,33 @@ jobs:
       - name: Run cargo fmt check
         run: cargo fmt --check # Check if code needs formatting
 
+  format-macos:
+    name: Format Check (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt # Ensure rustfmt component is installed
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          # Cache paths for cargo registry, git dependencies, and target directory
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          # Create a unique key based on OS, job name, and Cargo.lock hash
+          key: ${{ runner.os }}-cargo-fmt-${{ hashFiles('**/Cargo.lock') }}
+          # Fallback keys if the exact key is not found
+          restore-keys: |
+            ${{ runner.os }}-cargo-fmt-
+      - name: Run cargo fmt check
+        run: cargo fmt --check # Check if code needs formatting
+
+
   log-check:
     name: Log Files Check
     runs-on: ubuntu-latest
@@ -47,8 +74,7 @@ jobs:
       - name: Verify no committed log files
         run: |
           echo "🔍 Checking for .log files in the repository..."
-          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \) \
-            -not -path "./target/*" -not -name ".gitkeep")
+          log_files=$(find . -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v "./target/" | grep -v ".gitkeep" || true)
           if [ -n "$log_files" ]; then
             echo "❌ Error: detected committed log files:"
             echo "$log_files"
@@ -57,8 +83,79 @@ jobs:
             echo "✅ No committed log files found."
           fi
 
-  lint:
-    name: Lint Check
+  hardcoded-literals-check:
+    name: Hardcoded Literals Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for hardcoded default literals
+        run: |
+          echo "🔍 Checking for hardcoded default literals outside of config.rs..."
+
+          # Store all error findings in this variable
+          error_found=false
+          literals_found=""
+
+          # Helper function to check for literals and exclude appropriate files
+          check_literal() {
+            local pattern="$1"
+            local name="$2"
+            local files_with_pattern
+
+            # Find files with pattern excluding config.rs, tests, documentation, and CI files
+            files_with_pattern=$(grep -l "$pattern" --include="*.rs" --exclude="config.rs" \
+                --exclude-dir=target --exclude-dir=tests --exclude-dir=benches . 2>/dev/null || true)
+
+            if [ -n "$files_with_pattern" ]; then
+              error_found=true
+              echo "⚠️ Found potential hardcoded $name literals in these files:"
+
+              # For each file found, show the exact line with the pattern
+              for file in $files_with_pattern; do
+                echo "File: $file"
+                grep -n "$pattern" "$file" | sed 's/^/  Line /'
+                echo ""
+              done
+
+              literals_found+="- Hardcoded $name literals\n"
+            fi
+          }
+
+          # Check for hardcoded log levels
+          check_literal '"info"' "LOG_STDOUT_LEVEL"
+          check_literal '"debug"' "LOG_FILE_LEVEL"
+          check_literal '"pretty"' "LOG_FORMAT"
+          check_literal '"warn"' "log level"
+          check_literal '"error"' "log level"
+          check_literal '"trace"' "log level"
+
+          # Check for hardcoded port
+          check_literal '"8080"' "PORT"
+
+          # Check for hardcoded URL
+          check_literal '"https://api.anthropic.com"' "ANTHROPIC_TARGET_URL"
+
+          # Check for hardcoded log file path
+          check_literal '"./switchboard.log"' "LOG_FILE_PATH"
+
+          # Check for hardcoded file sizes
+          check_literal '\b20480\b' "LOG_MAX_BODY_SIZE"
+
+          # Check for hardcoded permission modes
+          check_literal '\b0o750\b' "LOG_DIRECTORY_MODE"
+
+          # Summarize findings
+          if [ "$error_found" = true ]; then
+            echo "❌ Error: Detected hardcoded literals that should be using constants from config.rs"
+            echo -e "Literals found:\n$literals_found"
+            echo "Please update the code to use the appropriate constants from src/config.rs"
+            exit 1
+          else
+            echo "✅ No problematic hardcoded literals detected!"
+          fi
+
+  lint-linux:
+    name: Lint Check (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,8 +178,33 @@ jobs:
         # Enforce all clippy warnings as errors to ensure high code quality
         run: cargo clippy -- -D warnings
 
-  test:
-    name: Run Tests
+  lint-macos:
+    name: Lint Check (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy # Ensure clippy component is installed
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-
+      - name: Run cargo clippy
+        # Enforce all clippy warnings as errors to ensure high code quality
+        run: cargo clippy -- -D warnings
+
+
+  test-linux:
+    name: Run Tests (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,20 +221,19 @@ jobs:
           key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-test-
-      - name: Run cargo test
-        # Run all tests, including unit tests, integration tests, and doctests
-        # --all-features ensures features are enabled if needed for tests
-        run: cargo test --all-features
+      - name: Run cargo test (excluding benchmarks)
+        # Run all tests except benchmarks to avoid tracing subscriber conflicts
+        # Uses the custom alias from .cargo/config.toml
+        run: cargo test-no-bench
       - name: Clean up log files after tests
         if: always()
         run: |
           echo "🧹 Removing test-generated logs..."
-          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) \
-            -not -name ".gitkeep" -delete || true
-          
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v ".gitkeep" | xargs rm -f || true
+
           # Verify all logs have been removed
-          leftover_logs=$(find ./logs -type f -not -name ".gitkeep" 2>/dev/null || true)
-          
+          leftover_logs=$(find ./logs -type f | grep -v ".gitkeep" 2>/dev/null || true)
+
           if [ -n "$leftover_logs" ]; then
             echo "⚠️ Warning: Some test log files could not be removed:"
             echo "$leftover_logs"
@@ -122,8 +243,47 @@ jobs:
             echo "✅ Log cleanup successful - no log files remaining."
           fi
 
-  build:
-    name: Build Verification
+  test-macos:
+    name: Run Tests (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
+      - name: Run cargo test (excluding benchmarks)
+        # Run all tests except benchmarks to avoid tracing subscriber conflicts
+        # Uses the custom alias from .cargo/config.toml
+        run: cargo test-no-bench
+      - name: Clean up log files after tests
+        if: always()
+        run: |
+          echo "🧹 Removing test-generated logs..."
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v ".gitkeep" | xargs rm -f || true
+
+          # Verify all logs have been removed
+          leftover_logs=$(find ./logs -type f | grep -v ".gitkeep" 2>/dev/null || true)
+
+          if [ -n "$leftover_logs" ]; then
+            echo "⚠️ Warning: Some test log files could not be removed:"
+            echo "$leftover_logs"
+          else
+            echo "✅ Log cleanup successful - no log files remaining."
+          fi
+
+
+  build-linux:
+    name: Build Verification (Linux)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -144,3 +304,50 @@ jobs:
         # Build the release artifact to verify compilation in release mode
         # --verbose provides more output if the build fails
         run: cargo build --release --verbose
+
+  build-macos:
+    name: Build Verification (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-
+      - name: Run cargo build (release)
+        # Build the release artifact to verify compilation in release mode
+        # --verbose provides more output if the build fails
+        run: cargo build --release --verbose
+
+
+  cross-platform-verification:
+    name: Cross-Platform Verification
+    needs: [
+      format-linux, format-macos,
+      lint-linux, lint-macos,
+      test-linux, test-macos,
+      build-linux, build-macos,
+      log-check, hardcoded-literals-check
+    ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verification Summary
+        run: |
+          echo "✅ All cross-platform checks have passed successfully!"
+          echo ""
+          echo "The following checks were verified on Linux and macOS:"
+          echo "- Code formatting with cargo fmt"
+          echo "- Code linting with cargo clippy"
+          echo "- All tests with cargo test"
+          echo "- Release build with cargo build --release"
+          echo "- No log files committed to the repository"
+          echo "- No hardcoded default literals outside of config.rs"

@@ -40,13 +40,158 @@ fn bench_request_processing(c: &mut Criterion<WallTime>) {
         let headers = HeaderMap::new();
         let status = StatusCode::OK;
 
-        // Test with different logging modes
-        for mode in [
-            LoggingMode::Disabled,
-            LoggingMode::StdoutOnly,
-            LoggingMode::FileOnly,
-            LoggingMode::DualOutput,
-        ] {
+        // Run each logging mode separately to avoid tracing subscriber conflicts
+
+        // Test with mode Disabled
+        {
+            let mode = LoggingMode::Disabled;
+            group.bench_with_input(
+                BenchmarkId::new(format!("{:?}", mode), size),
+                &(mode, test_body.clone()),
+                |b, (mode, body)| {
+                    // Setup logging for this benchmark
+                    let (config, guard) = setup_logging(*mode);
+
+                    b.to_async(&runtime).iter(|| async {
+                        // Only pass log_bodies and log_max_body_size if we have a config
+                        if let Some(cfg) = &config {
+                            // Log request
+                            log_request_details(
+                                &method,
+                                &uri,
+                                &headers,
+                                body,
+                                cfg.log_bodies,
+                                cfg.log_max_body_size,
+                            );
+
+                            // Simulate processing
+                            simulate_processing_delay().await;
+
+                            // Log response
+                            log_response_details(
+                                &status,
+                                &headers,
+                                body,
+                                cfg.log_bodies,
+                                cfg.log_max_body_size,
+                                None,
+                            );
+                        } else {
+                            // For disabled logging mode
+                            log_request_details(&method, &uri, &headers, body, false, 0);
+                            simulate_processing_delay().await;
+                            log_response_details(&status, &headers, body, false, 0, None);
+                        }
+                    });
+
+                    // Teardown logging
+                    teardown_logging(*mode, config, guard);
+                },
+            );
+        }
+
+        // Test with mode StdoutOnly
+        {
+            let mode = LoggingMode::StdoutOnly;
+            group.bench_with_input(
+                BenchmarkId::new(format!("{:?}", mode), size),
+                &(mode, test_body.clone()),
+                |b, (mode, body)| {
+                    // Setup logging for this benchmark
+                    let (config, guard) = setup_logging(*mode);
+
+                    b.to_async(&runtime).iter(|| async {
+                        // Only pass log_bodies and log_max_body_size if we have a config
+                        if let Some(cfg) = &config {
+                            // Log request
+                            log_request_details(
+                                &method,
+                                &uri,
+                                &headers,
+                                body,
+                                cfg.log_bodies,
+                                cfg.log_max_body_size,
+                            );
+
+                            // Simulate processing
+                            simulate_processing_delay().await;
+
+                            // Log response
+                            log_response_details(
+                                &status,
+                                &headers,
+                                body,
+                                cfg.log_bodies,
+                                cfg.log_max_body_size,
+                                None,
+                            );
+                        } else {
+                            // For disabled logging mode
+                            log_request_details(&method, &uri, &headers, body, false, 0);
+                            simulate_processing_delay().await;
+                            log_response_details(&status, &headers, body, false, 0, None);
+                        }
+                    });
+
+                    // Teardown logging
+                    teardown_logging(*mode, config, guard);
+                },
+            );
+        }
+
+        // Test with mode FileOnly
+        {
+            let mode = LoggingMode::FileOnly;
+            group.bench_with_input(
+                BenchmarkId::new(format!("{:?}", mode), size),
+                &(mode, test_body.clone()),
+                |b, (mode, body)| {
+                    // Setup logging for this benchmark
+                    let (config, guard) = setup_logging(*mode);
+
+                    b.to_async(&runtime).iter(|| async {
+                        // Only pass log_bodies and log_max_body_size if we have a config
+                        if let Some(cfg) = &config {
+                            // Log request
+                            log_request_details(
+                                &method,
+                                &uri,
+                                &headers,
+                                body,
+                                cfg.log_bodies,
+                                cfg.log_max_body_size,
+                            );
+
+                            // Simulate processing
+                            simulate_processing_delay().await;
+
+                            // Log response
+                            log_response_details(
+                                &status,
+                                &headers,
+                                body,
+                                cfg.log_bodies,
+                                cfg.log_max_body_size,
+                                None,
+                            );
+                        } else {
+                            // For disabled logging mode
+                            log_request_details(&method, &uri, &headers, body, false, 0);
+                            simulate_processing_delay().await;
+                            log_response_details(&status, &headers, body, false, 0, None);
+                        }
+                    });
+
+                    // Teardown logging
+                    teardown_logging(*mode, config, guard);
+                },
+            );
+        }
+
+        // Test with mode DualOutput
+        {
+            let mode = LoggingMode::DualOutput;
             group.bench_with_input(
                 BenchmarkId::new(format!("{:?}", mode), size),
                 &(mode, test_body.clone()),
@@ -121,8 +266,45 @@ fn bench_high_volume_logging(c: &mut Criterion<WallTime>) {
     let uri = Uri::from_static("https://example.com/v1/messages");
     let headers = HeaderMap::new();
 
-    // Only test file logging modes here
-    for mode in [LoggingMode::FileOnly, LoggingMode::DualOutput] {
+    // Test FileOnly mode
+    {
+        let mode = LoggingMode::FileOnly;
+        group.bench_with_input(
+            BenchmarkId::new(format!("{:?}", mode), num_logs),
+            &(mode, test_body.clone()),
+            |b, (mode, body)| {
+                // Setup logging for this benchmark
+                let (config, guard) = setup_logging(*mode);
+
+                // Ensure we have a config
+                let config = config.expect("Config should be available for this test");
+
+                b.to_async(&runtime).iter(|| async {
+                    for _ in 0..num_logs {
+                        // Log a request (this will generate a lot of logging activity)
+                        log_request_details(
+                            &method,
+                            &uri,
+                            &headers,
+                            body,
+                            config.log_bodies,
+                            config.log_max_body_size,
+                        );
+                    }
+
+                    // Add a small delay to allow the non-blocking writer to process some logs
+                    tokio::time::sleep(Duration::from_millis(5)).await;
+                });
+
+                // Teardown logging (this will flush the logs)
+                teardown_logging(*mode, Some(config), guard);
+            },
+        );
+    }
+
+    // Test DualOutput mode
+    {
+        let mode = LoggingMode::DualOutput;
         group.bench_with_input(
             BenchmarkId::new(format!("{:?}", mode), num_logs),
             &(mode, test_body.clone()),

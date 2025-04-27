@@ -25,22 +25,24 @@ For contributing to the project, you'll need the following additional tools:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `PORT` | HTTP port to listen on | 8080 |
+| `PORT` | HTTP port to listen on | `DEFAULT_PORT` (8080) |
 | `ANTHROPIC_API_KEY` | Your Anthropic API key (required) | - |
-| `ANTHROPIC_TARGET_URL` | Anthropic API base URL | https://api.anthropic.com |
+| `ANTHROPIC_TARGET_URL` | Anthropic API base URL | `DEFAULT_ANTHROPIC_TARGET_URL` (https://api.anthropic.com) |
 
 ### Logging Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `LOG_LEVEL` | Minimum log level for stdout (trace, debug, info, warn, error) | info |
-| `LOG_FILE_LEVEL` | Minimum log level for file output | debug |
-| `LOG_FORMAT` | Log output format for stdout (pretty or json) | pretty |
-| `LOG_FILE_PATH` | Path to the log file with daily rotation | ./switchboard.log |
-| `LOG_BODIES` | Whether to log full request and response bodies | true |
-| `LOG_MAX_BODY_SIZE` | Maximum size in bytes for logged bodies before truncation | 20480 |
-| `LOG_DIRECTORY_MODE` | Controls how the log directory is determined (default, xdg, system) | default |
-| `LOG_MAX_AGE_DAYS` | Maximum age for log files in days before automatic cleanup | None (disabled) |
+| `LOG_LEVEL` | Minimum log level for stdout (trace, debug, info, warn, error) | `DEFAULT_LOG_STDOUT_LEVEL` (info) |
+| `LOG_FILE_LEVEL` | Minimum log level for file output | `DEFAULT_LOG_FILE_LEVEL` (debug) |
+| `LOG_FORMAT` | Log output format for stdout (pretty or json) | `DEFAULT_LOG_FORMAT` (pretty) |
+| `LOG_FILE_PATH` | Path to the log file with daily rotation | `DEFAULT_LOG_FILE_PATH` (./switchboard.log) |
+| `LOG_BODIES` | Whether to log full request and response bodies | `DEFAULT_LOG_BODIES` (true) |
+| `LOG_MAX_BODY_SIZE` | Maximum size in bytes for logged bodies before truncation | `DEFAULT_LOG_MAX_BODY_SIZE` (20480) |
+| `LOG_DIRECTORY_MODE` | Controls how the log directory is determined (default, xdg, system) | `LogDirectoryMode::Default` (default) |
+| `LOG_MAX_AGE_DAYS` | Maximum age for log files in days before automatic cleanup | `DEFAULT_LOG_MAX_AGE_DAYS` (None - disabled) |
+
+> Note: All default values are centralized in `src/config.rs` as constants to ensure consistency throughout the application.
 
 ## Getting Started
 
@@ -51,19 +53,19 @@ For contributing to the project, you'll need the following additional tools:
 
 ```
 # Server configuration
-PORT=8080
+PORT=8080                       # From DEFAULT_PORT
 ANTHROPIC_API_KEY=your-api-key-here
-ANTHROPIC_TARGET_URL=https://api.anthropic.com
+ANTHROPIC_TARGET_URL=https://api.anthropic.com  # From DEFAULT_ANTHROPIC_TARGET_URL
 
 # Logging configuration
-LOG_LEVEL=info                  # Stdout log level
-LOG_FILE_LEVEL=debug            # File log level
-LOG_FORMAT=pretty               # Stdout format (pretty or json)
-LOG_FILE_PATH=./switchboard.log # Log file path with daily rotation
-LOG_BODIES=true                 # Log request/response bodies
-LOG_MAX_BODY_SIZE=20480         # Max size of logged bodies in bytes
-LOG_DIRECTORY_MODE=default      # Log directory selection mode (default, xdg, system)
-LOG_MAX_AGE_DAYS=30             # Cleanup logs older than 30 days (comment out to disable)
+LOG_LEVEL=info                  # From DEFAULT_LOG_STDOUT_LEVEL
+LOG_FILE_LEVEL=debug            # From DEFAULT_LOG_FILE_LEVEL
+LOG_FORMAT=pretty               # From DEFAULT_LOG_FORMAT
+LOG_FILE_PATH=./switchboard.log # From DEFAULT_LOG_FILE_PATH
+LOG_BODIES=true                 # From DEFAULT_LOG_BODIES
+LOG_MAX_BODY_SIZE=20480         # From DEFAULT_LOG_MAX_BODY_SIZE
+LOG_DIRECTORY_MODE=default      # Maps to LogDirectoryMode::Default
+LOG_MAX_AGE_DAYS=30             # Cleanup logs older than 30 days (defaults to None when not set)
 ```
 
 ### Building
@@ -181,43 +183,43 @@ Logs can be filtered by level, from most to least verbose:
 #### Production Environment
 
 ```
-LOG_LEVEL=warn                   # Show only warnings and errors on stdout
-LOG_FILE_LEVEL=info              # Keep file logs at info level for troubleshooting
-LOG_DIRECTORY_MODE=system        # Use system logs directory (/var/log/switchboard)
-LOG_FILE_PATH=app.log            # Log file name (will be placed in the system directory)
-LOG_BODIES=false                 # Disable body logging for privacy and performance
-LOG_MAX_AGE_DAYS=90              # Keep logs for 90 days
+LOG_LEVEL=warn                   # Higher than DEFAULT_LOG_STDOUT_LEVEL for less verbose output
+LOG_FILE_LEVEL=info              # Less verbose than DEFAULT_LOG_FILE_LEVEL
+LOG_DIRECTORY_MODE=system        # Use LogDirectoryMode::System
+LOG_FILE_PATH=app.log            # Different from DEFAULT_LOG_FILE_PATH
+LOG_BODIES=false                 # Opposite of DEFAULT_LOG_BODIES
+LOG_MAX_AGE_DAYS=90              # Longer retention than default
 ```
 
 #### Development Environment
 
 ```
-LOG_LEVEL=debug                  # Show detailed logs on stdout
-LOG_FORMAT=pretty                # Use human-readable format
-LOG_DIRECTORY_MODE=default       # Auto-detect (will use ./logs/ in development)
-LOG_FILE_PATH=dev.log            # Log file name (will be placed in ./logs/)
-LOG_BODIES=true                  # Log bodies for debugging
-LOG_MAX_AGE_DAYS=14              # Clean up logs older than 14 days
+LOG_LEVEL=debug                  # More verbose than DEFAULT_LOG_STDOUT_LEVEL
+LOG_FORMAT=pretty                # Same as DEFAULT_LOG_FORMAT
+LOG_DIRECTORY_MODE=default       # Same as LogDirectoryMode::Default
+LOG_FILE_PATH=dev.log            # Different from DEFAULT_LOG_FILE_PATH
+LOG_BODIES=true                  # Same as DEFAULT_LOG_BODIES
+LOG_MAX_AGE_DAYS=14              # Shorter retention than typical production
 ```
 
 #### User Installation
 
 ```
-LOG_LEVEL=info                   # Standard logging level for general usage
-LOG_FILE_LEVEL=debug             # More verbose file logs for troubleshooting
-LOG_DIRECTORY_MODE=xdg           # Use XDG directory (e.g., ~/.local/share/switchboard/logs on Linux)
-LOG_FILE_PATH=switchboard.log    # Log file name (will be placed in the XDG directory)
-LOG_MAX_AGE_DAYS=30              # Clean up logs older than 30 days
+LOG_LEVEL=info                   # Same as DEFAULT_LOG_STDOUT_LEVEL
+LOG_FILE_LEVEL=debug             # Same as DEFAULT_LOG_FILE_LEVEL
+LOG_DIRECTORY_MODE=xdg           # Use LogDirectoryMode::Xdg
+LOG_FILE_PATH=switchboard.log    # Similar to DEFAULT_LOG_FILE_PATH
+LOG_MAX_AGE_DAYS=30              # Custom retention period
 ```
 
 #### Performance Testing
 
 ```
-LOG_LEVEL=error                  # Minimize stdout logging
-LOG_FILE_LEVEL=error             # Minimize file logging
-LOG_DIRECTORY_MODE=default       # Use default directory
-LOG_BODIES=false                 # Disable body logging
-# LOG_MAX_AGE_DAYS               # Omit to disable log cleanup
+LOG_LEVEL=error                  # Minimal logging compared to DEFAULT_LOG_STDOUT_LEVEL
+LOG_FILE_LEVEL=error             # Minimal logging compared to DEFAULT_LOG_FILE_LEVEL
+LOG_DIRECTORY_MODE=default       # Same as LogDirectoryMode::Default
+LOG_BODIES=false                 # Opposite of DEFAULT_LOG_BODIES for performance
+# LOG_MAX_AGE_DAYS               # Omitted to use DEFAULT_LOG_MAX_AGE_DAYS (None)
 ```
 
 ### Log Rotation
