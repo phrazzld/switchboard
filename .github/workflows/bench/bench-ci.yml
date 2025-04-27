@@ -1,0 +1,61 @@
+name: Rust Benchmarks
+
+on:
+  # Run benchmark workflow only on demand, not as part of regular CI
+  workflow_dispatch:
+  # Optionally add back automatic triggers once stable
+  # push:
+  #   branches: [ "master" ]
+  #   paths:
+  #     - 'benches/**'
+  #     - 'src/**'
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  benchmarks:
+    name: Run Benchmarks
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Install Benchmark Dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnuplot
+      
+      - name: Install Benchmark Dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install gnuplot
+      
+      - name: Run Benchmarks
+        run: cargo bench
+      
+      - name: Clean up log files after benchmarks
+        if: always()
+        run: |
+          echo "🧹 Removing benchmark-generated logs..."
+          find ./logs -type f \( -name "*.log" -o -name "*.log.*" \) | grep -v ".gitkeep" | xargs rm -f || true
+        shell: bash

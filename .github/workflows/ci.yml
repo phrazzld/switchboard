@@ -269,10 +269,10 @@ jobs:
           key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-test-
-      - name: Run cargo test
-        # Run all tests, including unit tests, integration tests, and doctests
-        # --all-targets ensures all test targets are checked
-        run: cargo test --all-targets
+      - name: Run cargo test (excluding benchmarks)
+        # Run all tests except benchmarks to avoid tracing subscriber conflicts
+        # Uses the custom alias from .cargo/config.toml
+        run: cargo test-no-bench
       - name: Clean up log files after tests
         if: always()
         run: |
@@ -309,9 +309,10 @@ jobs:
           key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-test-
-      - name: Run cargo test
-        # Run all tests on macOS
-        run: cargo test --all-targets
+      - name: Run cargo test (excluding benchmarks)
+        # Run all tests except benchmarks to avoid tracing subscriber conflicts
+        # Uses the custom alias from .cargo/config.toml
+        run: cargo test-no-bench
       - name: Clean up log files after tests
         if: always()
         run: |
@@ -346,9 +347,10 @@ jobs:
           key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-test-
-      - name: Run cargo test
-        # Run all tests on Windows
-        run: cargo test --all-targets
+      - name: Run cargo test (excluding benchmarks)
+        # Run all tests except benchmarks to avoid tracing subscriber conflicts
+        # Uses the custom alias from .cargo/config.toml
+        run: cargo test-no-bench
       - name: Clean up log files after tests
         if: always()
         run: |
