@@ -38,10 +38,8 @@ pub fn setup_logging(
 
     match mode {
         LoggingMode::Disabled => {
-            // Set up a no-op subscriber
-            let subscriber = registry().with(LevelFilter::OFF);
-            tracing::subscriber::set_global_default(subscriber)
-                .expect("Failed to set tracing subscriber");
+            // For disabled mode, just return None values without setting up a subscriber
+            // This avoids the SetGlobalDefaultError when running in CI
             (None, None)
         }
         LoggingMode::StdoutOnly => {
