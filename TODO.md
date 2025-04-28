@@ -108,7 +108,7 @@
         1. The `pre-commit-linux` and `pre-commit-macos` jobs are removed from `ci.yml`.
     - **Depends‑on:** none
 
-- [ ] **T011 · Chore · P2: update needs section of ci summary job**
+- [x] **T011 · Chore · P2: update needs section of ci summary job**
     - **Context:** PLAN.md § cr-06 Remove Redundant and Misleading Pre-commit CI Jobs (Step 3)
     - **Action:**
         1. Edit `.github/workflows/ci.yml`.

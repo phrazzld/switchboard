@@ -341,7 +341,6 @@ jobs:
       lint-linux, lint-macos,
       test-linux, test-macos,
       build-linux, build-macos,
-      pre-commit-linux, pre-commit-macos,
       log-check, hardcoded-literals-check
     ]
     runs-on: ubuntu-latest
@@ -353,7 +352,6 @@ jobs:
           echo "The following checks were verified on Linux and macOS:"
           echo "- Code formatting with cargo fmt"
           echo "- Code linting with cargo clippy"
-          echo "- Pre-commit hooks validation"
           echo "- All tests with cargo test"
           echo "- Release build with cargo build --release"
           echo "- No log files committed to the repository"
