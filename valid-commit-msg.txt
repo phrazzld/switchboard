@@ -1,0 +1,4 @@
+feat: add new feature for log processing
+
+This is a valid commit message that follows conventional commit format.
+It has a type (feat), a scope (optional), and a description.
