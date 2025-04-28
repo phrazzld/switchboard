@@ -23,3 +23,11 @@ repos:
       types: [file]
       exclude: '^Cargo.lock$|^tests/linecounts/|^benches/'
       args: [--warn-lines=500, --max-lines=1000]
+    - id: cargo-test
+      name: Rust Test Suite
+      description: Run cargo test to verify all tests pass
+      entry: cargo test --no-fail-fast
+      language: system
+      pass_filenames: false
+      stages: [pre-commit]
+      types: [rust]
