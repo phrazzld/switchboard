@@ -66,7 +66,7 @@
         1. Add a file exceeding the threshold and attempt `git commit`. Verify the hook fails.
     - **Depends‑on:** none
 
-- [ ] **T007 · Feature · P1: add pre-commit hook for local cargo test execution**
+- [x] **T007 · Feature · P1: add pre-commit hook for local cargo test execution**
     - **Context:** PLAN.md § cr-01 Reinstate Lost Pre-commit File Length & Test Checks (Step 3 & 4)
     - **Action:**
         1. Edit `.pre-commit-config.yaml`.

@@ -1,177 +1,152 @@
 ```markdown
-# Plan: Refactor Pre-commit Hooks using pre-commit Framework
+# Remediation Plan – Sprint <n>
 
-## Chosen Approach (One-liner)
-Adopt the standard `pre-commit` framework to manage formatting, linting, and commit message validation hooks, while using a separate standard Git post-commit hook for the asynchronous `glance` execution.
+## Executive Summary
+This plan addresses critical and significant findings from the recent code review. The priority is to restore essential quality gates (local pre-commit checks, CI commit linting), stabilize the automation framework by fixing fragile configurations and pinning dependencies, and then address code quality issues (dead code, unclear tests) and documentation gaps. This order ensures foundational stability before tackling deeper code and documentation improvements.
 
-## Architecture Blueprint
+## Strike List
+| Seq | CR-ID | Title                                                 | Effort | Owner?    |
+|-----|-------|-------------------------------------------------------|--------|-----------|
+| 1   | cr-03 | Fix Fragile Local Pre-commit Hooks Definition         | xs     | Dev Team  |
+| 2   | cr-09 | Pin Unpinned Commitlint Dependency                    | xs     | Dev Team  |
+| 3   | cr-04 | Fix Missing Commit Message Enforcement in CI          | xs     | Dev Team  |
+| 4   | cr-01 | Reinstate Lost Pre-commit File Length & Test Checks   | s      | Dev Team  |
+| 5   | cr-06 | Remove Redundant and Misleading Pre-commit CI Jobs    | xs     | Dev Team  |
+| 6   | cr-07 | Remove Committed Temporary/Example Files              | xs     | Dev Team  |
+| 7   | cr-02 | Remove Undocumented Suppression of Dead Code Warnings | m      | Dev Team  |
+| 8   | cr-08 | Clarify Unclear Test Variable Usage                   | s      | Dev Team  |
+| 9   | cr-05 | Restore Essential Planning/Rationale Documentation    | m      | Dev Team  |
 
-- **Modules / Packages**
-  - `.pre-commit-config.yaml` → Declarative configuration for `pre-commit` managed hooks (formatting, linting, commit message validation). Single source-of-truth for these checks.
-  - `commitlint.config.js` → Configuration file defining the Conventional Commits rules enforced by `commitlint`.
-  - `templates/post-commit.template` → A template shell script for the standard Git `post-commit` hook, responsible for running `glance ./` asynchronously. Developers copy this to `.git/hooks/post-commit`.
-  - `README.md` / `CONTRIBUTING.md` → Essential documentation covering setup, usage, rationale, and troubleshooting for the new hook system.
+## Detailed Remedies
 
-- **Public Interfaces / Contracts**
-  - **`pre-commit` CLI:**
-    - `pre-commit install --hook-type pre-commit --hook-type commit-msg`: Installs the managed hooks.
-    - `pre-commit run [--all-files]`: Runs hooks manually.
-    - `SKIP=<hook_id>[,<hook_id>...] git commit ...`: Environment variable mechanism provided by `pre-commit` to bypass specific hooks.
-  - **Conventional Commits Standard:** Enforced by the `commitlint` hook during the `commit-msg` stage.
-  - **`post-commit` Hook:** Standard Git hook mechanism (`.git/hooks/post-commit`), not managed by the `pre-commit` framework installation command.
+### cr-03 Fix Fragile Local Pre-commit Hooks Definition
+- **Problem:** `rustfmt` and `clippy` hooks use `repo: local` and `language: system`, causing non-reproducible behavior based on developer environments.
+- **Impact:** Violates Dependency Management ("Pin and audit") and Simplicity (Reproducibility). Leads to inconsistent checks and bypasses pre-commit's tool version management.
+- **Chosen Fix:** Replace `repo: local` definitions with standard, version-pinned pre-commit hook repositories (Option 1).
+- **Steps:**
+  1. Edit `.pre-commit-config.yaml`.
+  2. Replace the `repo: local` entries for `rustfmt` and `clippy` with entries using standard repositories like `pre-commit/mirrors-rustfmt` and `doublify/pre-commit-clippy` (or equivalents).
+  3. Pin each repository to a specific, audited `rev:` (tag or commit hash).
+  4. Run `pre-commit install --install-hooks` and `pre-commit run -a` locally to verify.
+- **Done-When:** `.pre-commit-config.yaml` uses standard remote repos with pinned revisions for rustfmt/clippy, and local hooks run consistently.
 
-- **Data Flow Diagram** (mermaid)
-  ```mermaid
-  graph TD
-      A[Developer: git commit -m "feat: Implement X"] --> B{Git Pre-Commit Trigger};
-      B --> C[pre-commit framework];
-      C -- Runs hooks defined in .pre-commit-config.yaml --> D{Run 'rustfmt' hook};
-      D -- Success --> E{Run 'clippy' hook};
-      E -- Success --> F[Commit process continues];
-      F --> G{Git Commit-Msg Trigger};
-      G --> C;
-      C -- Runs hooks defined in .pre-commit-config.yaml --> H{Run 'commitlint' hook};
-      H -- Success --> I[Commit is created];
-      I --> J{Git Post-Commit Trigger};
-      J --> K[Execute .git/hooks/post-commit];
-      K --> L[Run 'glance ./' async];
-      L --> M[Commit process complete];
+### cr-09 Pin Unpinned Commitlint Dependency
+- **Problem:** The `commitlint` hook's `additional_dependencies` entry for `@commitlint/config-conventional` lacks a specific version pin.
+- **Impact:** Violates Dependency Management. Can lead to unexpected CI failures or behavior changes if the dependency updates automatically.
+- **Chosen Fix:** Pin the dependency to a specific version.
+- **Steps:**
+  1. Edit `.pre-commit-config.yaml`.
+  2. Modify the `additional_dependencies` line for the `commitlint` hook.
+  3. Change `['@commitlint/config-conventional']` to `['@commitlint/config-conventional@<specific_version>']` (e.g., `'@commitlint/config-conventional@17.4.4'` or latest verified version).
+  4. Run `pre-commit run commitlint --hook-stage commit-msg -m "feat: test pinning"` (or similar) locally to verify.
+- **Done-When:** `@commitlint/config-conventional` dependency is pinned to a specific version in `.pre-commit-config.yaml`.
 
-      D -- Failure --> Z{Abort Commit & Display Error};
-      E -- Failure --> Z;
-      H -- Failure --> Z;
-  ```
+### cr-04 Fix Missing Commit Message Enforcement in CI
+- **Problem:** CI job runs `pre-commit run --all-files`, which skips the `commit-msg` stage, failing to enforce Conventional Commits via `commitlint`.
+- **Impact:** Violates Automation Quality Gates and Conventional Commits standard. Allows invalid commit messages into history, breaking SemVer/changelog automation.
+- **Chosen Fix:** Add an explicit step in CI to run the `commit-msg` stage hooks (Option 1).
+- **Steps:**
+  1. Edit `.github/workflows/ci.yml`.
+  2. Within one of the primary jobs (e.g., `lint-linux` or a dedicated step/job), add a step *after* checkout.
+  3. Use `pre-commit run --hook-stage commit-msg --from HEAD~${{ github.event.pull_request.commits }} --to HEAD` for PRs, or `pre-commit run --hook-stage commit-msg --from HEAD~1 --to HEAD` for push events on master. Alternatively, use `npx commitlint --from HEAD~... --to HEAD`. Adjust the commit range as needed for the trigger event.
+  4. Verify the step runs and fails on invalid commit messages in a test PR.
+- **Done-When:** CI pipeline fails if commits in a PR do not adhere to the Conventional Commits standard.
 
-- **Error & Edge-Case Strategy**
-  - **Hook Failures (`pre-commit`, `commit-msg`):** Any failure (non-zero exit code) from a hook managed by `pre-commit` will block the commit process immediately. The framework outputs the failing hook's ID and its stdout/stderr, providing clear feedback.
-  - **Skipping Hooks:** Use the documented `SKIP` environment variable for exceptional cases. Discourage the use of `git commit --no-verify`.
-  - **`post-commit` Failures:** The template script checks for `glance` existence and warns if not found. The `glance` command itself is run asynchronously (`&`) and its output redirected (`>/dev/null 2>&1`) to prevent blocking the terminal or failing the overall commit flow if `glance` itself errors. Failures here are non-blocking by design.
-  - **Setup Issues:** Clear documentation is the primary mitigation. CI checks (`pre-commit run --all-files`) ensure the configuration is valid and tools run correctly in a clean environment. Failure to install `pre-commit` or copy the `post-commit` hook will mean hooks don't run locally, but CI provides a safety net.
+### cr-01 Reinstate Lost Pre-commit File Length & Test Checks
+- **Problem:** Replacing the old shell hook with `.pre-commit-config.yaml` dropped local checks for file length limits and `cargo test`.
+- **Impact:** Violates Automation Quality Gates and Design for Testability (Local Gating). Removes vital fast feedback loops for developers.
+- **Chosen Fix:** Re-implement these checks within `.pre-commit-config.yaml` (Option 1).
+- **Steps:**
+  1. Edit `.pre-commit-config.yaml`.
+  2. Add a hook for file size checks. Consider `pre-commit-hooks` `check-added-large-files` or `check-yaml` (if applicable), or potentially a small custom `repo: local` script hook (`language: script`) checking line counts (`wc -l`) against WARN/ERROR thresholds (500/1000 lines).
+  3. Add a `repo: local` hook with `id: cargo-test`, `name: cargo test`, `entry: cargo test --no-fail-fast`, `language: system`, `stages: [commit]`, `pass_filenames: false`.
+  4. *If* full `cargo test` is too slow locally:
+     *   Configure it to run a faster subset (e.g., `cargo test --lib` or specific unit tests).
+     *   Alternatively, make the hook optional (`stages: [manual]`) but document it as strongly recommended (`CONTRIBUTING.md`).
+  5. Document the exact behavior (what tests run, how long, thresholds) in `CONTRIBUTING.md`.
+- **Done-When:** Local `pre-commit` run checks file length and executes `cargo test` (or a documented subset).
 
-## Detailed Build Steps
+### cr-06 Remove Redundant and Misleading Pre-commit CI Jobs
+- **Problem:** CI runs `pre-commit run --all-files` jobs (`pre-commit-linux`, `pre-commit-macos`) which are redundant as `fmt` and `clippy` are checked by dedicated `cargo` jobs. The `cross-platform-verification` job name is misleading.
+- **Impact:** Violates Simplicity First and Automation Quality Gates. Wastes CI resources and build time, adds unnecessary complexity.
+- **Chosen Fix:** Remove redundant jobs and rename the summary job.
+- **Steps:**
+  1. Edit `.github/workflows/ci.yml`.
+  2. **Delete** the `pre-commit-linux` and `pre-commit-macos` jobs entirely.
+  3. Update the `needs` section of the `cross-platform-verification` job to remove dependencies on the deleted jobs.
+  4. Rename the `cross-platform-verification` job to something accurate, like `Linux_macOS_Verification_Summary`.
+- **Done-When:** Redundant pre-commit CI jobs are removed, `needs` section is updated, and summary job is renamed.
 
-1.  **Add `pre-commit` Dependency:** Document the requirement for developers to install `pre-commit` (e.g., `pip install pre-commit` or via package manager).
-2.  **Create `.pre-commit-config.yaml`:** Initialize the configuration file at the repository root.
-3.  **Configure `rustfmt` Hook:** Add an entry for `cargo fmt --check`. Use a `language: system` hook for simplicity if Rust toolchain is assumed present.
-    ```yaml
-    repos:
-    - repo: local
-      hooks:
-        - id: rustfmt
-          name: Rust Formatter Check
-          entry: cargo fmt -- --check
-          language: system
-          types: [rust]
-          pass_filenames: false # Run against the whole project state if any .rs file changed
-    ```
-4.  **Configure `clippy` Hook:** Add an entry for `cargo clippy -- -D warnings`.
-    ```yaml
-    # In .pre-commit-config.yaml, within the same repo: local or a new one
-        - id: clippy
-          name: Rust Linter Check
-          entry: cargo clippy --all-targets -- -D warnings # Fail on any warnings
-          language: system
-          types: [rust]
-          pass_filenames: false
-    ```
-5.  **Configure `commitlint` Hook:** Add a hook using a community repository to manage Node.js execution and dependencies for commit message validation.
-    ```yaml
-    # In .pre-commit-config.yaml
-    - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-      rev: v9.13.0 # Specify a pinned, stable version
-      hooks:
-        - id: commitlint
-          stages: [commit-msg]
-          additional_dependencies: ['@commitlint/config-conventional'] # Use conventional commit rules
-    ```
-6.  **Create `commitlint.config.js`:** Add the configuration file at the repository root to specify the rule set.
-    ```javascript
-    // commitlint.config.js
-    module.exports = {
-      extends: ['@commitlint/config-conventional']
-    };
-    ```
-7.  **Create `post-commit` Hook Template:** Create `templates/post-commit.template` with robust async execution and checks.
-    ```sh
-    #!/bin/sh
-    # Template for .git/hooks/post-commit
-    # Runs 'glance ./' asynchronously after a successful commit.
+### cr-07 Remove Committed Temporary/Example Files
+- **Problem:** `test-file.txt` and `valid-commit-msg.txt` are committed to the repository.
+- **Impact:** Violates Simplicity First, Keep It Lean. Adds clutter unrelated to source code.
+- **Chosen Fix:** Delete the files and embed examples in documentation if needed.
+- **Steps:**
+  1. Delete `test-file.txt` locally.
+  2. Delete `valid-commit-msg.txt` locally.
+  3. If the content of `valid-commit-msg.txt` is a useful example, copy it into `README.md` or `CONTRIBUTING.md` within a relevant section (e.g., Conventional Commits).
+  4. Commit the deletions.
+- **Done-When:** `test-file.txt` and `valid-commit-msg.txt` are removed from the repository.
 
-    # Check if glance command exists
-    if ! command -v glance > /dev/null 2>&1; then
-        echo "post-commit hook: Warning: 'glance' command not found. Skipping execution." >&2
-        exit 0
-    fi
+### cr-02 Remove Undocumented Suppression of Dead Code Warnings
+- **Problem:** Numerous `#[allow(dead_code)]` attributes exist in `tests/common/mod.rs` without justification.
+- **Impact:** Violates Coding Standards ("Address Violations, Don't Suppress"), Simplicity First. Hides potential bugs, unused code, and increases maintenance cost.
+- **Chosen Fix:** Remove all allowances and investigate each resulting compiler warning (Option 1).
+- **Steps:**
+  1. Open `tests/common/mod.rs`.
+  2. Delete *every* instance of `#[allow(dead_code)]`.
+  3. Run `cargo check --tests` or `cargo clippy --tests`.
+  4. For each reported `dead_code` warning:
+     *   Investigate if the function/struct/field is truly unused by any test. Use IDE tools (find references) or text search across the `tests/` directory.
+     *   If confirmed unused: **DELETE** the code.
+     *   If it *is* used (e.g., by a test in another file calling `common::some_helper()`), the compiler warning should disappear after removing the `allow`.
+     *   If the compiler *still* warns incorrectly (rare, possibly complex macro/conditional compilation interaction), add a specific `// ALLOWANCE: Used by integration test setup in [specific test file/scenario], compiler fails to detect usage.` comment *directly above* the item, and only for that single item. This requires strong justification.
+  5. Ensure `cargo clippy --tests -- -D warnings` passes cleanly regarding dead code in this module.
+- **Done-When:** All `#[allow(dead_code)]` attributes are removed from `tests/common/mod.rs`, and all resulting warnings are resolved by either deleting unused code or verifying actual usage (eliminating the warning naturally).
 
-    echo "post-commit hook: Running 'glance ./' in background..."
+### cr-08 Clarify Unclear Test Variable Usage
+- **Problem:** Unused variables in tests are silenced using `#[allow(unused_variables)]` or `_`-prefixing, obscuring intent.
+- **Impact:** Violates Coding Standards, Design for Testability. Makes tests harder to understand and verify correctness.
+- **Chosen Fix:** Investigate each instance and remove the suppression/prefix or use the variable.
+- **Steps:**
+  1. Go to `tests/common_utils_test.rs:96`.
+     *   Remove `#[allow(unused_variables)]` from `temp_dir_path`.
+     *   Determine why `temp_dir_path` is not used in `test_directory_permissions_non_unix`. If it's truly unnecessary for the test logic, remove the variable binding `let temp_dir_path = ...`. If it *should* be used (e.g., passed to a function), update the test logic.
+  2. Go to `tests/environment_log_paths_test.rs:135`.
+     *   Investigate why `_config` is created but not used in `test_development_environment_paths`.
+     *   If the `Config` instance creation itself has side effects needed for the test (unlikely) or is just setup for later steps, add a comment explaining why it's needed but not directly referenced.
+     *   If it serves no purpose in this specific test's logic, remove the `let _config = ...` line.
+     *   If it *should* be used (e.g., assertions based on config values), rename to `config` and add the relevant assertions/logic.
+- **Done-When:** Allowances/prefixes for unused variables are removed, and variables are either used correctly or deleted from the tests.
 
-    # Execute glance asynchronously, detaching completely
-    ( glance ./ & ) > /dev/null 2>&1 &
+### cr-05 Restore Essential Planning/Rationale Documentation
+- **Problem:** Critical historical/decision documents (`PLAN.md`, `TODO.md`, `CI_FAILURES.md`, `CI_STATUS.md`) were deleted.
+- **Impact:** Violates Documentation Approach ("Document Decisions, Not Mechanics"). Loss of project context hinders maintainability and onboarding.
+- **Chosen Fix:** Resurrect key decisions and rationale from history and consolidate them into living documentation (Option 1).
+- **Steps:**
+  1. Use `git log --diff-filter=D --summary` or history browsing tools to find the commits where `PLAN.md`, `TODO.md`, `CI_FAILURES.md`, `CI_STATUS.md` were deleted.
+  2. Retrieve the content of these files from commits prior to deletion (`git show <commit_hash>:<path>`).
+  3. Review the content, focusing on:
+     *   **Decisions:** Significant choices made (architecture, libraries, algorithms).
+     *   **Rationale:** The "why" behind those decisions, trade-offs considered.
+     *   **Learnings:** Important lessons from past failures (especially CI issues) or refactorings.
+     *   **Core Plans:** Overarching goals or architectural direction from `PLAN.md`.
+  4. Create a consolidated `DECISIONS.md` file in the repository root containing relevant extracted rationale, organized by topic/feature area.
+  5. Update `README.md` to reference the new `DECISIONS.md` file and explain its purpose.
+- **Done-When:** A permanent record of key decisions and rationale is preserved in a well-organized document, including Windows support removal rationale, CI troubleshooting lessons, and architecture decisions.
 
-    exit 0
-    ```
-8.  **Update Documentation (`README.md` / `CONTRIBUTING.md`):**
-    *   Clearly state prerequisites: `python`, `pip` (for `pre-commit`), `glance`.
-    *   Provide setup instructions:
-        *   `pip install pre-commit`
-        *   `pre-commit install --hook-type pre-commit --hook-type commit-msg` (Installs hooks defined in `.pre-commit-config.yaml`)
-        *   `cp templates/post-commit.template .git/hooks/post-commit && chmod +x .git/hooks/post-commit` (Manual step for post-commit)
-    *   Explain the purpose of each hook (Format, Lint, Commit Message Syntax, Post-Commit Glance).
-    *   Document how to skip hooks using `SKIP=hook_id,... git commit ...`. Strongly discourage `--no-verify`.
-9.  **Remove Old Hook System:** Delete any legacy hook scripts (e.g., `.git/hooks/pre-commit`, `hooks/pre-commit` if tracked). Ensure documentation reflects the removal.
-10. **Add Configuration Files to Git:** Ensure `.pre-commit-config.yaml`, `commitlint.config.js`, and `templates/post-commit.template` are tracked by Git. Add `.pre-commit-cache/` to `.gitignore`.
-11. **Integrate with CI:** Add a CI step that installs `pre-commit` and runs `pre-commit run --all-files` to validate all files against all hooks.
+## Standards Alignment
+- **Simplicity First**: Each fix is intentionally minimal and focused on resolving specific issues without over-engineering. Priority given to quality gates that prevent complexity (file size limits) from sneaking in.
+- **Modularity**: Fixes maintain clear separation of concerns, especially with properly configured pre-commit hooks and documentation.
+- **Testability**: Restoring local test gates is prioritized to ensure developers get immediate feedback on test failures.
+- **Coding Standards**: Multiple fixes directly address coding standards violations (dead code suppression, unused variables).
+- **Documentation**: Documentation improvements capture rationale ("why") over mechanics, preserving critical decision context.
 
-## Testing Strategy
-
-- **Unit Tests:** N/A for the configuration files or the simple post-commit script. `commitlint` itself has unit tests.
-- **Integration Tests (Manual):** Developers perform these implicitly during setup and use. Explicit tests:
-    - Run setup instructions verbatim.
-    - Stage code requiring formatting -> `git commit` -> Verify `rustfmt` fails and blocks.
-    - Fix formatting, stage code with clippy warnings -> `git commit` -> Verify `clippy` fails and blocks.
-    - Fix clippy warnings, attempt commit with invalid message -> `git commit -m "bad message"` -> Verify `commitlint` fails and blocks.
-    - Attempt commit with valid code and message -> `git commit -m "feat: Add valid feature"` -> Verify commit succeeds.
-    - Immediately after success, check running processes for `glance ./` or evidence of its execution (if it creates files/logs). Verify no errors were printed to the terminal from the post-commit hook.
-    - Test skipping: `SKIP=clippy git commit ...` with clippy warnings present -> Verify commit succeeds (if fmt/commitlint pass).
-- **CI Tests:** The `pre-commit run --all-files` step in CI acts as the automated integration test for the `pre-commit` managed hooks against the entire codebase.
-
-## Logging & Observability
-
-- **`pre-commit` Framework:** Logs hook execution status (Passed/Failed), timing, and any stdout/stderr from the hooks directly to the console during the commit attempt. Verbosity can be increased if needed (`pre-commit run -v`).
-- **`commitlint`:** Outputs specific rule violations for commit messages.
-- **`post-commit` Script:** Logs a warning to stderr if `glance` is not found. Logs an informational message indicating background execution start. `glance`'s own output is intentionally discarded (`>/dev/null 2>&1`) to avoid cluttering the user's terminal after a successful commit.
-- **Correlation IDs:** Not applicable for local developer tooling.
-
-## Security & Config
-
-- **Input Validation:** Handled by the underlying tools (`cargo fmt`, `cargo clippy`, `commitlint`). The `post-commit` script validates the existence of `glance` before attempting execution.
-- **Secrets Handling:** No secrets are used, processed, or stored by this tooling.
-- **Least Privilege:** Hooks run with the privileges of the developer invoking `git commit`. The `post-commit` script does not require elevated privileges. Ensure `glance` itself follows least privilege principles.
-- **Dependencies:** Using pinned versions (`rev`) in `.pre-commit-config.yaml` for third-party hook repositories mitigates risks from upstream changes.
-
-## Documentation
-
-- **Code Self-doc:**
-    - `.pre-commit-config.yaml`: YAML structure is declarative. Use `name:` fields for clarity. Add comments (`#`) explaining non-obvious choices.
-    - `commitlint.config.js`: Minimal, relies on standard conventional commit rules.
-    - `templates/post-commit.template`: Includes comments explaining its purpose, checks, and asynchronous execution logic.
-- **README/CONTRIBUTING Updates:** Critical section detailing prerequisites, installation steps (including the manual post-commit setup), purpose of hooks, and how to skip them. (See Detailed Build Steps #8).
-
-## Risk Matrix
-
-| Risk                                                     | Severity | Mitigation                                                                                                                               |
-|----------------------------------------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------|
-| Developer Setup Friction (Python/pre-commit/post-commit) | medium   | Clear, tested documentation in README/CONTRIBUTING.md. CI validation (`pre-commit run --all-files`) provides a safety net.                 |
-| `commitlint` Node.js Dependency Management               | low      | Using a community `pre-commit` hook (`alessandrojcm/commitlint-pre-commit-hook`) abstracts away direct Node/npm management from the developer. |
-| `post-commit` Hook Not Installed/Executable by Developer | medium   | Explicit manual setup steps in documentation. Consider adding a simple verification script (`./scripts/verify-hooks.sh`) if this becomes common. |
-| `glance` Tool Unavailable or Failing                     | low      | Post-commit script includes existence check and warning. Async execution prevents blocking. Failure is non-critical for commit success.    |
-| Hook Performance Impacting Commit Time                   | low      | `fmt` and `clippy` are generally fast. Avoiding `cargo test` in pre-commit mitigates major slowdowns. Monitor if needed.                     |
-| Over-reliance on `SKIP` or `--no-verify`                 | low      | Document as escape hatches for exceptional cases only. CI enforces checks regardless of local skips.                                      |
-| Platform Compatibility (Shell script, paths)             | low      | Post-commit script uses basic `sh` features. `pre-commit` handles cross-platform execution for managed hooks well. Test on target OSes.     |
-
-## Open Questions
-
-- Confirm `glance` is expected to be present in typical developer environments and CI. If not, the post-commit warning is sufficient, but documentation might need adjustment.
-- Is the chosen `commitlint` hook repository (`alessandrojcm/commitlint-pre-commit-hook`) the best fit, or are there alternatives preferred by the team? (Chosen one seems robust and handles node environment).
-- Should `cargo test` be added as a *manual* pre-commit stage (`stages: [manual]`) for optional execution via `pre-commit run --hook-stage manual test`, or solely rely on CI? (Decision: Rely solely on CI for tests to keep pre-commit fast).
-```
+## Validation Checklist
+- All pre-commit hooks run successfully locally.
+- CI pipeline passes on Linux and macOS.
+- Conventional Commits validation works in CI.
+- Tests pass with warning levels set to deny warnings (`-D warnings`).
+- No warning suppressions exist without specific justification comments.
+- Core decisions and rationale are preserved in structured documentation.
+- All temporary files are removed from the repository.
