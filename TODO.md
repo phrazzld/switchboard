@@ -78,7 +78,7 @@
         1. The three configuration files are tracked by Git.
         2. `.gitignore` includes the `.pre-commit-cache/` entry.
     - **Depends‑on:** [T001, T005, T006]
-- [ ] **T010 · Test · P1: add ci check for pre-commit hooks**
+- [x] **T010 · Test · P1: add ci check for pre-commit hooks**
     - **Context:** PLAN.md > Detailed Build Steps > #11, Testing Strategy > CI Tests
     - **Action:**
         1. Add a step/job to the existing CI pipeline.
