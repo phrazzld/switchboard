@@ -28,7 +28,7 @@
 *.stamp
 
 # Local dev references
-thinktank_output/
+thinktank_*/
 TASK-PROMPT.md
 CODE_REVIEW.md
 diff.md
@@ -38,7 +38,7 @@ diff.md
 logs/app/.gitkeep
 logs/test/.gitkeep
 
-# Ignore everything else in logs/ 
+# Ignore everything else in logs/
 logs/**/*.log
 logs/**/*.log.*
 
@@ -47,3 +47,6 @@ logs/**/*.log.*
 /benchmark.log*
 /test_switchboard.log*
 # ------------------------------------------------------
+
+# Pre-commit cache files
+.pre-commit-cache/

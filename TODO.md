@@ -69,7 +69,7 @@
         1. Legacy hook files are removed from the repository history (if applicable).
         2. No documentation refers to the old system.
     - **Depends‑on:** [T007]
-- [ ] **T009 · Chore · P2: stage hook config files and update `.gitignore`**
+- [x] **T009 · Chore · P2: stage hook config files and update `.gitignore`**
     - **Context:** PLAN.md > Detailed Build Steps > #10
     - **Action:**
         1. Add `.pre-commit-config.yaml`, `commitlint.config.js`, and `templates/post-commit.template` to Git tracking.
