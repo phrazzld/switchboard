@@ -503,7 +503,7 @@ mod tests {
         assert_eq!(config.anthropic_target_url, "https://custom.example.com");
         assert_eq!(config.log_stdout_level, "debug");
         assert_eq!(config.log_format, "json");
-        assert_eq!(config.log_bodies, false);
+        assert!(!config.log_bodies);
         assert_eq!(config.log_file_path, "/tmp/custom.log");
         assert_eq!(config.log_file_level, "trace");
         assert_eq!(config.log_max_body_size, 10240);

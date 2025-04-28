@@ -62,7 +62,7 @@ struct LogVisitor {
 impl LogVisitor {
     fn finish(self) -> String {
         // Format the message and fields for easy testing
-        let mut result = self.message.unwrap_or_else(|| "".to_string());
+        let mut result = self.message.unwrap_or_default();
 
         if !self.fields.is_empty() {
             result.push_str(" {");
@@ -72,7 +72,7 @@ impl LogVisitor {
                 }
                 result.push_str(&format!("{}={}", key, value));
             }
-            result.push_str("}");
+            result.push('}');
         }
 
         result
@@ -108,7 +108,7 @@ fn generate_test_body(size: usize) -> Bytes {
     while body.len() < size - 2 {
         body.push('a');
     }
-    body.push_str(r#"}"#);
+    body.push('}');
     Bytes::from(body)
 }
 

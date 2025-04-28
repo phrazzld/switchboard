@@ -43,7 +43,7 @@ fn test_directory_creation_for_nonexistent_path() {
     let nested_path = temp_dir.join("nested/deep/path/test.log");
 
     let config = create_test_config(
-        &nested_path.to_string_lossy().to_string(),
+        nested_path.to_string_lossy().as_ref(),
         LogDirectoryMode::Default,
     );
 

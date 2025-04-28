@@ -166,9 +166,8 @@ fn test_user_installation_environment_simulation() {
     }
 
     // Restore other env vars
-    match switchboard_dev_orig {
-        Some(val) => env::set_var("SWITCHBOARD_DEV", val),
-        None => {}
+    if let Some(val) = switchboard_dev_orig {
+        env::set_var("SWITCHBOARD_DEV", val)
     }
 }
 

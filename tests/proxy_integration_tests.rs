@@ -176,9 +176,8 @@ async fn test_streaming_response_forward_success() {
     for line in body_str.lines() {
         let trimmed = line.trim();
         // Check if the line starts with "data: " prefix (SSE format)
-        if trimmed.starts_with("data: ") {
-            // Extract the JSON content after "data: "
-            let data_content = &trimmed["data: ".len()..];
+        if let Some(data_content) = trimmed.strip_prefix("data: ") {
+            // JSON content is now available in data_content
             // Parse the JSON data
             if !data_content.is_empty() {
                 let json_value: serde_json::Value = serde_json::from_str(data_content)

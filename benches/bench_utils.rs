@@ -3,10 +3,6 @@ use std::time::Duration;
 use switchboard::config::Config;
 use switchboard::logger;
 use tempfile::tempdir;
-use tracing_subscriber::filter::LevelFilter;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::registry;
-use tracing_subscriber::Layer;
 
 /// Benchmark logging modes
 #[derive(Debug, Clone, Copy)]
@@ -126,7 +122,7 @@ pub fn generate_test_data(size: usize) -> bytes::Bytes {
         data.push('a');
     }
 
-    data.push_str(r#"}"#);
+    data.push('}');
     bytes::Bytes::from(data)
 }
 

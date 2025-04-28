@@ -6,7 +6,7 @@ use switchboard::{
     config::{Config, LogDirectoryMode},
     logger::{
         detect_environment, get_environment_log_directory, get_xdg_log_directory, LogEnvironment,
-        LogPathResolver, LogType, APP_LOG_SUBDIR, DEFAULT_LOG_DIR, SYSTEM_LOG_DIR, TEST_LOG_SUBDIR,
+        LogType, APP_LOG_SUBDIR, DEFAULT_LOG_DIR, SYSTEM_LOG_DIR, TEST_LOG_SUBDIR,
     },
 };
 
@@ -131,7 +131,7 @@ fn test_development_environment_paths() {
     );
 
     // Create config with default mode to use environment detection
-    let config = create_test_config(&log_filename, LogDirectoryMode::Default);
+    let _config = create_test_config(&log_filename, LogDirectoryMode::Default);
 
     // Get expected base directory for this environment
     let expected_base_dir = PathBuf::from(DEFAULT_LOG_DIR);

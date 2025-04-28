@@ -92,6 +92,7 @@ mod tests {
         // This test should run on all platforms
         // but will have different behavior based on the platform
         let temp_dir = TempDir::new().expect("Failed to create temporary directory");
+        #[allow(unused_variables)]
         let temp_dir_path = temp_dir.path();
 
         // On non-Unix systems, it should always succeed
