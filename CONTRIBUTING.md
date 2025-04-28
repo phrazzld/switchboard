@@ -66,6 +66,21 @@ Switchboard uses pre-commit hooks to ensure code quality and consistency. The fo
 - Runs at the commit-msg stage
 - Uses `@commitlint/config-conventional` rules
 
+#### Example Commit Message
+
+```
+feat: add new feature for log processing
+
+This is a valid commit message that follows conventional commit format.
+It has a type (feat), a scope (optional), and a description.
+```
+
+The commit message format should include:
+- A type (e.g., feat, fix, docs, style, refactor, test, chore)
+- An optional scope in parentheses
+- A description of the change
+- An optional longer body separated by a blank line
+
 ## Coding Guidelines
 
 ### Rust Code Style

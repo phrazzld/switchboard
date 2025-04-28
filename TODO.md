@@ -138,7 +138,7 @@
         1. `test-file.txt` and `valid-commit-msg.txt` are no longer present in the repository HEAD.
     - **Depends‑on:** none
 
-- [ ] **T014 · Documentation · P3: embed commit message example in documentation if needed**
+- [x] **T014 · Documentation · P3: embed commit message example in documentation if needed**
     - **Context:** PLAN.md § cr-07 Remove Committed Temporary/Example Files (Step 3)
     - **Action:**
         1. Determine if the content of the deleted `valid-commit-msg.txt` is a useful example.
