@@ -50,7 +50,7 @@
         1. `templates/post-commit.template` exists with the specified script content.
         2. The script is syntactically valid shell script.
     - **Depends‑on:** none
-- [ ] **T007 · Chore · P1: update developer documentation for hooks**
+- [x] **T007 · Chore · P1: update developer documentation for hooks**
     - **Context:** PLAN.md > Detailed Build Steps > #8, Risk Matrix > Developer Setup Friction
     - **Action:**
         1. Update `README.md` or `CONTRIBUTING.md` with prerequisites (`python`, `pip`, `glance`).

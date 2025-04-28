@@ -20,6 +20,9 @@ A Rust-based HTTP proxy service that intercepts and logs traffic between clients
 For contributing to the project, you'll need the following additional tools:
 
 - Git
+- Python 3.6+ (for pre-commit hooks)
+- pip (for installing pre-commit)
+- glance (optional, used by post-commit hook)
 
 ## Environment Variables
 
@@ -409,42 +412,89 @@ cargo doc --open
 
 ### Setting Up Pre-commit Hooks
 
-We use pre-commit hooks to ensure code quality checks run before each commit. You can set up the pre-commit hook using either a file copy or a symbolic link.
+We use the Python-based `pre-commit` framework to manage Git hooks for ensuring code quality and commit message standards. This tool automatically runs checks before commits are created to catch issues early.
 
-#### Option 1: Copy Method (recommended for most users)
+#### Prerequisites
+
+Before setting up the hooks, ensure you have the following tools installed:
+
+- **Python 3.6+**: Required to run the pre-commit framework
+- **pip**: Python package manager to install pre-commit
+- **glance** (optional): Used by post-commit hook to automatically scan the repository after commits
+
+#### Installation and Setup
+
+1. **Install pre-commit:**
 
 ```bash
-# Copy the hook to your git hooks directory
-cp hooks/pre-commit .git/hooks/
-# Make it executable (required on Unix-based systems)
-chmod +x .git/hooks/pre-commit
+# Install pre-commit using pip
+pip install pre-commit
 ```
 
-#### Option 2: Symlink Method (better for development on the hook itself)
+2. **Set up the hooks:**
 
 ```bash
-# Create a symbolic link to the hook
-ln -sf "$(pwd)/hooks/pre-commit" .git/hooks/pre-commit
-# Make it executable (required on Unix-based systems)
-chmod +x .git/hooks/pre-commit
+# Install the pre-commit and commit-msg hooks
+pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
-The symlink method is preferred if you plan to contribute improvements to the hook, as any changes you make to the hook will be immediately active without requiring you to copy the file again.
+3. **Set up the post-commit hook (optional):**
 
-The pre-commit hook performs the following checks:
+```bash
+# Copy the post-commit hook template to your Git hooks directory
+cp templates/post-commit.template .git/hooks/post-commit
+# Make it executable (required on Unix-based systems)
+chmod +x .git/hooks/post-commit
+```
 
-1. **File Length Check**: Ensures Rust files maintain reasonable size
-   - Warning at 500+ lines: Suggests refactoring but allows commit
-   - Error at 1000+ lines: Blocks commit until file is refactored into smaller modules
+#### Hook Descriptions
 
-2. **Code Quality Checks**:
-   - `cargo fmt --check`: Verifies code adheres to formatting standards
-   - `cargo clippy -- -D warnings`: Ensures code passes linting checks
+The pre-commit framework manages the following hooks:
 
-3. **Test Execution**:
-   - `cargo test`: Runs all tests to ensure functionality is maintained
+1. **rustfmt (pre-commit)**: 
+   - Ensures all Rust code follows the project's formatting standards
+   - Uses `cargo fmt -- --check` to verify without modifying files
+   - Fails if any file doesn't meet the formatting standards
 
-If any checks fail, the commit will be aborted with a descriptive error message. Fix the issues and try again.
+2. **clippy (pre-commit)**: 
+   - Performs static analysis on Rust code to detect common issues
+   - Uses `cargo clippy --all-targets -- -D warnings` to treat warnings as errors
+   - Helps catch potential bugs and improve code quality
+
+3. **commitlint (commit-msg)**: 
+   - Validates commit messages follow the Conventional Commits format
+   - Ensures messages have the proper structure (type, scope, description)
+   - Helps maintain a clean, readable commit history
+
+4. **post-commit (optional)**: 
+   - Runs the `glance` tool asynchronously after successful commits
+   - Provides quick feedback on the repository state
+   - Non-blocking, so it won't delay your workflow
+
+#### Usage Guidelines
+
+The hooks run automatically when you commit changes. If a hook fails, the commit will be aborted with an error message. Fix the reported issues and try again.
+
+If you need to bypass hooks in exceptional circumstances:
+
+```bash
+# Skip one or more specific hooks
+SKIP=rustfmt,clippy git commit -m "your commit message"
+
+# Skip all pre-commit hooks (not recommended for regular use)
+SKIP=pre-commit git commit -m "your commit message"
+```
+
+**Note:** Using `git commit --no-verify` to bypass hooks is strongly discouraged as it circumvents all quality checks. Use the `SKIP` mechanism instead, which clearly documents which specific checks are being skipped.
+
+#### Troubleshooting
+
+If you encounter issues with the hooks:
+
+1. Ensure pre-commit is installed: `pre-commit --version`
+2. Update pre-commit and hooks: `pre-commit autoupdate`
+3. Check hook configurations in `.pre-commit-config.yaml`
+4. For commitlint issues, verify your commit message format against the Conventional Commits specification
 
 ## License
 
