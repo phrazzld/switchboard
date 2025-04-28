@@ -60,7 +60,7 @@
         1. Documentation accurately reflects prerequisites, setup steps, hook purposes, and skip usage.
         2. Following the setup instructions results in functional local hooks.
     - **Depends‑on:** [T010]
-- [ ] **T008 · Chore · P2: remove legacy hook system artifacts**
+- [x] **T008 · Chore · P2: remove legacy hook system artifacts**
     - **Context:** PLAN.md > Detailed Build Steps > #9
     - **Action:**
         1. Identify and delete any previously tracked Git hook scripts (e.g., `.git/hooks/pre-commit`, `hooks/pre-commit`).
