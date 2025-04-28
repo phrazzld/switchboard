@@ -55,7 +55,7 @@
         1. Run `pre-commit run commitlint --hook-stage commit-msg -m "feat: test pinning"` locally; verify it passes.
     - **Depends‑on:** none
 
-- [ ] **T006 · Feature · P1: add pre-commit hook for file size check**
+- [x] **T006 · Feature · P1: add pre-commit hook for file size check**
     - **Context:** PLAN.md § cr-01 Reinstate Lost Pre-commit File Length & Test Checks (Step 2)
     - **Action:**
         1. Edit `.pre-commit-config.yaml`.

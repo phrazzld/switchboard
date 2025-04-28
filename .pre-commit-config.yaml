@@ -13,3 +13,13 @@ repos:
     - id: commitlint
       stages: [commit-msg]
       additional_dependencies: ['@commitlint/config-conventional@19.8.0'] # Use conventional commit rules with pinned version
+- repo: local
+  hooks:
+    - id: check-file-length
+      name: Check File Length
+      description: Check file length (warn > 500 lines, error > 1000 lines)
+      entry: hooks/check_file_length.py
+      language: python
+      types: [file]
+      exclude: '^Cargo.lock$|^tests/linecounts/|^benches/'
+      args: [--warn-lines=500, --max-lines=1000]
