@@ -44,7 +44,7 @@
         1. The `rev:` for the remote `clippy` hook is pinned to a specific version.
     - **Depends‑on:** [T002]
 
-- [ ] **T005 · Chore · P1: pin @commitlint/config-conventional dependency version**
+- [x] **T005 · Chore · P1: pin @commitlint/config-conventional dependency version**
     - **Context:** PLAN.md § cr-09 Pin Unpinned Commitlint Dependency
     - **Action:**
         1. Edit `.pre-commit-config.yaml`.

@@ -12,4 +12,4 @@ repos:
   hooks:
     - id: commitlint
       stages: [commit-msg]
-      additional_dependencies: ['@commitlint/config-conventional'] # Use conventional commit rules
+      additional_dependencies: ['@commitlint/config-conventional@19.8.0'] # Use conventional commit rules with pinned version
