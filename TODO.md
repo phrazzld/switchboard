@@ -90,10 +90,3 @@
         3. CI passes when code adheres to hook rules.
     - **Depends‑on:** [T002, T003, T004, T009]
 
-### Clarifications & Assumptions
-- [ ] **Issue:** Confirm `glance` tool availability and expected location in standard developer and CI environments.
-    - **Context:** PLAN.md > Open Questions > #1; Risk Matrix > `glance` Tool Unavailable
-    - **Blocking?:** no
-- [ ] **Issue:** Verify team acceptance of the chosen `alessandrojcm/commitlint-pre-commit-hook` repository.
-    - **Context:** PLAN.md > Open Questions > #2; Risk Matrix > `commitlint` Node.js Dependency Management
-    - **Blocking?:** no

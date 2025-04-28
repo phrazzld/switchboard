@@ -1,208 +1,177 @@
-# plan.md
-
-# Centralize Logging Configuration and Directory Permission Refactor
+```markdown
+# Plan: Refactor Pre-commit Hooks using pre-commit Framework
 
 ## Chosen Approach (One-liner)
-Extract every hardcoded logging default into documented constants in `src/config.rs`, refactor `src/logger.rs` to consume those constants, and centralize directory‐creation and permission‐checking logic into a new `fs_utils` module (used by both production and tests) to eliminate duplication and ensure consistency.
+Adopt the standard `pre-commit` framework to manage formatting, linting, and commit message validation hooks, while using a separate standard Git post-commit hook for the asynchronous `glance` execution.
 
 ## Architecture Blueprint
 
-- Modules / Packages  
-  - `src/config.rs`  
-    • Defines all default values as `pub const` with doc comments explaining the rationale.  
-    • Houses `Config` struct, `Config::default()`, and `load_config()` using those constants.  
-  - `src/logger.rs`  
-    • Initializes the tracing subscriber.  
-    • Uses a `LogPathResolver` that receives a `Config` and resolves file paths.  
-    • Delegates directory creation/permission checks to `fs_utils`.  
-  - `src/fs_utils.rs` (new)  
-    • `ensure_directory(path: &Path, mode: Option<u32>) -> Result<(), io::Error>`  
-    • `check_writable(path: &Path) -> Result<(), io::Error>`  
-    • Centralizes all filesystem operations and permission logic.  
-  - `tests/common/mod.rs`  
-    • Test helpers for permission assertions:  
-      - `verify_directory_permissions(path: &Path, required_mode: u32) -> Result<(), String>`  
-    • Shared config/test-config creation utilities.  
+- **Modules / Packages**
+  - `.pre-commit-config.yaml` → Declarative configuration for `pre-commit` managed hooks (formatting, linting, commit message validation). Single source-of-truth for these checks.
+  - `commitlint.config.js` → Configuration file defining the Conventional Commits rules enforced by `commitlint`.
+  - `templates/post-commit.template` → A template shell script for the standard Git `post-commit` hook, responsible for running `glance ./` asynchronously. Developers copy this to `.git/hooks/post-commit`.
+  - `README.md` / `CONTRIBUTING.md` → Essential documentation covering setup, usage, rationale, and troubleshooting for the new hook system.
 
-- Public Interfaces / Contracts  
-  ```rust
-  // src/config.rs
-  pub const DEFAULT_PORT: &str;
-  pub const DEFAULT_ANTHROPIC_TARGET_URL: &str;
-  pub const DEFAULT_LOG_STDOUT_LEVEL: &str;
-  pub const DEFAULT_LOG_FILE_LEVEL: &str;
-  pub const DEFAULT_LOG_FORMAT: &str;
-  pub const DEFAULT_LOG_BODIES: bool;
-  pub const DEFAULT_LOG_FILE_PATH: &str;
-  pub const DEFAULT_LOG_MAX_BODY_SIZE: usize;
-  pub const DEFAULT_LOG_DIRECTORY_MODE: u32;        // e.g., 0o750
-  pub const DEFAULT_LOG_MAX_AGE_DAYS: Option<u32>;
+- **Public Interfaces / Contracts**
+  - **`pre-commit` CLI:**
+    - `pre-commit install --hook-type pre-commit --hook-type commit-msg`: Installs the managed hooks.
+    - `pre-commit run [--all-files]`: Runs hooks manually.
+    - `SKIP=<hook_id>[,<hook_id>...] git commit ...`: Environment variable mechanism provided by `pre-commit` to bypass specific hooks.
+  - **Conventional Commits Standard:** Enforced by the `commitlint` hook during the `commit-msg` stage.
+  - **`post-commit` Hook:** Standard Git hook mechanism (`.git/hooks/post-commit`), not managed by the `pre-commit` framework installation command.
 
-  pub struct Config { /* fields populated from env or defaults */ }
-  impl Config {
-      pub fn default() -> Self;
-      pub fn load() -> Self;
-  }
-
-  // src/logger.rs
-  pub struct LogPathResolver { /* holds base_dir, subdir, filename */ }
-  impl LogPathResolver {
-      pub fn new(cfg: &Config, log_type: LogType) -> Self;
-      pub fn resolve(&self) -> Result<PathBuf, LogInitError>;
-  }
-  pub enum LogInitError { DirectoryCreationFailed(io::Error), PermissionDenied(io::Error), /*…*/ }
-
-  // src/fs_utils.rs
-  pub fn ensure_directory(path: &Path, mode: Option<u32>) -> Result<(), io::Error>;
-  pub fn check_writable(path: &Path) -> Result<(), io::Error>;
-
-  // tests/common/mod.rs
-  #[cfg(target_family = "unix")]
-  pub fn verify_directory_permissions(path: &Path, required_mode: u32) -> Result<(), String>;
-  #[cfg(not(target_family = "unix"))]
-  pub fn verify_directory_permissions(_path: &Path, _required_mode: u32) -> Result<(), String> { Ok(()) }
-  ```
-
-- Data Flow Diagram (mermaid)
+- **Data Flow Diagram** (mermaid)
   ```mermaid
   graph TD
-    A[Application Start] --> B(load_config)
-    B --> C(Config)
-    C --> D(init_tracing)
-    D --> E(LogPathResolver)
-    E --> F(fs_utils.ensure_directory)
-    F --> G[Filesystem]
-    G --> F
-    F --> E
-    E --> D
-    D --> H[Tracing Subscriber Active]
+      A[Developer: git commit -m "feat: Implement X"] --> B{Git Pre-Commit Trigger};
+      B --> C[pre-commit framework];
+      C -- Runs hooks defined in .pre-commit-config.yaml --> D{Run 'rustfmt' hook};
+      D -- Success --> E{Run 'clippy' hook};
+      E -- Success --> F[Commit process continues];
+      F --> G{Git Commit-Msg Trigger};
+      G --> C;
+      C -- Runs hooks defined in .pre-commit-config.yaml --> H{Run 'commitlint' hook};
+      H -- Success --> I[Commit is created];
+      I --> J{Git Post-Commit Trigger};
+      J --> K[Execute .git/hooks/post-commit];
+      K --> L[Run 'glance ./' async];
+      L --> M[Commit process complete];
 
-    subgraph Tests
-      T1[Test Setup] --> T2(common::TestConfig)
-      T2 --> T3(LogPathResolver with test Config)
-      T3 --> T4(fs_utils.ensure_directory)
-      T4 --> G
-      T1 --> T5(common::verify_directory_permissions)
-      T5 --> G
-    end
+      D -- Failure --> Z{Abort Commit & Display Error};
+      E -- Failure --> Z;
+      H -- Failure --> Z;
   ```
 
-- Error & Edge-Case Strategy  
-  • All path creation and permission‐setting funnels through `fs_utils`, returning `io::Error` on failure.  
-  • `LogInitError` maps `fs_utils` errors to named variants.  
-  • Config parsing falls back to defaults on missing or unparsable env vars, logging a warning.  
-  • Filenames missing in `log_file_path` default to `switchboard.log`.  
-  • Edge cases—non‐UTF8 paths, symlinks, permission boundaries—are caught in `fs_utils`.  
+- **Error & Edge-Case Strategy**
+  - **Hook Failures (`pre-commit`, `commit-msg`):** Any failure (non-zero exit code) from a hook managed by `pre-commit` will block the commit process immediately. The framework outputs the failing hook's ID and its stdout/stderr, providing clear feedback.
+  - **Skipping Hooks:** Use the documented `SKIP` environment variable for exceptional cases. Discourage the use of `git commit --no-verify`.
+  - **`post-commit` Failures:** The template script checks for `glance` existence and warns if not found. The `glance` command itself is run asynchronously (`&`) and its output redirected (`>/dev/null 2>&1`) to prevent blocking the terminal or failing the overall commit flow if `glance` itself errors. Failures here are non-blocking by design.
+  - **Setup Issues:** Clear documentation is the primary mitigation. CI checks (`pre-commit run --all-files`) ensure the configuration is valid and tools run correctly in a clean environment. Failure to install `pre-commit` or copy the `post-commit` hook will mean hooks don't run locally, but CI provides a safety net.
 
 ## Detailed Build Steps
 
-1. **Define Configuration Constants**  
-   - In `src/config.rs`, add `pub const` for each default (port, URLs, levels, format, bodies, file path, max body size, dir mode, max age).  
-   - Above each, write `///` doc comments citing reasons (e.g., “INFO stdout for minimal noise in CI”; “20MB max body to avoid memory blowup”).
+1.  **Add `pre-commit` Dependency:** Document the requirement for developers to install `pre-commit` (e.g., `pip install pre-commit` or via package manager).
+2.  **Create `.pre-commit-config.yaml`:** Initialize the configuration file at the repository root.
+3.  **Configure `rustfmt` Hook:** Add an entry for `cargo fmt --check`. Use a `language: system` hook for simplicity if Rust toolchain is assumed present.
+    ```yaml
+    repos:
+    - repo: local
+      hooks:
+        - id: rustfmt
+          name: Rust Formatter Check
+          entry: cargo fmt -- --check
+          language: system
+          types: [rust]
+          pass_filenames: false # Run against the whole project state if any .rs file changed
+    ```
+4.  **Configure `clippy` Hook:** Add an entry for `cargo clippy -- -D warnings`.
+    ```yaml
+    # In .pre-commit-config.yaml, within the same repo: local or a new one
+        - id: clippy
+          name: Rust Linter Check
+          entry: cargo clippy --all-targets -- -D warnings # Fail on any warnings
+          language: system
+          types: [rust]
+          pass_filenames: false
+    ```
+5.  **Configure `commitlint` Hook:** Add a hook using a community repository to manage Node.js execution and dependencies for commit message validation.
+    ```yaml
+    # In .pre-commit-config.yaml
+    - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+      rev: v9.13.0 # Specify a pinned, stable version
+      hooks:
+        - id: commitlint
+          stages: [commit-msg]
+          additional_dependencies: ['@commitlint/config-conventional'] # Use conventional commit rules
+    ```
+6.  **Create `commitlint.config.js`:** Add the configuration file at the repository root to specify the rule set.
+    ```javascript
+    // commitlint.config.js
+    module.exports = {
+      extends: ['@commitlint/config-conventional']
+    };
+    ```
+7.  **Create `post-commit` Hook Template:** Create `templates/post-commit.template` with robust async execution and checks.
+    ```sh
+    #!/bin/sh
+    # Template for .git/hooks/post-commit
+    # Runs 'glance ./' asynchronously after a successful commit.
 
-2. **Refactor `Config::default()` & `load_config()`**  
-   - Replace all hardcoded literals with the new constants.  
-   - In `load_config()`, use `env::var("X").unwrap_or_else(|_| DEFAULT_*.to_string())`. On parse errors (numeric/bool), log `warn!` and use default.
+    # Check if glance command exists
+    if ! command -v glance > /dev/null 2>&1; then
+        echo "post-commit hook: Warning: 'glance' command not found. Skipping execution." >&2
+        exit 0
+    fi
 
-3. **Create `fs_utils` Module**  
-   - New file `src/fs_utils.rs`: implement  
-     ```rust
-     pub fn ensure_directory(path: &Path, mode: Option<u32>) -> io::Result<()> { … }
-     pub fn check_writable(path: &Path) -> io::Result<()> { … }
-     ```  
-   - Set `mode` on Unix via `PermissionsExt::from_mode`. On Windows, no-op or use ACL defaults.
+    echo "post-commit hook: Running 'glance ./' in background..."
 
-4. **Refactor `src/logger.rs`**  
-   - Remove inline `create_dir_all`, `set_permissions` calls.  
-   - Inject `fs_utils::ensure_directory` in `LogPathResolver::resolve()`.  
-   - Map any `io::Error` into `LogInitError` variants.
+    # Execute glance asynchronously, detaching completely
+    ( glance ./ & ) > /dev/null 2>&1 &
 
-5. **Implement Test Helper in `tests/common/mod.rs`**  
-   - Write `verify_directory_permissions(path, required_mode)` with Unix‐only logic using `metadata().permissions().mode()`.  
-   - Return `Err(String)` with `"expected 0o750, got 0o755"` style messages.
-
-6. **Refactor Tests**  
-   - Search all tests for custom permission‐checking code.  
-   - Replace with `common::verify_directory_permissions(&path, DEFAULT_LOG_DIRECTORY_MODE).expect("…")`.  
-   - Remove duplicated fs calls.
-
-7. **Add Unit Tests for `fs_utils` and Helper**  
-   - Use `tempfile::TempDir` to create dirs with custom modes.  
-   - Test `ensure_directory` handles existing, missing, and permission errors.  
-   - Test `verify_directory_permissions` passes and fails correctly.
-
-8. **Update Documentation**  
-   - Add module‐level docs in `config.rs` and `fs_utils.rs` summarizing the design.  
-   - Update `README.md`’s logging table to reference new constants.
-
-9. **Quality Gates**  
-   - Run `cargo fmt`.  
-   - Run `cargo clippy -- -D warnings`.  
-   - Execute `cargo test` on Linux/macOS/Windows in CI.
+    exit 0
+    ```
+8.  **Update Documentation (`README.md` / `CONTRIBUTING.md`):**
+    *   Clearly state prerequisites: `python`, `pip` (for `pre-commit`), `glance`.
+    *   Provide setup instructions:
+        *   `pip install pre-commit`
+        *   `pre-commit install --hook-type pre-commit --hook-type commit-msg` (Installs hooks defined in `.pre-commit-config.yaml`)
+        *   `cp templates/post-commit.template .git/hooks/post-commit && chmod +x .git/hooks/post-commit` (Manual step for post-commit)
+    *   Explain the purpose of each hook (Format, Lint, Commit Message Syntax, Post-Commit Glance).
+    *   Document how to skip hooks using `SKIP=hook_id,... git commit ...`. Strongly discourage `--no-verify`.
+9.  **Remove Old Hook System:** Delete any legacy hook scripts (e.g., `.git/hooks/pre-commit`, `hooks/pre-commit` if tracked). Ensure documentation reflects the removal.
+10. **Add Configuration Files to Git:** Ensure `.pre-commit-config.yaml`, `commitlint.config.js`, and `templates/post-commit.template` are tracked by Git. Add `.pre-commit-cache/` to `.gitignore`.
+11. **Integrate with CI:** Add a CI step that installs `pre-commit` and runs `pre-commit run --all-files` to validate all files against all hooks.
 
 ## Testing Strategy
 
-- Unit Tests  
-  • `config` constants correctness via `Config::default()`.  
-  • `fs_utils::ensure_directory` and `check_writable` errors & success.  
-  • `common::verify_directory_permissions` on Unix modes.
-
-- Integration Tests  
-  • Logger initialization end-to-end: directory creation, log file writing, subscriber guard returned.  
-  • Tests unchanged except for using the helper—verify no regressions.
-
-- Mocking  
-  • None for internal functions.  
-  • Simulate permission errors by creating a read-only parent directory.
-
-- Coverage  
-  • 100% on new utility and helper modules.  
-  • No regression on existing coverage thresholds.
+- **Unit Tests:** N/A for the configuration files or the simple post-commit script. `commitlint` itself has unit tests.
+- **Integration Tests (Manual):** Developers perform these implicitly during setup and use. Explicit tests:
+    - Run setup instructions verbatim.
+    - Stage code requiring formatting -> `git commit` -> Verify `rustfmt` fails and blocks.
+    - Fix formatting, stage code with clippy warnings -> `git commit` -> Verify `clippy` fails and blocks.
+    - Fix clippy warnings, attempt commit with invalid message -> `git commit -m "bad message"` -> Verify `commitlint` fails and blocks.
+    - Attempt commit with valid code and message -> `git commit -m "feat: Add valid feature"` -> Verify commit succeeds.
+    - Immediately after success, check running processes for `glance ./` or evidence of its execution (if it creates files/logs). Verify no errors were printed to the terminal from the post-commit hook.
+    - Test skipping: `SKIP=clippy git commit ...` with clippy warnings present -> Verify commit succeeds (if fmt/commitlint pass).
+- **CI Tests:** The `pre-commit run --all-files` step in CI acts as the automated integration test for the `pre-commit` managed hooks against the entire codebase.
 
 ## Logging & Observability
 
-- Emit `INFO` when a log directory is created:  
-  `{ event = "create_dir", path = ?path }`.  
-- Emit `WARN` if parsing an env var fails, with `{ var, error }`.  
-- Emit `ERROR` on directory or permission failure before application exit.  
-- Continue standard structured logging: timestamp, level, module, message, error details.
+- **`pre-commit` Framework:** Logs hook execution status (Passed/Failed), timing, and any stdout/stderr from the hooks directly to the console during the commit attempt. Verbosity can be increased if needed (`pre-commit run -v`).
+- **`commitlint`:** Outputs specific rule violations for commit messages.
+- **`post-commit` Script:** Logs a warning to stderr if `glance` is not found. Logs an informational message indicating background execution start. `glance`'s own output is intentionally discarded (`>/dev/null 2>&1`) to avoid cluttering the user's terminal after a successful commit.
+- **Correlation IDs:** Not applicable for local developer tooling.
 
 ## Security & Config
 
-- Input Validation  
-  • Paths validated in `fs_utils` against traversal (reject `".."` components outside base).  
-  • Non-UTF8 paths converted via `OsString` safely.
-
-- Secrets Handling  
-  • API keys not logged.  
-  • No config values printed at DEBUG level.
-
-- Least Privilege  
-  • Directory mode default `0o750` limits “others”.  
-  • Tests only escalate to `0o755` when explicitly required.
+- **Input Validation:** Handled by the underlying tools (`cargo fmt`, `cargo clippy`, `commitlint`). The `post-commit` script validates the existence of `glance` before attempting execution.
+- **Secrets Handling:** No secrets are used, processed, or stored by this tooling.
+- **Least Privilege:** Hooks run with the privileges of the developer invoking `git commit`. The `post-commit` script does not require elevated privileges. Ensure `glance` itself follows least privilege principles.
+- **Dependencies:** Using pinned versions (`rev`) in `.pre-commit-config.yaml` for third-party hook repositories mitigates risks from upstream changes.
 
 ## Documentation
 
-- Code Self-Doc  
-  • Each constant has a rationale.  
-  • `fs_utils` functions documented with parameters, behavior, and cross-platform notes.
-
-- README Updates  
-  • Sync default values table with constants.  
-  • Note centralization of defaults and new `fs_utils` responsibilities.
+- **Code Self-doc:**
+    - `.pre-commit-config.yaml`: YAML structure is declarative. Use `name:` fields for clarity. Add comments (`#`) explaining non-obvious choices.
+    - `commitlint.config.js`: Minimal, relies on standard conventional commit rules.
+    - `templates/post-commit.template`: Includes comments explaining its purpose, checks, and asynchronous execution logic.
+- **README/CONTRIBUTING Updates:** Critical section detailing prerequisites, installation steps (including the manual post-commit setup), purpose of hooks, and how to skip them. (See Detailed Build Steps #8).
 
 ## Risk Matrix
 
-| Risk                                                          | Severity | Mitigation                                                          |
-|---------------------------------------------------------------|----------|---------------------------------------------------------------------|
-| Changing observable defaults (port/levels/paths) accidentally | medium   | Code review against `README.md`; tests assert constants in code; CI re-runs integration tests. |
-| Incomplete sweep of hardcoded literals                        | medium   | `grep` audit for string patterns; clippy lint for forbidden literals. |
-| Platform‐specific fs behavior (Windows ACLs)                  | medium   | CI matrix on Win/Linux/macOS; conditional code with cfgs; unit tests per platform. |
-| Permission helper false negatives due to bitmask errors       | low      | Unit tests with all relevant modes; review expected masks.          |
-| Conflicts with ongoing logging-cleanup work                   | low      | Coordinate via PR tags; isolate module-level changes; small commits. |
+| Risk                                                     | Severity | Mitigation                                                                                                                               |
+|----------------------------------------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------|
+| Developer Setup Friction (Python/pre-commit/post-commit) | medium   | Clear, tested documentation in README/CONTRIBUTING.md. CI validation (`pre-commit run --all-files`) provides a safety net.                 |
+| `commitlint` Node.js Dependency Management               | low      | Using a community `pre-commit` hook (`alessandrojcm/commitlint-pre-commit-hook`) abstracts away direct Node/npm management from the developer. |
+| `post-commit` Hook Not Installed/Executable by Developer | medium   | Explicit manual setup steps in documentation. Consider adding a simple verification script (`./scripts/verify-hooks.sh`) if this becomes common. |
+| `glance` Tool Unavailable or Failing                     | low      | Post-commit script includes existence check and warning. Async execution prevents blocking. Failure is non-critical for commit success.    |
+| Hook Performance Impacting Commit Time                   | low      | `fmt` and `clippy` are generally fast. Avoiding `cargo test` in pre-commit mitigates major slowdowns. Monitor if needed.                     |
+| Over-reliance on `SKIP` or `--no-verify`                 | low      | Document as escape hatches for exceptional cases only. CI enforces checks regardless of local skips.                                      |
+| Platform Compatibility (Shell script, paths)             | low      | Post-commit script uses basic `sh` features. `pre-commit` handles cross-platform execution for managed hooks well. Test on target OSes.     |
 
 ## Open Questions
 
-- Should `fs_utils::ensure_directory` reject symlink targets outside the intended base?  
-- Expose `fs_utils` publicly for downstream crates or keep `pub(crate)`?  
-- Enforce a CI lint that flags any new hardcoded default literal?
+- Confirm `glance` is expected to be present in typical developer environments and CI. If not, the post-commit warning is sufficient, but documentation might need adjustment.
+- Is the chosen `commitlint` hook repository (`alessandrojcm/commitlint-pre-commit-hook`) the best fit, or are there alternatives preferred by the team? (Chosen one seems robust and handles node environment).
+- Should `cargo test` be added as a *manual* pre-commit stage (`stages: [manual]`) for optional execution via `pre-commit run --hook-stage manual test`, or solely rely on CI? (Decision: Rely solely on CI for tests to keep pre-commit fast).
+```
