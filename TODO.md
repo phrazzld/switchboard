@@ -118,7 +118,7 @@
         1. The `needs:` section of the summary job no longer lists the removed jobs.
     - **Depends‑on:** [T010]
 
-- [ ] **T012 · Chore · P2: rename ci summary job**
+- [x] **T012 · Chore · P2: rename ci summary job**
     - **Context:** PLAN.md § cr-06 Remove Redundant and Misleading Pre-commit CI Jobs (Step 4)
     - **Action:**
         1. Edit `.github/workflows/ci.yml`.

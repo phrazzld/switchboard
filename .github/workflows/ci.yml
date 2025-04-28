@@ -334,8 +334,8 @@ jobs:
   # These jobs were redundant because format and linting checks are already performed
   # in the format-* and lint-* jobs
 
-  cross-platform-verification:
-    name: Cross-Platform Verification
+  Linux_macOS_Verification_Summary:
+    name: Linux/macOS Verification Summary
     needs: [
       format-linux, format-macos,
       lint-linux, lint-macos,
