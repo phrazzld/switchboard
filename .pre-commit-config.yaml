@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/doublify/pre-commit-rust
-  rev: v1.0
+  rev: eeee35a89e69d5772bdee97db1a6a898467b686e # v1.0 tag
   hooks:
     - id: fmt
       name: Rust Formatter Check
