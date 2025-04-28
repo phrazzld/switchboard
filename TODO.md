@@ -35,7 +35,7 @@
         1. The `rev:` for the remote `rustfmt` hook is pinned to a specific version.
     - **Depends‑on:** [T001]
 
-- [ ] **T004 · Chore · P1: pin remote clippy hook version**
+- [x] **T004 · Chore · P1: pin remote clippy hook version**
     - **Context:** PLAN.md § cr-03 Fix Fragile Local Pre-commit Hooks Definition
     - **Action:**
         1. Edit `.pre-commit-config.yaml`.
