@@ -77,7 +77,7 @@
         1. Introduce a failing test. Attempt `git commit`. Verify the hook fails. Fix the test. Attempt `git commit`. Verify the hook passes.
     - **Depends‑on:** none
 
-- [ ] **T008 · Documentation · P2: document file size and cargo test pre-commit hooks**
+- [x] **T008 · Documentation · P2: document file size and cargo test pre-commit hooks**
     - **Context:** PLAN.md § cr-01 Reinstate Lost Pre-commit File Length & Test Checks (Step 5)
     - **Action:**
         1. Edit `CONTRIBUTING.md`.
