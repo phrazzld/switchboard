@@ -128,7 +128,7 @@
     - **Depends‑on:** [T011]
 
 ## Repository & Code Cleanup
-- [ ] **T013 · Chore · P3: remove temporary files from repository**
+- [x] **T013 · Chore · P3: remove temporary files from repository**
     - **Context:** PLAN.md § cr-07 Remove Committed Temporary/Example Files (Steps 1, 2, 4)
     - **Action:**
         1. Delete `test-file.txt` from the repository.
