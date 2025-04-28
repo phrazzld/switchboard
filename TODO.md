@@ -99,7 +99,7 @@
         2. Create a test PR with only valid commit messages. Verify the CI step passes.
     - **Depends‑on:** [T005]
 
-- [ ] **T010 · Chore · P2: remove redundant pre-commit ci jobs**
+- [x] **T010 · Chore · P2: remove redundant pre-commit ci jobs**
     - **Context:** PLAN.md § cr-06 Remove Redundant and Misleading Pre-commit CI Jobs (Step 2)
     - **Action:**
         1. Edit `.github/workflows/ci.yml`.
