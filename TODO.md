@@ -147,7 +147,7 @@
         1. A useful commit message example is embedded in documentation, or a decision was made not to include it.
     - **Depends‑on:** [T013]
 
-- [ ] **T015 · Refactor · P1: remove dead_code allowances in tests/common/mod.rs**
+- [x] **T015 · Refactor · P1: remove dead_code allowances in tests/common/mod.rs**
     - **Context:** PLAN.md § cr-02 Remove Undocumented Suppression of Dead Code Warnings (Steps 1, 2)
     - **Action:**
         1. Open `tests/common/mod.rs`.
@@ -156,7 +156,7 @@
         1. No `#[allow(dead_code)]` attributes remain in `tests/common/mod.rs`.
     - **Depends‑on:** none
 
-- [ ] **T016 · Refactor · P1: resolve dead_code warnings in tests/common/mod.rs**
+- [x] **T016 · Refactor · P1: resolve dead_code warnings in tests/common/mod.rs**
     - **Context:** PLAN.md § cr-02 Remove Undocumented Suppression of Dead Code Warnings (Steps 3, 4, 5)
     - **Action:**
         1. Run `cargo clippy --tests -- -D warnings` focusing on `tests/common/mod.rs`.
