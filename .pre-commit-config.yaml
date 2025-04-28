@@ -4,14 +4,9 @@ repos:
   hooks:
     - id: fmt
       name: Rust Formatter Check
-- repo: local
-  hooks:
     - id: clippy
       name: Rust Linter Check
-      entry: cargo clippy --all-targets -- -D warnings # Fail on any warnings
-      language: system
-      types: [rust]
-      pass_filenames: false
+      args: ["--all-targets", "--", "-D", "warnings"]
 - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
   rev: v9.13.0 # Specify a pinned, stable version
   hooks:

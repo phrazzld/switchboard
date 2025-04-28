@@ -14,7 +14,7 @@
         2. Run `pre-commit run rustfmt` and confirm it downloads and runs the remote hook.
     - **Depends‑on:** none
 
-- [ ] **T002 · Refactor · P1: replace local clippy hook with remote**
+- [x] **T002 · Refactor · P1: replace local clippy hook with remote**
     - **Context:** PLAN.md § cr-03 Fix Fragile Local Pre-commit Hooks Definition
     - **Action:**
         1. Edit `.pre-commit-config.yaml`.
