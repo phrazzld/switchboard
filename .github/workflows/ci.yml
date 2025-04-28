@@ -334,6 +334,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Fetch all history for commit message validation
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -349,12 +352,44 @@ jobs:
         run: pip install pre-commit
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
+      - name: Validate commit messages
+        # Different handling for push vs. pull request events
+        run: |
+          # Determine the base and head commits based on event type
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "Validating commit messages for pull request #${{ github.event.pull_request.number }}"
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            echo "Validating commit messages for push to ${{ github.ref_name }}"
+            # For push events, use the before/after commits from the push
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.event.after }}"
+          fi
+          
+          echo "Commit range: $BASE_SHA...$HEAD_SHA"
+          
+          # Run commitlint using pre-commit on all commits in the range
+          pre-commit run --hook-stage commit-msg --from $BASE_SHA --to $HEAD_SHA commitlint
+          
+          # Check exit code and provide appropriate feedback
+          if [ $? -eq 0 ]; then
+            echo "✅ All commit messages in range follow Conventional Commits format"
+          else
+            echo "❌ Some commit messages do not follow Conventional Commits format"
+            echo "Please ensure all commit messages follow the format: type(scope): description"
+            echo "Examples: 'feat: add new feature', 'fix(api): resolve connection issue'"
+            exit 1
+          fi
         
   pre-commit-macos:
     name: Pre-commit Hooks (macOS)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Fetch all history for commit message validation
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -370,6 +405,35 @@ jobs:
         run: pip install pre-commit
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
+      - name: Validate commit messages
+        # Different handling for push vs. pull request events
+        run: |
+          # Determine the base and head commits based on event type
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "Validating commit messages for pull request #${{ github.event.pull_request.number }}"
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            echo "Validating commit messages for push to ${{ github.ref_name }}"
+            # For push events, use the before/after commits from the push
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.event.after }}"
+          fi
+          
+          echo "Commit range: $BASE_SHA...$HEAD_SHA"
+          
+          # Run commitlint using pre-commit on all commits in the range
+          pre-commit run --hook-stage commit-msg --from $BASE_SHA --to $HEAD_SHA commitlint
+          
+          # Check exit code and provide appropriate feedback
+          if [ $? -eq 0 ]; then
+            echo "✅ All commit messages in range follow Conventional Commits format"
+          else
+            echo "❌ Some commit messages do not follow Conventional Commits format"
+            echo "Please ensure all commit messages follow the format: type(scope): description"
+            echo "Examples: 'feat: add new feature', 'fix(api): resolve connection issue'"
+            exit 1
+          fi
 
   cross-platform-verification:
     name: Cross-Platform Verification

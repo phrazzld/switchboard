@@ -87,7 +87,7 @@
     - **Depends‑on:** [T006, T007]
 
 ## CI Automation
-- [ ] **T009 · Feature · P1: add commit message validation step to ci**
+- [x] **T009 · Feature · P1: add commit message validation step to ci**
     - **Context:** PLAN.md § cr-04 Fix Missing Commit Message Enforcement in CI
     - **Action:**
         1. Edit `.github/workflows/ci.yml`.
