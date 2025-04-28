@@ -41,7 +41,7 @@
     - **Done‑when:**
         1. `commitlint.config.js` exists with the specified content.
     - **Depends‑on:** none
-- [ ] **T006 · Feature · P2: create post-commit hook template**
+- [x] **T006 · Feature · P2: create post-commit hook template**
     - **Context:** PLAN.md > Detailed Build Steps > #7
     - **Action:**
         1. Create `templates/post-commit.template` with the exact shell script content provided in the plan.
