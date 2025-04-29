@@ -177,7 +177,7 @@
         1. The `unused_variables` allowance is removed and `cargo clippy --tests -- -D warnings` passes for this variable.
     - **Depends‑on:** none
 
-- [ ] **T018 · Refactor · P2: resolve unused _config in test_development_environment_paths**
+- [x] **T018 · Refactor · P2: resolve unused _config in test_development_environment_paths**
     - **Context:** PLAN.md § cr-08 Clarify Unclear Test Variable Usage (Step 2)
     - **Action:**
         1. Edit `tests/environment_log_paths_test.rs:135`.
