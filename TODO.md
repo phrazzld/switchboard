@@ -27,7 +27,7 @@
         1. `load_config` correctly wraps retrieved API keys in `Secret` types.
         2. `cargo check` passes for `load_config`.
     - **Depends‑on:** [T002, T009]
-- [ ] **T004 · Refactor · P0: update api key usage sites to call expose_secret**
+- [x] **T004 · Refactor · P0: update api key usage sites to call expose_secret**
     - **Context:** PLAN.md > cr-02 > Steps > 4
     - **Action:**
         1. Find all code locations (e.g., HTTP client setup) accessing `anthropic_api_key` or `openai_api_key`.
