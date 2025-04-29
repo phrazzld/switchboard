@@ -26,7 +26,7 @@
     - **Verification:** none
     - **Depends‑on:** none
 
-- [ ] **T003 · feature · P2: add openai config fields to config struct**
+- [x] **T003 · feature · P2: add openai config fields to config struct**
     - **Context:** PLAN-1.md, 4.1. Add Config Fields
     - **Action:**
         1. Add `openai_api_key: Option<String>`, `openai_api_base_url: String`, and `openai_enabled: bool` fields to the `Config` struct in `src/config.rs`.
@@ -38,7 +38,7 @@
     - **Verification:** none
     - **Depends‑on:** none
 
-- [ ] **T004 · feature · P2: implement loading openai config from env vars with defaults**
+- [x] **T004 · feature · P2: implement loading openai config from env vars with defaults**
     - **Context:** PLAN-1.md, 4.2. Update Config Loading (loading & defaults)
     - **Action:**
         1. Modify the config loading function (`load_config` or similar) in `src/config.rs` to read `OPENAI_API_KEY`, `OPENAI_API_BASE_URL`, and `OPENAI_ENABLED` environment variables.
@@ -50,7 +50,7 @@
     - **Verification:** none
     - **Depends‑on:** [T003]
 
-- [ ] **T005 · feature · P2: add validation for openai api key if enabled**
+- [x] **T005 · feature · P2: add validation for openai api key if enabled**
     - **Context:** PLAN-1.md, 4.2. Update Config Loading (validation)
     - **Action:**
         1. Add validation logic within the config loading function in `src/config.rs`.
@@ -63,7 +63,7 @@
     - **Verification:** none
     - **Depends‑on:** [T004]
 
-- [ ] **T006 · feature · P2: add logging for loaded openai config (excluding key)**
+- [x] **T006 · feature · P2: add logging for loaded openai config (excluding key)**
     - **Context:** PLAN-1.md, 4.2. Update Config Loading (logging)
     - **Action:**
         1. In the config loading logic (after successful load and validation), add logging statements (INFO or DEBUG level).
@@ -79,7 +79,7 @@
         3. Search application logs for `testkey` (or the actual key used); verify it's not found.
     - **Depends‑on:** [T004]
 
-- [ ] **T007 · chore · P2: document openai env vars in readme**
+- [x] **T007 · chore · P2: document openai env vars in readme**
     - **Context:** PLAN-1.md, 4.5. Update Documentation
     - **Action:**
         1. Add a subsection for OpenAI under the "Environment Variables" section in `README.md`.

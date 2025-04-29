@@ -43,6 +43,9 @@
 //! | `PORT` | HTTP server port | 8080 |
 //! | `ANTHROPIC_API_KEY` | API key (required) | None |
 //! | `ANTHROPIC_TARGET_URL` | API endpoint | <https://api.anthropic.com> |
+//! | `OPENAI_API_KEY` | OpenAI API key (required when enabled) | None |
+//! | `OPENAI_API_BASE_URL` | OpenAI API endpoint | <https://api.openai.com> |
+//! | `OPENAI_ENABLED` | Enable OpenAI integration | false |
 //! | `LOG_LEVEL` | Console log level | info |
 //! | `LOG_FORMAT` | Log format (pretty/json) | pretty |
 //! | `LOG_BODIES` | Log request/response bodies | true |
@@ -67,6 +70,11 @@ pub const DEFAULT_PORT: &str = "8080";
 ///
 /// The official endpoint for Anthropic's API services
 pub const DEFAULT_ANTHROPIC_TARGET_URL: &str = "https://api.anthropic.com";
+
+/// Default URL for OpenAI API (<https://api.openai.com>)
+///
+/// The official endpoint for OpenAI's API services
+pub const DEFAULT_OPENAI_TARGET_URL: &str = "https://api.openai.com";
 
 /// Default log level for stdout (info)
 ///
@@ -109,6 +117,11 @@ pub const DEFAULT_LOG_DIRECTORY_MODE: u32 = 0o750;
 /// By default, no automatic log cleanup is performed
 pub const DEFAULT_LOG_MAX_AGE_DAYS: Option<u32> = None;
 
+/// Default value for OpenAI integration enablement (false)
+///
+/// OpenAI integration is disabled by default, requiring explicit opt-in
+pub const DEFAULT_OPENAI_ENABLED: bool = false;
+
 /// Specifies how log directory should be determined
 ///
 /// This enum controls how the application selects the base directory for logs,
@@ -148,10 +161,22 @@ pub enum LogDirectoryMode {
 pub struct Config {
     /// HTTP port to listen on
     pub port: String,
+
+    // Anthropic API configuration
     /// API key for authenticating with Anthropic API
     pub anthropic_api_key: String,
     /// Target URL for the Anthropic API
     pub anthropic_target_url: String,
+
+    // OpenAI API configuration
+    /// API key for authenticating with OpenAI API (None if disabled)
+    pub openai_api_key: Option<String>,
+    /// Target URL for the OpenAI API
+    pub openai_api_base_url: String,
+    /// Whether the OpenAI integration is enabled
+    pub openai_enabled: bool,
+
+    // Logging configuration
     /// Minimum log level for stdout output (info, debug, etc.)
     pub log_stdout_level: String,
     /// Format for stdout log output (json or pretty)
@@ -181,8 +206,17 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             port: DEFAULT_PORT.to_string(),
+
+            // Anthropic API defaults
             anthropic_api_key: "".to_string(),
             anthropic_target_url: DEFAULT_ANTHROPIC_TARGET_URL.to_string(),
+
+            // OpenAI API defaults
+            openai_api_key: None,
+            openai_api_base_url: DEFAULT_OPENAI_TARGET_URL.to_string(),
+            openai_enabled: DEFAULT_OPENAI_ENABLED,
+
+            // Logging defaults
             log_stdout_level: DEFAULT_LOG_STDOUT_LEVEL.to_string(),
             log_format: DEFAULT_LOG_FORMAT.to_string(),
             log_bodies: DEFAULT_LOG_BODIES,
@@ -224,6 +258,36 @@ pub fn load_config() -> &'static Config {
 
         let anthropic_target_url = env::var("ANTHROPIC_TARGET_URL")
             .unwrap_or_else(|_| DEFAULT_ANTHROPIC_TARGET_URL.to_string());
+
+        // Load OpenAI configuration
+        let openai_api_key = env::var("OPENAI_API_KEY").ok();
+        let openai_api_base_url = env::var("OPENAI_API_BASE_URL")
+            .unwrap_or_else(|_| DEFAULT_OPENAI_TARGET_URL.to_string());
+
+        // Parse OPENAI_ENABLED with error handling for non-boolean values
+        let openai_enabled = match env::var("OPENAI_ENABLED") {
+            Ok(value) => {
+                // Check if it's a valid boolean representation
+                if value.to_lowercase() == "true"
+                    || value.to_lowercase() == "false"
+                    || value == "0"
+                    || value == "1"
+                {
+                    // Only consider "true" and "1" as true values
+                    value.to_lowercase() == "true" || value == "1"
+                } else {
+                    // Non-standard boolean value, log a warning
+                    warn!(
+                        var = "OPENAI_ENABLED",
+                        value = %value,
+                        default = DEFAULT_OPENAI_ENABLED,
+                        "Ambiguous boolean value in environment variable, using default"
+                    );
+                    DEFAULT_OPENAI_ENABLED
+                }
+            }
+            Err(_) => DEFAULT_OPENAI_ENABLED, // Use default if not set
+        };
 
         let log_stdout_level =
             env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_STDOUT_LEVEL.to_string());
@@ -305,10 +369,21 @@ pub fn load_config() -> &'static Config {
             })
         });
 
+        // Validate OpenAI configuration - if enabled, API key must be provided
+        if openai_enabled && openai_api_key.is_none() {
+            panic!("OPENAI_API_KEY must be set when OPENAI_ENABLED is true");
+        }
+
         let loaded_config = Config {
             port,
             anthropic_api_key,
             anthropic_target_url,
+
+            // Use the loaded OpenAI configuration values
+            openai_api_key,
+            openai_api_base_url,
+            openai_enabled,
+
             log_stdout_level,
             log_format,
             log_bodies,
@@ -319,10 +394,12 @@ pub fn load_config() -> &'static Config {
             log_max_age_days,
         };
 
-        // Log configuration values, but omit the API key for security
+        // Log configuration values, but omit the API keys for security
         info!(
             port = %loaded_config.port,
-            target_url = %loaded_config.anthropic_target_url,
+            anthropic_target_url = %loaded_config.anthropic_target_url,
+            openai_target_url = %loaded_config.openai_api_base_url,
+            openai_enabled = loaded_config.openai_enabled,
             log_stdout_level = %loaded_config.log_stdout_level,
             log_format = %loaded_config.log_format,
             log_bodies = loaded_config.log_bodies,
@@ -421,6 +498,9 @@ mod tests {
             port,
             anthropic_api_key,
             anthropic_target_url,
+            openai_api_key: None,
+            openai_api_base_url: DEFAULT_OPENAI_TARGET_URL.to_string(),
+            openai_enabled: DEFAULT_OPENAI_ENABLED,
             log_stdout_level,
             log_format,
             log_bodies,

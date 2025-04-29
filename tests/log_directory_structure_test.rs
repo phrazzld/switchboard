@@ -19,6 +19,9 @@ struct LogPaths {
 fn generate_log_paths(base_name: &str) -> LogPaths {
     // Create config with the provided base name
     let config = Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
@@ -217,6 +220,9 @@ fn test_all_log_types() {
     // Instead of using the global logger, we'll test the path resolution directly
     // Test application logs path
     let app_config = Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
@@ -239,6 +245,9 @@ fn test_all_log_types() {
 
     // Test log path
     let test_config = Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),

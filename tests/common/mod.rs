@@ -71,6 +71,9 @@ pub async fn setup_test_environment() -> TestSetup {
         port: "0".to_string(), // Use 0 to let OS assign a random port if needed
         anthropic_api_key: "test-api-key".to_string(), // Dummy API key for testing
         anthropic_target_url: mock_server.uri(), // Point to the mock server
+        openai_api_key: Some("test-openai-api-key".to_string()), // Dummy OpenAI API key
+        openai_api_base_url: "https://api.openai.com".to_string(), // Default OpenAI URL
+        openai_enabled: false, // Disabled by default
         log_stdout_level: "debug".to_string(), // Use debug level for more verbose test logs
         log_format: "pretty".to_string(), // Use pretty format for readability in tests
         log_bodies: true,      // Enable body logging for verbose testing
@@ -129,6 +132,9 @@ pub fn setup_test_logging(test_name: &str) -> TestLoggingSetup {
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),
         log_bodies: true,
@@ -178,6 +184,9 @@ pub fn generate_test_log_path(test_name: &str) -> PathBuf {
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),
         log_bodies: true,
@@ -231,6 +240,9 @@ pub fn verify_log_directory() -> bool {
         port: "0".to_string(),
         anthropic_api_key: "test-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "info".to_string(),
         log_format: "pretty".to_string(),
         log_bodies: true,

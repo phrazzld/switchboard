@@ -10,6 +10,9 @@ use switchboard::{
 /// Helper function to create a test config with specific settings
 fn create_test_config(log_file_path: &str, log_directory_mode: LogDirectoryMode) -> Config {
     Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
@@ -255,6 +258,9 @@ fn test_subdir_creation() {
     // We can't create LogPathResolver directly as its fields are private
     // Instead, create a config that points to our temp directory
     let config = Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),
@@ -383,6 +389,9 @@ fn test_unix_directory_permissions() {
     // We can't create LogPathResolver directly as its fields are private
     // Instead, create a config that points to our temp directory
     let config = Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),

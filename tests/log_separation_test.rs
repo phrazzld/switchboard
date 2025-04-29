@@ -9,6 +9,9 @@ use switchboard::{
 /// Creates a test config with a specific log filename
 fn create_test_config(log_filename: &str) -> Config {
     Config {
+        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
         anthropic_api_key: "test-api-key".to_string(),
         anthropic_target_url: "https://example.com".to_string(),

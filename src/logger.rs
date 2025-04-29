@@ -165,6 +165,9 @@ impl LogPathResolver {
     ///
     /// // Create a test configuration
     /// let config = Config {
+    ///     # openai_api_key: None,
+    ///     # openai_api_base_url: "https://api.openai.com".to_string(),
+    ///     # openai_enabled: false,
     ///     // ... config fields ...
     ///     log_file_path: "./switchboard.log".to_string(),
     ///     // ... other fields ...
@@ -285,6 +288,9 @@ impl LogPathResolver {
     ///
     /// // Create a test configuration
     /// let config = Config {
+    ///     # openai_api_key: None,
+    ///     # openai_api_base_url: "https://api.openai.com".to_string(),
+    ///     # openai_enabled: false,
     ///     // ... config fields ...
     ///     log_file_path: "./switchboard.log".to_string(),
     ///     // ... other fields ...
@@ -812,6 +818,9 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 /// # use switchboard::logger;
 /// # // Create a mock config for testing instead of using global config
 /// # let mock_config = Config {
+///     openai_api_key: Some("test-openai-api-key".to_string()),
+///     openai_api_base_url: "https://api.openai.com".to_string(),
+///     openai_enabled: false,
 /// #     port: "8080".to_string(),
 /// #     anthropic_api_key: "test-key".to_string(),
 /// #     anthropic_target_url: "https://example.com".to_string(),
@@ -837,6 +846,9 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 /// # use switchboard::config::{Config, LogDirectoryMode};
 /// # use switchboard::logger;
 /// let config = Config {
+///     # openai_api_key: None,
+///     # openai_api_base_url: "https://api.openai.com".to_string(),
+///     # openai_enabled: false,
 ///     // ... other fields ...
 ///     log_stdout_level: "info".to_string(),
 ///     log_format: "json".to_string(), // Use JSON for stdout too
@@ -860,6 +872,9 @@ pub fn validate_log_path(path_str: &str) -> Result<PathBuf, LogInitError> {
 /// # use switchboard::config::{Config, LogDirectoryMode};
 /// # use switchboard::logger;
 /// let config = Config {
+///     # openai_api_key: None,
+///     # openai_api_base_url: "https://api.openai.com".to_string(),
+///     # openai_enabled: false,
 ///     // ... other fields ...
 ///     log_stdout_level: "warn".to_string(), // Only warnings and errors go to stdout
 ///     log_file_path: "./logs/switchboard.log".to_string(),
@@ -1314,6 +1329,9 @@ mod tests {
 
         // Create a test configuration
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -1386,6 +1404,9 @@ mod tests {
         {
             // Create a configuration with a path to a location that cannot be created
             let config = Config {
+                openai_api_key: Some("test-openai-api-key".to_string()),
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 port: "0".to_string(),
                 anthropic_api_key: "test-key".to_string(),
                 anthropic_target_url: "https://example.com".to_string(),
@@ -1418,6 +1439,9 @@ mod tests {
         #[cfg(target_family = "windows")]
         {
             let config = Config {
+                openai_api_key: Some("test-openai-api-key".to_string()),
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 port: "0".to_string(),
                 anthropic_api_key: "test-key".to_string(),
                 anthropic_target_url: "https://example.com".to_string(),
@@ -1447,6 +1471,9 @@ mod tests {
     fn test_invalid_path_error() {
         // Create a configuration with an invalid path (empty filename)
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -1652,6 +1679,9 @@ mod tests {
     fn test_log_path_resolver_new() {
         // Create a test configuration
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -1688,6 +1718,9 @@ mod tests {
     fn test_log_path_resolver_with_absolute_path() {
         // Create a config with absolute path
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -1712,6 +1745,9 @@ mod tests {
     fn test_log_path_resolver_with_default_filename() {
         // Create a config with invalid path (to trigger default)
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -1737,6 +1773,9 @@ mod tests {
     fn test_log_path_resolver_resolve() {
         // Create a test configuration
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -1861,6 +1900,9 @@ mod tests {
 
         // This config is not used in this test but kept for context clarity
         let _config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),
@@ -2026,6 +2068,9 @@ mod tests {
     fn test_legacy_path_adaptation() {
         // Create a configuration with a legacy path
         let config = Config {
+            openai_api_key: Some("test-openai-api-key".to_string()),
+            openai_api_base_url: "https://api.openai.com".to_string(),
+            openai_enabled: false,
             port: "0".to_string(),
             anthropic_api_key: "test-api-key".to_string(),
             anthropic_target_url: "https://example.com".to_string(),

@@ -211,6 +211,9 @@ fn setup_logging(
                 port: "0".to_string(),                     // Not used in benchmarks
                 anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                openai_api_key: None,
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 log_stdout_level: "debug".to_string(),
                 log_format: "json".to_string(), // JSON format for consistency
                 log_bodies: true,
@@ -234,8 +237,11 @@ fn setup_logging(
                 port: "0".to_string(),                     // Not used in benchmarks
                 anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
-                log_stdout_level: "off".to_string(),       // Disable stdout logging
-                log_format: "json".to_string(),            // Not relevant when stdout disabled
+                openai_api_key: None,
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
+                log_stdout_level: "off".to_string(), // Disable stdout logging
+                log_format: "json".to_string(),      // Not relevant when stdout disabled
                 log_bodies: true,
                 log_file_path,
                 log_file_level: "debug".to_string(),
@@ -257,6 +263,9 @@ fn setup_logging(
                 port: "0".to_string(),                     // Not used in benchmarks
                 anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                openai_api_key: None,
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 log_stdout_level: "debug".to_string(),
                 log_format: "json".to_string(), // JSON format for consistency
                 log_bodies: true,
