@@ -167,7 +167,7 @@
         2. Any remaining allowances have explicit `// ALLOWANCE:` comments.
     - **Depends‑on:** [T015]
 
-- [ ] **T017 · Refactor · P2: resolve unused variable in test_directory_permissions_non_unix**
+- [x] **T017 · Refactor · P2: resolve unused variable in test_directory_permissions_non_unix**
     - **Context:** PLAN.md § cr-08 Clarify Unclear Test Variable Usage (Step 1)
     - **Action:**
         1. Edit `tests/common_utils_test.rs:96`.
