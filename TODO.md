@@ -115,7 +115,7 @@
     - **Verification:** Run `cargo test`.
     - **Depends‑on:** [T005]
 
-- [ ] **T010 · chore · P2: run final checks (fmt, clippy, test)**
+- [x] **T010 · chore · P2: run final checks (fmt, clippy, test)**
     - **Context:** PLAN-1.md, 4.7. Review & Refactor
     - **Action:**
         1. Run `cargo fmt --check` to verify formatting.
