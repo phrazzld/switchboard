@@ -2,7 +2,7 @@
 
 ## OpenAI Foundation
 
-- [ ] **T001 · chore · P2: add async-openai crate dependency**
+- [x] **T001 · chore · P2: add async-openai crate dependency**
     - **Context:** PLAN-1.md, 4.3. Add Dependency
     - **Action:**
         1. Add `async-openai = "<latest_compatible_version>"` to `[dependencies]` in `Cargo.toml`. (Confirm version constraint - see Clarifications)
