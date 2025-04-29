@@ -15,7 +15,7 @@
     - **Verification:** none
     - **Depends‑on:** none
 
-- [ ] **T002 · chore · P2: create empty openai adapter module file**
+- [x] **T002 · chore · P2: create empty openai adapter module file**
     - **Context:** PLAN-1.md, 4.4. Create Placeholder Module
     - **Action:**
         1. Create the file `src/openai_adapter.rs`.
