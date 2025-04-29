@@ -36,6 +36,7 @@ reqwest = { version = "0.11.20", features = ["json", "stream", "rustls-tls"], de
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.107"
 async-openai = { version = "0.28.1", features = ["rustls"], default-features = false }
+secrecy = "0.10.3"  # For redacting sensitive data in logs and debug output
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
 tracing-appender = "0.2.2"
