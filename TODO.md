@@ -103,7 +103,7 @@
     - **Verification:** Run `cargo test`.
     - **Depends‑on:** [T004]
 
-- [ ] **T009 · test · P2: add unit tests for openai config validation**
+- [x] **T009 · test · P2: add unit tests for openai config validation**
     - **Context:** PLAN-1.md, 4.6. Add Unit Tests (validation)
     - **Action:**
         1. Add unit tests in the config test module.
