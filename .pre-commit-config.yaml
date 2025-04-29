@@ -1,0 +1,33 @@
+repos:
+- repo: https://github.com/doublify/pre-commit-rust
+  rev: eeee35a89e69d5772bdee97db1a6a898467b686e # v1.0 tag
+  hooks:
+    - id: fmt
+      name: Rust Formatter Check
+    - id: clippy
+      name: Rust Linter Check
+      args: ["--all-targets", "--", "-D", "warnings"]
+- repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+  rev: v9.13.0 # Specify a pinned, stable version
+  hooks:
+    - id: commitlint
+      stages: [commit-msg]
+      additional_dependencies: ['@commitlint/config-conventional@19.8.0'] # Use conventional commit rules with pinned version
+- repo: local
+  hooks:
+    - id: check-file-length
+      name: Check File Length
+      description: Check file length (warn > 500 lines, error > 1000 lines)
+      entry: hooks/check_file_length.py
+      language: python
+      types: [file]
+      exclude: '^Cargo.lock$|^tests/linecounts/|^benches/'
+      args: [--warn-lines=500, --max-lines=1000]
+    - id: cargo-test
+      name: Rust Test Suite
+      description: Run cargo test to verify all tests pass
+      entry: cargo test --no-fail-fast
+      language: system
+      pass_filenames: false
+      stages: [pre-commit]
+      types: [rust]

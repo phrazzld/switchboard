@@ -2,30 +2,10 @@ use std::env;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use switchboard::{
-    config::{Config, LogDirectoryMode},
-    logger::{
-        detect_environment, get_environment_log_directory, get_xdg_log_directory, LogEnvironment,
-        LogPathResolver, LogType, APP_LOG_SUBDIR, DEFAULT_LOG_DIR, SYSTEM_LOG_DIR, TEST_LOG_SUBDIR,
-    },
+use switchboard::logger::{
+    detect_environment, get_environment_log_directory, get_xdg_log_directory, LogEnvironment,
+    LogType, APP_LOG_SUBDIR, DEFAULT_LOG_DIR, SYSTEM_LOG_DIR, TEST_LOG_SUBDIR,
 };
-
-/// Creates a test config with a specific log filename and directory mode
-fn create_test_config(log_filename: &str, dir_mode: LogDirectoryMode) -> Config {
-    Config {
-        port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
-        anthropic_target_url: "https://example.com".to_string(),
-        log_stdout_level: "debug".to_string(),
-        log_format: "pretty".to_string(),
-        log_bodies: true,
-        log_file_path: log_filename.to_string(),
-        log_file_level: "debug".to_string(),
-        log_max_body_size: 1024,
-        log_directory_mode: dir_mode,
-        log_max_age_days: None,
-    }
-}
 
 /// Creates a test log file with specified content
 fn create_log_file(path: &Path, content: &str) -> bool {
@@ -130,8 +110,7 @@ fn test_development_environment_paths() {
         "Environment should be detected as Development"
     );
 
-    // Create config with default mode to use environment detection
-    let config = create_test_config(&log_filename, LogDirectoryMode::Default);
+    // Note: We don't need to create a config here as the test directly uses the environment paths
 
     // Get expected base directory for this environment
     let expected_base_dir = PathBuf::from(DEFAULT_LOG_DIR);

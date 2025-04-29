@@ -1,0 +1,16 @@
+#!/bin/sh
+# Template for .git/hooks/post-commit
+# Runs 'glance ./' asynchronously after a successful commit.
+
+# Check if glance command exists
+if ! command -v glance > /dev/null 2>&1; then
+    echo "post-commit hook: Warning: 'glance' command not found. Skipping execution." >&2
+    exit 0
+fi
+
+echo "post-commit hook: Running 'glance ./' in background..."
+
+# Execute glance asynchronously, detaching completely
+( glance ./ & ) > /dev/null 2>&1 &
+
+exit 0

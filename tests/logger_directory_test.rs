@@ -34,10 +34,8 @@ fn test_directory_creation() {
     // List files in directory to help debug
     println!("Files in test directory:");
     if let Ok(entries) = fs::read_dir(parent_dir) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                println!("  {}", entry.path().display());
-            }
+        for entry in entries.flatten() {
+            println!("  {}", entry.path().display());
         }
     }
 

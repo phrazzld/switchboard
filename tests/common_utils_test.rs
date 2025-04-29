@@ -89,15 +89,13 @@ mod tests {
 
     #[test]
     fn test_directory_permissions_non_unix() {
-        // This test should run on all platforms
-        // but will have different behavior based on the platform
-        let temp_dir = TempDir::new().expect("Failed to create temporary directory");
-        let temp_dir_path = temp_dir.path();
-
         // On non-Unix systems, it should always succeed
-        // On Unix systems, we test the actual behavior
         #[cfg(not(target_family = "unix"))]
         {
+            // Create a temporary directory and get its path
+            let temp_dir = TempDir::new().expect("Failed to create temporary directory");
+            let temp_dir_path = temp_dir.path();
+
             // The function should return Ok regardless of the permission bits on non-Unix
             let result = verify_directory_permissions(temp_dir_path, 0o755);
             assert!(

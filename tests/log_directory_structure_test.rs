@@ -7,7 +7,7 @@ use switchboard::logger::{
 };
 
 mod common;
-use common::{cleanup_test_log_file, verify_directory_permissions, verify_log_directory};
+use common::{cleanup_test_log_file, verify_log_directory};
 
 // Structure to hold paths for different log types
 struct LogPaths {

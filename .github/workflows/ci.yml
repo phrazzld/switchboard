@@ -329,8 +329,13 @@ jobs:
         run: cargo build --release --verbose
 
 
-  cross-platform-verification:
-    name: Cross-Platform Verification
+  # pre-commit-linux and pre-commit-macos jobs have been removed (T010)
+  # Commit message validation is now integrated into the main jobs
+  # These jobs were redundant because format and linting checks are already performed
+  # in the format-* and lint-* jobs
+
+  Linux_macOS_Verification_Summary:
+    name: Linux/macOS Verification Summary
     needs: [
       format-linux, format-macos,
       lint-linux, lint-macos,

@@ -69,13 +69,13 @@ struct TextVisitor {
 
 impl TextVisitor {
     fn finish(self) -> String {
-        let mut result = self.message.unwrap_or_else(|| "".to_string());
+        let mut result = self.message.unwrap_or_default();
 
         if !self.fields.is_empty() {
-            result.push_str(" ");
+            result.push(' ');
             for (i, (key, value)) in self.fields.iter().enumerate() {
                 if i > 0 {
-                    result.push_str(" ");
+                    result.push(' ');
                 }
                 // Remove quotes from value for string types
                 let formatted_value = value.trim_matches('"').to_string();

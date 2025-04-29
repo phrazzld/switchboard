@@ -70,7 +70,7 @@ impl TestLogResolver {
             .original_config
             .log_file_path
             .split('/')
-            .last()
+            .next_back()
             .unwrap_or(&self.original_config.log_file_path);
         assert!(
             path_str.ends_with(filename),

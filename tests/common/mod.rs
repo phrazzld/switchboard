@@ -18,17 +18,16 @@ use wiremock::MockServer;
 use std::os::unix::fs::PermissionsExt;
 
 /// Represents the setup needed for integration tests.
+#[allow(dead_code)] // ALLOWANCE: Used by tests/proxy_integration_tests.rs
 pub struct TestSetup {
     /// HTTP client for the application to use
     /// Note: This field is required during setup even though tests may not access it directly,
     /// as it's captured by the router and used internally during request processing.
-    #[allow(dead_code)]
     pub client: Client,
 
     /// Application configuration pointing to the mock server
     /// Note: This field is retained for potential future tests that might need to verify config values,
     /// though it's not directly accessed in current tests.
-    #[allow(dead_code)]
     pub config: Config,
 
     /// The WireMock server instance
@@ -39,6 +38,7 @@ pub struct TestSetup {
 }
 
 /// Represents the setup needed for logging in tests.
+#[allow(dead_code)] // ALLOWANCE: Potentially used by future tests
 pub struct TestLoggingSetup {
     /// Worker guard that must be kept alive for the duration of the test
     pub _guard: WorkerGuard,
@@ -59,6 +59,7 @@ pub struct TestLoggingSetup {
 /// 4. Instantiates the application router using the test client and config
 ///
 /// Returns a TestSetup instance containing all components needed for testing.
+#[allow(dead_code)] // ALLOWANCE: Used by tests/proxy_integration_tests.rs
 pub async fn setup_test_environment() -> TestSetup {
     // Start a WireMock server on a random available port
     // This will be used to mock the Anthropic API during tests
@@ -118,6 +119,7 @@ pub async fn setup_test_environment() -> TestSetup {
 ///
 /// # Returns
 /// A TestLoggingSetup instance containing the worker guard, log path, and config
+#[allow(dead_code)] // ALLOWANCE: Potentially used by future tests
 pub fn setup_test_logging(test_name: &str) -> TestLoggingSetup {
     // Create a unique log file name based on the test name
     let log_file_name = format!("{}_test.log", test_name);
@@ -166,6 +168,7 @@ pub fn setup_test_logging(test_name: &str) -> TestLoggingSetup {
 ///
 /// # Returns
 /// A PathBuf containing the resolved log file path
+#[allow(dead_code)] // ALLOWANCE: Used by multiple test files (logger_level_test.rs, logger_file_test.rs, etc.)
 pub fn generate_test_log_path(test_name: &str) -> PathBuf {
     // Create a unique log file name based on the test name
     let log_file_name = format!("{}_test.log", test_name);
@@ -200,6 +203,7 @@ pub fn generate_test_log_path(test_name: &str) -> PathBuf {
 ///
 /// # Returns
 /// true if the log file exists and has content, false otherwise
+#[allow(dead_code)] // ALLOWANCE: Used by tests/test_log_utilities_test.rs
 pub fn verify_log_file_exists(log_path: &Path) -> bool {
     if !log_path.exists() {
         return false;
@@ -220,6 +224,7 @@ pub fn verify_log_file_exists(log_path: &Path) -> bool {
 ///
 /// # Returns
 /// true if the directory structure is correct, false otherwise
+#[allow(dead_code)] // ALLOWANCE: Used by multiple test files (logger_directory_test.rs, test_log_utilities_test.rs, log_directory_structure_test.rs)
 pub fn verify_log_directory() -> bool {
     // Create a dummy config with LogDirectoryMode::Default
     let config = Config {
@@ -276,6 +281,7 @@ pub fn verify_log_directory() -> bool {
 ///
 /// # Returns
 /// An Option containing the PathBuf of the found log file, or None if not found
+#[allow(dead_code)] // ALLOWANCE: Internal helper function
 pub fn find_log_file(base_path: &Path) -> Option<PathBuf> {
     // Check for the base path first
     if base_path.exists() {
@@ -294,12 +300,10 @@ pub fn find_log_file(base_path: &Path) -> Option<PathBuf> {
     if let Some(parent) = base_path.parent() {
         if let Ok(entries) = fs::read_dir(parent) {
             let base_name = base_path.file_name().unwrap().to_string_lossy();
-            for entry in entries {
-                if let Ok(entry) = entry {
-                    let file_name = entry.file_name().to_string_lossy().to_string();
-                    if file_name.starts_with(base_name.as_ref()) {
-                        return Some(entry.path());
-                    }
+            for entry in entries.flatten() {
+                let file_name = entry.file_name().to_string_lossy().to_string();
+                if file_name.starts_with(base_name.as_ref()) {
+                    return Some(entry.path());
                 }
             }
         }
@@ -315,6 +319,7 @@ pub fn find_log_file(base_path: &Path) -> Option<PathBuf> {
 ///
 /// # Returns
 /// An io::Result containing the number of lines in the file
+#[allow(dead_code)] // ALLOWANCE: Used by other functions in this module and test files (logger_file_test.rs, test_log_utilities_test.rs)
 pub fn count_lines(path: &Path) -> io::Result<usize> {
     let file = fs::File::open(path)?;
     let reader = BufReader::new(file);
@@ -328,6 +333,7 @@ pub fn count_lines(path: &Path) -> io::Result<usize> {
 ///
 /// # Returns
 /// true if the file contains valid JSON (one object per line), false otherwise
+#[allow(dead_code)] // ALLOWANCE: Used by tests/logger_file_test.rs and tests/test_log_utilities_test.rs
 pub fn is_valid_json(path: &Path) -> bool {
     if let Ok(content) = fs::read_to_string(path) {
         for line in content.lines() {
@@ -358,6 +364,7 @@ pub fn is_valid_json(path: &Path) -> bool {
 /// * `Ok(())` - If the permissions match or on non-Unix systems
 /// * `Err(String)` - With a descriptive error message if permissions don't match
 #[cfg(target_family = "unix")]
+#[allow(dead_code)] // ALLOWANCE: Used by multiple test files (verify_permissions_test.rs, directory_creation_test.rs, common_utils_test.rs)
 pub fn verify_directory_permissions(path: &Path, required_mode: u32) -> Result<(), String> {
     // Ensure the path exists and get its metadata
     let metadata = fs::metadata(path)
@@ -386,6 +393,7 @@ pub fn verify_directory_permissions(path: &Path, required_mode: u32) -> Result<(
 
 /// Non-Unix implementation is a no-op that always succeeds
 #[cfg(not(target_family = "unix"))]
+#[allow(dead_code)] // ALLOWANCE: Used by tests on non-Unix platforms
 pub fn verify_directory_permissions(_path: &Path, _required_mode: u32) -> Result<(), String> {
     // Permissions are not applicable on non-Unix systems
     Ok(())
@@ -398,6 +406,7 @@ pub fn verify_directory_permissions(_path: &Path, _required_mode: u32) -> Result
 ///
 /// # Arguments
 /// * `log_path` - Path to the log file to clean up
+#[allow(dead_code)] // ALLOWANCE: Used by multiple test files (logger_level_test.rs, logger_file_test.rs, etc.)
 pub fn cleanup_test_log_file(log_path: &Path) {
     // Remove the main log file
     match fs::remove_file(log_path) {
@@ -414,26 +423,24 @@ pub fn cleanup_test_log_file(log_path: &Path) {
         if let Some(file_name) = log_path.file_name() {
             let base_name = file_name.to_string_lossy().to_string();
             if let Ok(entries) = fs::read_dir(parent) {
-                for entry in entries {
-                    if let Ok(entry) = entry {
-                        let path = entry.path();
-                        if path.is_file() {
-                            if let Some(current_name) = path.file_name() {
-                                let current_filename = current_name.to_string_lossy().to_string();
-                                if current_filename.starts_with(&base_name)
-                                    && current_filename != base_name
-                                {
-                                    // This is likely a dated copy - also remove it
-                                    match fs::remove_file(&path) {
-                                        Ok(_) => {
-                                            println!("Removed rotated log file: {}", path.display())
-                                        }
-                                        Err(e) => println!(
-                                            "Warning: Failed to remove rotated log file {}: {}",
-                                            path.display(),
-                                            e
-                                        ),
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_file() {
+                        if let Some(current_name) = path.file_name() {
+                            let current_filename = current_name.to_string_lossy().to_string();
+                            if current_filename.starts_with(&base_name)
+                                && current_filename != base_name
+                            {
+                                // This is likely a dated copy - also remove it
+                                match fs::remove_file(&path) {
+                                    Ok(_) => {
+                                        println!("Removed rotated log file: {}", path.display())
                                     }
+                                    Err(e) => println!(
+                                        "Warning: Failed to remove rotated log file {}: {}",
+                                        path.display(),
+                                        e
+                                    ),
                                 }
                             }
                         }
