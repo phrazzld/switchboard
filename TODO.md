@@ -9,7 +9,7 @@
         1. Dependency added to `Cargo.toml`.
         2. `cargo build` completes successfully.
     - **Depends‑on:** none
-- [ ] **T002 · Refactor · P0: modify config struct fields to use secret types**
+- [x] **T002 · Refactor · P0: modify config struct fields to use secret types**
     - **Context:** PLAN.md > cr-02 > Steps > 2
     - **Action:**
         1. Import `Secret` from `secrecy` in `src/config.rs`.

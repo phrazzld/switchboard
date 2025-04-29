@@ -58,6 +58,7 @@
 use std::env;
 use std::sync::OnceLock;
 use tracing::{info, warn};
+use secrecy::SecretString;
 
 // Configuration Default Constants
 
@@ -164,14 +165,14 @@ pub struct Config {
 
     // Anthropic API configuration
     /// API key for authenticating with Anthropic API
-    pub anthropic_api_key: String,
+    pub anthropic_api_key: SecretString,
     /// Target URL for the Anthropic API
     pub anthropic_target_url: String,
 
     // OpenAI API configuration
     /// API key for authenticating with OpenAI API (None if disabled)
     #[allow(dead_code)] // Will be used when OpenAI proxy handler is implemented
-    pub openai_api_key: Option<String>,
+    pub openai_api_key: Option<SecretString>,
     /// Target URL for the OpenAI API
     pub openai_api_base_url: String,
     /// Whether the OpenAI integration is enabled
@@ -209,7 +210,7 @@ impl Default for Config {
             port: DEFAULT_PORT.to_string(),
 
             // Anthropic API defaults
-            anthropic_api_key: "".to_string(),
+            anthropic_api_key: SecretString::new("".to_string().into()),
             anthropic_target_url: DEFAULT_ANTHROPIC_TARGET_URL.to_string(),
 
             // OpenAI API defaults
@@ -377,11 +378,11 @@ pub fn load_config() -> &'static Config {
 
         let loaded_config = Config {
             port,
-            anthropic_api_key,
+            anthropic_api_key: SecretString::new(anthropic_api_key.into()),
             anthropic_target_url,
 
             // Use the loaded OpenAI configuration values
-            openai_api_key,
+            openai_api_key: openai_api_key.map(|key| SecretString::new(key.into())),
             openai_api_base_url,
             openai_enabled,
 
