@@ -91,7 +91,7 @@
         1. Review the rendered `README.md` for clarity and correctness.
     - **Depends‑on:** none
 
-- [ ] **T008 · test · P2: add unit tests for openai config loading and defaults**
+- [x] **T008 · test · P2: add unit tests for openai config loading and defaults**
     - **Context:** PLAN-1.md, 4.6. Add Unit Tests (loading & defaults)
     - **Action:**
         1. Add unit tests in the config test module (e.g., `src/config.rs` tests or `tests/config_tests.rs`).
