@@ -67,3 +67,4 @@ uuid = { version = "1.4.1", features = ["v4"] }  # Match the version used in mai
 tempfile = "3.8"
 chrono = "0.4.31"  # For date formatting in tests
 criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }  # For benchmarking
+serial_test = "2.0.0"  # For running tests that modify env vars in sequence

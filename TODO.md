@@ -159,7 +159,7 @@
     - **Depends‑on:** [T013]
 
 ## Testing (Isolation - cr-03)
-- [ ] **T016 · Chore · P2: add serial_test dev-dependency**
+- [x] **T016 · Chore · P2: add serial_test dev-dependency**
     - **Context:** PLAN.md > cr-03 > Steps > 1
     - **Action:**
         1. Add `serial_test = "2.0"` (or latest compatible) to `[dev-dependencies]` in `Cargo.toml`.
