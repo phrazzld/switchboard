@@ -167,7 +167,7 @@
         1. Dependency added to `Cargo.toml`.
         2. `cargo build --tests` completes successfully.
     - **Depends‑on:** none
-- [ ] **T017 · Test · P2: apply #[serial] attribute to env-modifying config tests**
+- [x] **T017 · Test · P2: apply #[serial] attribute to env-modifying config tests**
     - **Context:** PLAN.md > cr-03 > Steps > 2, 3, 4
     - **Action:**
         1. Add `use serial_test::serial;` to `tests/config_test.rs`.
@@ -178,7 +178,7 @@
         2. `use` statement added.
         3. `cargo test -- --test-threads=N` (N>1) runs tests without env var conflicts.
     - **Depends‑on:** [T016]
-- [ ] **T018 · Refactor · P2: remove env_mutex and usage from config_test.rs**
+- [x] **T018 · Refactor · P2: remove env_mutex and usage from config_test.rs**
     - **Context:** PLAN.md > cr-03 > Steps > 5
     - **Action:**
         1. Remove `static ENV_MUTEX: Mutex<()>` definition from `tests/config_test.rs`.

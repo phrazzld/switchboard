@@ -1,7 +1,7 @@
 use secrecy::{ExposeSecret, SecretString};
+use serial_test::serial;
 use std::collections::HashMap;
 use std::env;
-use std::sync::Mutex;
 use std::sync::Once;
 use switchboard::config::{
     parse_bool_env, Config, LogDirectoryMode, DEFAULT_ANTHROPIC_TARGET_URL, DEFAULT_LOG_BODIES,
@@ -10,11 +10,8 @@ use switchboard::config::{
     DEFAULT_OPENAI_TARGET_URL, DEFAULT_PORT,
 };
 
-// Use a mutex to ensure environment variable tests don't interfere with each other
-static ENV_MUTEX: Mutex<()> = Mutex::new(());
-static INIT: Once = Once::new();
-
 // Initialize test environment exactly once
+static INIT: Once = Once::new();
 fn initialize() {
     INIT.call_once(|| {
         // Initialize test environment here
@@ -23,11 +20,6 @@ fn initialize() {
 
 // A function to create a test config with specific environment variables
 fn create_test_config_with_env(env_vars: HashMap<&str, &str>) -> Config {
-    // Ensure synchronization across tests - avoid unwrap() to prevent poison errors
-    let _lock = match ENV_MUTEX.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
     initialize();
 
     // Save current environment
@@ -112,6 +104,7 @@ fn create_test_config_with_env(env_vars: HashMap<&str, &str>) -> Config {
     config
 }
 
+#[serial]
 #[test]
 fn test_default_values() {
     // For default values, we just need the API key (required) and all others empty/unset
@@ -150,6 +143,7 @@ fn test_default_values() {
     assert_eq!(config.log_directory_mode, LogDirectoryMode::Default);
 }
 
+#[serial]
 #[test]
 fn test_environment_variable_parsing() {
     let env_vars = HashMap::from([
@@ -180,6 +174,7 @@ fn test_environment_variable_parsing() {
     assert_eq!(config.log_directory_mode, LogDirectoryMode::Xdg);
 }
 
+#[serial]
 #[test]
 fn test_boolean_parsing() {
     // Test various boolean string representations
@@ -213,6 +208,7 @@ fn test_boolean_parsing() {
     }
 }
 
+#[serial]
 #[test]
 fn test_numeric_parsing_valid() {
     let env_vars = HashMap::from([
@@ -224,6 +220,7 @@ fn test_numeric_parsing_valid() {
     assert_eq!(config.log_max_body_size, 12345);
 }
 
+#[serial]
 #[test]
 fn test_numeric_parsing_invalid() {
     let env_vars = HashMap::from([
@@ -235,6 +232,7 @@ fn test_numeric_parsing_invalid() {
     assert_eq!(config.log_max_body_size, 20480);
 }
 
+#[serial]
 #[test]
 fn test_edge_case_large_value() {
     let max_size_str = usize::MAX.to_string();
@@ -251,6 +249,7 @@ fn test_edge_case_large_value() {
     assert!(config.log_max_body_size == usize::MAX || config.log_max_body_size >= 20480);
 }
 
+#[serial]
 #[test]
 fn test_empty_string_environment_variable() {
     // In Rust, setting an environment variable to an empty string with env::set_var
@@ -275,6 +274,7 @@ fn test_empty_string_environment_variable() {
     );
 }
 
+#[serial]
 #[test]
 fn test_log_directory_mode_parsing() {
     // Test the default value
@@ -334,6 +334,7 @@ fn test_log_directory_mode_parsing() {
     );
 }
 
+#[serial]
 #[test]
 fn test_edge_case_unusual_path() {
     // We'll use the create_test_config_with_env function directly, which properly
@@ -356,6 +357,7 @@ fn test_edge_case_unusual_path() {
     );
 }
 
+#[serial]
 #[test]
 fn test_openai_default_values() {
     // For default OpenAI values, we just need the Anthropic API key (required) and ensure OpenAI vars are unset
@@ -379,6 +381,7 @@ fn test_openai_default_values() {
     assert!(!config.openai_enabled); // DEFAULT_OPENAI_ENABLED should be false
 }
 
+#[serial]
 #[test]
 fn test_openai_custom_values() {
     let env_vars = HashMap::from([
@@ -390,10 +393,6 @@ fn test_openai_custom_values() {
 
     // We need to modify the create_test_config_with_env implementation to properly handle OpenAI vars
     // For this test, we'll directly use the environment variables and manually construct the Config
-    let _lock = match ENV_MUTEX.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
     initialize();
 
     // Save current environment
@@ -470,6 +469,7 @@ fn test_openai_custom_values() {
     assert!(config.openai_enabled);
 }
 
+#[serial]
 #[test]
 fn test_openai_enabled_boolean_parsing() {
     // Test various boolean string representations for OPENAI_ENABLED
@@ -492,11 +492,6 @@ fn test_openai_enabled_boolean_parsing() {
     ];
 
     for (input, expected) in test_cases {
-        let _lock = match ENV_MUTEX.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-
         // Save current environment
         let old_openai_enabled = env::var("OPENAI_ENABLED").ok();
 
@@ -528,6 +523,7 @@ fn test_openai_enabled_boolean_parsing() {
     }
 }
 
+#[serial]
 #[test]
 fn test_openai_api_key_not_required_when_disabled() {
     let env_vars = HashMap::from([
@@ -543,6 +539,7 @@ fn test_openai_api_key_not_required_when_disabled() {
     assert!(config.openai_api_key.is_none());
 }
 
+#[serial]
 #[test]
 #[should_panic(expected = "OPENAI_API_KEY must be set when OPENAI_ENABLED is true")]
 fn test_openai_api_key_required_when_enabled() {
@@ -553,10 +550,6 @@ fn test_openai_api_key_required_when_enabled() {
     ]);
 
     // This should panic with the expected message
-    let _lock = match ENV_MUTEX.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
     initialize();
 
     // Save current environment
@@ -611,6 +604,7 @@ fn test_openai_api_key_required_when_enabled() {
     panic!("Expected validation to fail but it didn't");
 }
 
+#[serial]
 #[test]
 fn test_config_debug_redaction() {
     // Create a Config with dummy API keys
