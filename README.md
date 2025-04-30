@@ -11,6 +11,8 @@ A Rust-based HTTP proxy service that intercepts and logs traffic between clients
 - Graceful shutdown handling for reliable operation
 - Configurable via environment variables or .env file
 
+> **⚠️ Note:** OpenAI integration is currently **foundational only** and **not yet functional**. The necessary adapter logic and request routing are planned for future implementation. Configuration variables exist, but the proxy will not route requests to OpenAI at this time.
+
 ## Prerequisites
 
 - Rust 1.68.1 or later

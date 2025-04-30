@@ -196,7 +196,7 @@
     - **Depends‑on:** [T017]
 
 ## Documentation (README - cr-05)
-- [ ] **T020 · Chore · P2: add warning note about openai status to readme features/overview**
+- [x] **T020 · Chore · P2: add warning note about openai status to readme features/overview**
     - **Context:** PLAN.md > cr-05 > Steps > 1, 2
     - **Action:**
         1. Edit `README.md`.
