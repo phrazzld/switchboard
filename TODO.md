@@ -206,7 +206,7 @@
     - **Verification:**
         1. Review the rendered `README.md`; confirm note is clear and visible.
     - **Depends‑on:** none
-- [ ] **T021 · Chore · P2: add/reference warning note in readme configuration section**
+- [x] **T021 · Chore · P2: add/reference warning note in readme configuration section**
     - **Context:** PLAN.md > cr-05 > Steps > 3
     - **Action:**
         1. Edit `README.md`.

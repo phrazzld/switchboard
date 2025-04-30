@@ -38,6 +38,8 @@ For contributing to the project, you'll need the following additional tools:
 
 ### OpenAI Variables
 
+> **⚠️ Warning:** As noted in the Features section, OpenAI integration is currently **foundational only** and **not yet functional**. These configuration variables exist for future functionality, but the proxy will not route requests to OpenAI at this time.
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OPENAI_API_KEY` | Your OpenAI API key (required when OpenAI is enabled) | - |
