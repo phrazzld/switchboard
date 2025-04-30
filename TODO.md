@@ -45,7 +45,7 @@
         1. Test and benchmark code correctly instantiates `Config` with `Secret` types.
         2. `cargo test --no-run` and `cargo bench --no-run` compile.
     - **Depends‑on:** [T002]
-- [ ] **T006 · Test · P0: add unit test verifying config debug redaction**
+- [x] **T006 · Test · P0: add unit test verifying config debug redaction**
     - **Context:** PLAN.md > cr-02 > Steps > 6
     - **Action:**
         1. Add a unit test (e.g., in `src/config.rs` or `tests/config_test.rs`).

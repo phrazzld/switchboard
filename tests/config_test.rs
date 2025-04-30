@@ -610,3 +610,45 @@ fn test_openai_api_key_required_when_enabled() {
     // If we get here, something went wrong
     panic!("Expected validation to fail but it didn't");
 }
+
+#[test]
+fn test_config_debug_redaction() {
+    // Create a Config with dummy API keys
+    let dummy_anthropic_key = "anthropic-key-should-not-appear-in-debug";
+    let dummy_openai_key = "openai-key-should-not-appear-in-debug";
+    let config = Config {
+        port: "8080".to_string(),
+        anthropic_api_key: SecretString::new(dummy_anthropic_key.into()),
+        anthropic_target_url: "https://api.anthropic.com".to_string(),
+        openai_api_key: Some(SecretString::new(dummy_openai_key.into())),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: true,
+        log_stdout_level: "info".to_string(),
+        log_format: "pretty".to_string(),
+        log_bodies: true,
+        log_file_path: "./switchboard.log".to_string(),
+        log_file_level: "debug".to_string(),
+        log_max_body_size: 20480,
+        log_directory_mode: LogDirectoryMode::Default,
+        log_max_age_days: None,
+    };
+
+    // Debug format the config
+    let debug_output = format!("{:?}", config);
+
+    // Verify the output contains [REDACTED] for API keys
+    assert!(
+        debug_output.contains("[REDACTED]"),
+        "Debug output should contain [REDACTED]"
+    );
+
+    // Verify the output does NOT contain the actual API key values
+    assert!(
+        !debug_output.contains(dummy_anthropic_key),
+        "Anthropic API key should not appear in debug output"
+    );
+    assert!(
+        !debug_output.contains(dummy_openai_key),
+        "OpenAI API key should not appear in debug output"
+    );
+}
