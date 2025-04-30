@@ -102,7 +102,7 @@
         1. Dependency added to `Cargo.toml`.
         2. `cargo build` completes successfully.
     - **Depends‑on:** none
-- [ ] **T011 · Refactor · P1: define configerror enum using thiserror**
+- [x] **T011 · Refactor · P1: define configerror enum using thiserror**
     - **Context:** PLAN.md > cr-01 > Steps > 2
     - **Action:**
         1. Define `pub enum ConfigError` in `src/config.rs` using `#[derive(Debug, thiserror::Error)]`.

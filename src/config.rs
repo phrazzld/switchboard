@@ -60,6 +60,35 @@ use std::env;
 use std::sync::OnceLock;
 use tracing::{info, warn};
 
+/// Errors that can occur during configuration loading or validation
+#[derive(Debug, thiserror::Error)]
+#[allow(dead_code)] // Will be used in subsequent tasks (T012-T015)
+pub enum ConfigError {
+    /// The required ANTHROPIC_API_KEY environment variable is not set
+    #[error("ANTHROPIC_API_KEY environment variable must be set")]
+    MissingAnthropicApiKey,
+
+    /// OpenAI integration is enabled but the API key is not set
+    #[error("OPENAI_API_KEY must be set when OPENAI_ENABLED is true")]
+    MissingOpenAiKey,
+
+    /// A generic required environment variable is missing
+    #[error("Required environment variable {0} is not set")]
+    MissingRequiredKey(&'static str),
+
+    /// A boolean environment variable has an invalid value
+    #[error("Invalid value for boolean environment variable {var}: '{value}'. Expected 'true', 'false', '1', or '0'")]
+    InvalidBooleanValue { var: String, value: String },
+
+    /// A numeric environment variable has an invalid value
+    #[error("Failed to parse numeric environment variable {var}: '{value}'")]
+    InvalidNumericValue { var: String, value: String },
+
+    /// An environment variable has an invalid format or value
+    #[error("Invalid format for {var}: {reason}")]
+    InvalidFormat { var: String, reason: String },
+}
+
 // Configuration Default Constants
 
 /// Default HTTP port to listen on (8080)
