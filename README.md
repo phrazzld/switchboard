@@ -17,7 +17,7 @@ A Rust-based HTTP proxy service that intercepts and logs traffic between clients
 
 - Rust 1.68.1 or later
 - An Anthropic API key
-- An OpenAI API key (only required if OpenAI integration is enabled)
+- An OpenAI API key (will be required when OpenAI integration is implemented in a future release, not needed currently)
 
 ### Development Prerequisites
 
@@ -74,10 +74,11 @@ PORT=8080                       # From DEFAULT_PORT
 ANTHROPIC_API_KEY=your-api-key-here
 ANTHROPIC_TARGET_URL=https://api.anthropic.com  # From DEFAULT_ANTHROPIC_TARGET_URL
 
-# OpenAI configuration (optional)
-# OPENAI_API_KEY=your-openai-api-key-here  # Required if OPENAI_ENABLED=true
+# OpenAI configuration (for future functionality)
+# NOTE: OpenAI integration is not yet implemented; these settings are for future use
+# OPENAI_API_KEY=your-openai-api-key-here  # Will be required when implemented
 # OPENAI_API_BASE_URL=https://api.openai.com  # From DEFAULT_OPENAI_TARGET_URL
-# OPENAI_ENABLED=false         # From DEFAULT_OPENAI_ENABLED (set to true to enable)
+# OPENAI_ENABLED=false         # From DEFAULT_OPENAI_ENABLED (leave as false until implementation is complete)
 
 # Logging configuration
 LOG_LEVEL=info                  # From DEFAULT_LOG_STDOUT_LEVEL
@@ -137,19 +138,24 @@ https://api.anthropic.com/v1/messages
 http://localhost:8080/v1/messages
 ```
 
-### OpenAI API (when enabled)
+<!-- 
+The OpenAI integration is not yet functional as noted in the Features section. 
+The usage examples below are for reference only and will work in future releases.
+-->
+
+### OpenAI API (future functionality)
+
+> **⚠️ Warning:** As noted in the Features section, OpenAI integration is currently **not yet functional**. The example below is provided for reference only and will be applicable when the integration is completed in a future release.
 
 ```
-# Original API endpoint
-https://api.openai.com/v1/chat/completions
-
-# Proxied endpoint (if running locally on port 8080)
-http://localhost:8080/v1/chat/completions
+# Future API endpoint structure (NOT YET IMPLEMENTED)
+# Original: https://api.openai.com/v1/chat/completions
+# Proxied: http://localhost:8080/v1/chat/completions
 ```
 
-Requests will be forwarded to the appropriate API, and both requests and responses will be logged according to your logging configuration. 
+Requests for Anthropic's API will be forwarded and logged according to your logging configuration. 
 
-Note that OpenAI integration is disabled by default and must be explicitly enabled by setting `OPENAI_ENABLED=true` and providing a valid `OPENAI_API_KEY`.
+OpenAI integration is both disabled by default and not yet implemented. The configuration variables (`OPENAI_ENABLED` and `OPENAI_API_KEY`) are included in preparation for future functionality.
 
 ## Logging System
 

@@ -216,7 +216,7 @@
     - **Verification:**
         1. Review the rendered `README.md`; confirm note is clear in config context.
     - **Depends‑on:** [T020]
-- [ ] **T022 · Chore · P2: remove/comment misleading openai usage examples from readme**
+- [x] **T022 · Chore · P2: remove/comment misleading openai usage examples from readme**
     - **Context:** PLAN.md > cr-05 > Steps > 4
     - **Action:**
         1. Edit `README.md`.
