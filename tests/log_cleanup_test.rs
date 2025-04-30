@@ -1,5 +1,6 @@
 //! Tests for the log cleanup functionality
 
+use secrecy::SecretString;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
@@ -66,11 +67,11 @@ fn test_log_cleanup_with_max_age() {
 
     // Create a test config with max_age of 7 days
     let config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-key".to_string(),
+        anthropic_api_key: SecretString::new("test-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "info".to_string(),
         log_format: "pretty".to_string(),
@@ -125,11 +126,11 @@ fn test_log_cleanup_with_disabled_max_age() {
 
     // Create a test config with max_age of None (disabled)
     let config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-key".to_string(),
+        anthropic_api_key: SecretString::new("test-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "info".to_string(),
         log_format: "pretty".to_string(),
@@ -174,11 +175,11 @@ fn test_log_cleanup_with_zero_max_age() {
 
     // Create a test config with max_age of 0 (disabled)
     let config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-key".to_string(),
+        anthropic_api_key: SecretString::new("test-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "info".to_string(),
         log_format: "pretty".to_string(),

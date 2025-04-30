@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use std::path::Path;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -208,8 +209,8 @@ fn setup_logging(
         Some(LogConfig::StdoutOnly) => {
             // Create config with stdout only (set file level to OFF)
             let config = Arc::new(Config {
-                port: "0".to_string(),                     // Not used in benchmarks
-                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                port: "0".to_string(), // Not used in benchmarks
+                anthropic_api_key: SecretString::new("test-key".to_string().into()), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
                 openai_api_key: None,
                 openai_api_base_url: "https://api.openai.com".to_string(),
@@ -234,8 +235,8 @@ fn setup_logging(
         Some(LogConfig::FileOnly) => {
             // Create config with file only (set stdout level to OFF)
             let config = Arc::new(Config {
-                port: "0".to_string(),                     // Not used in benchmarks
-                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                port: "0".to_string(), // Not used in benchmarks
+                anthropic_api_key: SecretString::new("test-key".to_string().into()), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
                 openai_api_key: None,
                 openai_api_base_url: "https://api.openai.com".to_string(),
@@ -260,8 +261,8 @@ fn setup_logging(
         Some(LogConfig::DualOutput) => {
             // Create config with both outputs enabled
             let config = Arc::new(Config {
-                port: "0".to_string(),                     // Not used in benchmarks
-                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                port: "0".to_string(), // Not used in benchmarks
+                anthropic_api_key: SecretString::new("test-key".to_string().into()), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
                 openai_api_key: None,
                 openai_api_base_url: "https://api.openai.com".to_string(),

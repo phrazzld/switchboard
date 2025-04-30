@@ -55,10 +55,10 @@
 //! | `LOG_DIRECTORY_MODE` | Directory mode | Default |
 //! | `LOG_MAX_AGE_DAYS` | Log retention period | None |
 
+use secrecy::SecretString;
 use std::env;
 use std::sync::OnceLock;
 use tracing::{info, warn};
-use secrecy::SecretString;
 
 // Configuration Default Constants
 
@@ -122,6 +122,42 @@ pub const DEFAULT_LOG_MAX_AGE_DAYS: Option<u32> = None;
 ///
 /// OpenAI integration is disabled by default, requiring explicit opt-in
 pub const DEFAULT_OPENAI_ENABLED: bool = false;
+
+/// Parse a boolean environment variable with standardized behavior
+///
+/// Reads an environment variable and normalizes its value:
+/// - Treats "true" and "1" (case-insensitive) as `true`
+/// - Treats "false" and "0" (case-insensitive) as `false`
+/// - Logs a warning and returns the default for any other value or if unset
+///
+/// # Arguments
+/// * `var_name` - The name of the environment variable to read
+/// * `default` - The default value to use if the variable is unset or invalid
+///
+/// # Returns
+/// The parsed boolean value
+pub fn parse_bool_env(var_name: &str, default: bool) -> bool {
+    match env::var(var_name) {
+        Ok(value) => {
+            let lowercase_value = value.to_lowercase();
+            if lowercase_value == "true" || value == "1" {
+                true
+            } else if lowercase_value == "false" || value == "0" {
+                false
+            } else {
+                warn!(
+                    var = var_name,
+                    value = %value,
+                    default = default,
+                    "Invalid value for environment variable {}: '{}'. Using default value.",
+                    var_name, value
+                );
+                default
+            }
+        }
+        Err(_) => default, // Variable not set, use default
+    }
+}
 
 /// Specifies how log directory should be determined
 ///
@@ -266,59 +302,15 @@ pub fn load_config() -> &'static Config {
         let openai_api_base_url = env::var("OPENAI_API_BASE_URL")
             .unwrap_or_else(|_| DEFAULT_OPENAI_TARGET_URL.to_string());
 
-        // Parse OPENAI_ENABLED with error handling for non-boolean values
-        let openai_enabled = match env::var("OPENAI_ENABLED") {
-            Ok(value) => {
-                // Check if it's a valid boolean representation
-                if value.to_lowercase() == "true"
-                    || value.to_lowercase() == "false"
-                    || value == "0"
-                    || value == "1"
-                {
-                    // Only consider "true" and "1" as true values
-                    value.to_lowercase() == "true" || value == "1"
-                } else {
-                    // Non-standard boolean value, log a warning
-                    warn!(
-                        var = "OPENAI_ENABLED",
-                        value = %value,
-                        default = DEFAULT_OPENAI_ENABLED,
-                        "Ambiguous boolean value in environment variable, using default"
-                    );
-                    DEFAULT_OPENAI_ENABLED
-                }
-            }
-            Err(_) => DEFAULT_OPENAI_ENABLED, // Use default if not set
-        };
+        // Parse OPENAI_ENABLED using standardized helper
+        let openai_enabled = parse_bool_env("OPENAI_ENABLED", DEFAULT_OPENAI_ENABLED);
 
         let log_stdout_level =
             env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_STDOUT_LEVEL.to_string());
         let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| DEFAULT_LOG_FORMAT.to_string());
 
-        // Parse LOG_BODIES with error handling for non-boolean values
-        let log_bodies = match env::var("LOG_BODIES") {
-            Ok(value) => {
-                // Check if it's a valid boolean representation
-                if value.to_lowercase() == "true"
-                    || value.to_lowercase() == "false"
-                    || value == "0"
-                    || value == "1"
-                {
-                    // Only consider "false" and "0" as false values (maintain existing behavior)
-                    value.to_lowercase() != "false" && value != "0"
-                } else {
-                    // Non-standard boolean value, log a warning
-                    warn!(
-                        var = "LOG_BODIES",
-                        value = %value,
-                        default = DEFAULT_LOG_BODIES,
-                        "Ambiguous boolean value in environment variable, using default"
-                    );
-                    DEFAULT_LOG_BODIES
-                }
-            }
-            Err(_) => DEFAULT_LOG_BODIES, // Use default if not set
-        };
+        // Parse LOG_BODIES using standardized helper
+        let log_bodies = parse_bool_env("LOG_BODIES", DEFAULT_LOG_BODIES);
 
         // Load file logging configuration
         let log_file_path =

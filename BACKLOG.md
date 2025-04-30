@@ -4,6 +4,9 @@
 
 ## High Priority
 
+- integrate `ward` pre-commit hook
+  - published at `phrazzld/ward`
+
 ### Core Functionality & Provider Integration
 
 - **[Feature]**: Implement OpenAI API Integration Adapter

@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -19,11 +20,11 @@ struct LogPaths {
 fn generate_log_paths(base_name: &str) -> LogPaths {
     // Create config with the provided base name
     let config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),
@@ -220,11 +221,11 @@ fn test_all_log_types() {
     // Instead of using the global logger, we'll test the path resolution directly
     // Test application logs path
     let app_config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),
@@ -245,11 +246,11 @@ fn test_all_log_types() {
 
     // Test log path
     let test_config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),

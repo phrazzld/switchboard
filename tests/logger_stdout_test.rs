@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use switchboard::config::Config;
@@ -363,11 +364,11 @@ fn test_logger_json_format() {
 
     // Create a test configuration
     let config = Config {
-        openai_api_key: Some("test-openai-api-key".to_string()),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "info".to_string(),
         log_format: "json".to_string(),

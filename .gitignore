@@ -50,3 +50,6 @@ logs/**/*.log.*
 
 # Pre-commit cache files
 .pre-commit-cache/
+
+# Test projects
+test_secrecy/

@@ -1,9 +1,10 @@
+use secrecy::{ExposeSecret, SecretString};
 use std::collections::HashMap;
 use std::env;
 use std::sync::Mutex;
 use std::sync::Once;
 use switchboard::config::{
-    Config, LogDirectoryMode, DEFAULT_ANTHROPIC_TARGET_URL, DEFAULT_LOG_BODIES,
+    parse_bool_env, Config, LogDirectoryMode, DEFAULT_ANTHROPIC_TARGET_URL, DEFAULT_LOG_BODIES,
     DEFAULT_LOG_FILE_LEVEL, DEFAULT_LOG_FILE_PATH, DEFAULT_LOG_FORMAT, DEFAULT_LOG_MAX_AGE_DAYS,
     DEFAULT_LOG_MAX_BODY_SIZE, DEFAULT_LOG_STDOUT_LEVEL, DEFAULT_OPENAI_ENABLED,
     DEFAULT_OPENAI_TARGET_URL, DEFAULT_PORT,
@@ -85,7 +86,7 @@ fn create_test_config_with_env(env_vars: HashMap<&str, &str>) -> Config {
 
     let config = Config {
         port,
-        anthropic_api_key,
+        anthropic_api_key: SecretString::new(anthropic_api_key.into()),
         anthropic_target_url,
         openai_api_key: None,
         openai_api_base_url: DEFAULT_OPENAI_TARGET_URL.to_string(),
@@ -138,7 +139,7 @@ fn test_default_values() {
 
     // Verify default values
     assert_eq!(config.port, "8080");
-    assert_eq!(config.anthropic_api_key, "test-api-key");
+    assert_eq!(config.anthropic_api_key.expose_secret(), "test-api-key");
     assert_eq!(config.anthropic_target_url, "https://api.anthropic.com");
     assert_eq!(config.log_stdout_level, "info");
     assert_eq!(config.log_format, "pretty");
@@ -168,7 +169,7 @@ fn test_environment_variable_parsing() {
 
     // Verify custom values were used
     assert_eq!(config.port, "9090");
-    assert_eq!(config.anthropic_api_key, "custom-api-key");
+    assert_eq!(config.anthropic_api_key.expose_secret(), "custom-api-key");
     assert_eq!(config.anthropic_target_url, "https://custom.example.com");
     assert_eq!(config.log_stdout_level, "debug");
     assert_eq!(config.log_format, "json");
@@ -183,18 +184,23 @@ fn test_environment_variable_parsing() {
 fn test_boolean_parsing() {
     // Test various boolean string representations
     let test_cases = vec![
+        // Valid true values (only "true" and "1" are accepted as true)
         ("true", true),
         ("True", true),
         ("TRUE", true),
         ("1", true),
-        ("yes", true),
-        ("Y", true),
+        // Valid false values (only "false" and "0" are accepted as false)
         ("false", false),
         ("False", false),
         ("FALSE", false),
         ("0", false),
-        ("no", true), // This should be true since we only check for "false" and "0"
-        ("n", true),  // Same here
+        // Invalid values (default true is used)
+        ("yes", DEFAULT_LOG_BODIES),
+        ("Y", DEFAULT_LOG_BODIES),
+        ("no", DEFAULT_LOG_BODIES),
+        ("n", DEFAULT_LOG_BODIES),
+        ("maybe", DEFAULT_LOG_BODIES),
+        ("enabled", DEFAULT_LOG_BODIES),
     ];
 
     for (input, expected) in test_cases {
@@ -367,7 +373,7 @@ fn test_openai_default_values() {
     let config = create_test_config_with_env(env_vars);
 
     // Verify default values for OpenAI configuration
-    assert_eq!(config.openai_api_key, None);
+    assert!(config.openai_api_key.is_none());
     assert_eq!(config.openai_api_base_url, DEFAULT_OPENAI_TARGET_URL);
     assert_eq!(config.openai_enabled, DEFAULT_OPENAI_ENABLED);
     assert!(!config.openai_enabled); // DEFAULT_OPENAI_ENABLED should be false
@@ -429,9 +435,9 @@ fn test_openai_custom_values() {
     let anthropic_target_url = DEFAULT_ANTHROPIC_TARGET_URL.to_string();
     let config = Config {
         port: DEFAULT_PORT.to_string(),
-        anthropic_api_key,
+        anthropic_api_key: SecretString::new(anthropic_api_key.into()),
         anthropic_target_url,
-        openai_api_key,
+        openai_api_key: openai_api_key.map(|key| SecretString::new(key.into())),
         openai_api_base_url,
         openai_enabled,
         log_stdout_level: DEFAULT_LOG_STDOUT_LEVEL.to_string(),
@@ -453,7 +459,10 @@ fn test_openai_custom_values() {
     }
 
     // Verify custom values for OpenAI configuration
-    assert_eq!(config.openai_api_key, Some("test-openai-key".to_string()));
+    assert_eq!(
+        config.openai_api_key.as_ref().unwrap().expose_secret(),
+        "test-openai-key"
+    );
     assert_eq!(
         config.openai_api_base_url,
         "https://custom-openai.example.com"
@@ -465,17 +474,21 @@ fn test_openai_custom_values() {
 fn test_openai_enabled_boolean_parsing() {
     // Test various boolean string representations for OPENAI_ENABLED
     let test_cases = vec![
+        // Valid true values
         ("true", true),
         ("True", true),
         ("TRUE", true),
         ("1", true),
+        // Valid false values
         ("false", false),
         ("False", false),
         ("FALSE", false),
         ("0", false),
-        ("yes", false),     // Non-standard boolean values should use default (false)
-        ("no", false),      // Non-standard boolean values should use default (false)
-        ("enabled", false), // Non-standard boolean values should use default (false)
+        // Invalid values (should use default, which is false)
+        ("yes", DEFAULT_OPENAI_ENABLED),
+        ("no", DEFAULT_OPENAI_ENABLED),
+        ("enabled", DEFAULT_OPENAI_ENABLED),
+        ("disabled", DEFAULT_OPENAI_ENABLED),
     ];
 
     for (input, expected) in test_cases {
@@ -496,21 +509,8 @@ fn test_openai_enabled_boolean_parsing() {
             env::set_var("OPENAI_API_KEY", "test-openai-key");
         }
 
-        // Parse OPENAI_ENABLED directly to isolate the boolean parsing logic
-        let openai_enabled = match env::var("OPENAI_ENABLED") {
-            Ok(value) => {
-                if value.to_lowercase() == "true"
-                    || value.to_lowercase() == "false"
-                    || value == "0"
-                    || value == "1"
-                {
-                    value.to_lowercase() == "true" || value == "1"
-                } else {
-                    DEFAULT_OPENAI_ENABLED
-                }
-            }
-            Err(_) => DEFAULT_OPENAI_ENABLED,
-        };
+        // Use our standardized helper directly
+        let openai_enabled = parse_bool_env("OPENAI_ENABLED", DEFAULT_OPENAI_ENABLED);
 
         // Restore environment
         match old_openai_enabled {
@@ -540,7 +540,7 @@ fn test_openai_api_key_not_required_when_disabled() {
 
     // Verify OpenAI is disabled and API key is None
     assert!(!config.openai_enabled);
-    assert_eq!(config.openai_api_key, None);
+    assert!(config.openai_api_key.is_none());
 }
 
 #[test]

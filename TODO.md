@@ -36,7 +36,7 @@
         1. All necessary usages of API keys correctly use `.expose_secret()`.
         2. Code compiles (`cargo check`).
     - **Depends‑on:** [T002]
-- [ ] **T005 · Refactor · P0: update test/benchmark config instantiations for secrecy**
+- [x] **T005 · Refactor · P0: update test/benchmark config instantiations for secrecy**
     - **Context:** PLAN.md > cr-02 > Steps > 5
     - **Action:**
         1. Update `Config` struct instantiations in `tests/common/mod.rs`, `tests/config_test.rs`, and `benches/*.rs`.
@@ -61,7 +61,7 @@
     - **Depends‑on:** [T002, T005]
 
 ## Configuration (Boolean Parsing - cr-04)
-- [ ] **T007 · Refactor · P2: define parse_bool_env helper function**
+- [x] **T007 · Refactor · P2: define parse_bool_env helper function**
     - **Context:** PLAN.md > cr-04 > Steps > 1, 2
     - **Action:**
         1. Define `fn parse_bool_env(var_name: &str, default: bool) -> bool` in `src/config.rs`.
@@ -70,7 +70,7 @@
         1. Helper function `parse_bool_env` defined and implemented correctly.
         2. `cargo check` passes.
     - **Depends‑on:** none
-- [ ] **T008 · Refactor · P2: integrate parse_bool_env into load_config**
+- [x] **T008 · Refactor · P2: integrate parse_bool_env into load_config**
     - **Context:** PLAN.md > cr-04 > Steps > 3
     - **Action:**
         1. Replace existing parsing logic for `LOG_BODIES` and `OPENAI_ENABLED` in `load_config` (or its replacement post-T009) with calls to `parse_bool_env`.
@@ -81,7 +81,7 @@
         1. Run application with an invalid boolean (e.g., `LOG_BODIES=maybe`).
         2. Verify a warning log appears (e.g., `Invalid value for environment variable LOG_BODIES: 'maybe'. Using default value.`) and the default is used.
     - **Depends‑on:** [T007, T009]
-- [ ] **T009 · Test · P2: update test_boolean_parsing to assert strict behavior**
+- [x] **T009 · Test · P2: update test_boolean_parsing to assert strict behavior**
     - **Context:** PLAN.md > cr-04 > Steps > 4
     - **Action:**
         1. Modify `test_boolean_parsing` test in `tests/config_test.rs`.

@@ -2317,6 +2317,7 @@ dependencies = [
  "nix",
  "rand 0.8.5",
  "reqwest 0.11.27",
+ "secrecy",
  "serde",
  "serde_json",
  "tempfile",
