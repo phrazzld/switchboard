@@ -1,3 +1,23 @@
+// This module contains tests for the configuration functionality.
+//
+// IMPORTANT: These tests modify environment variables which can cause race conditions
+// when tests run in parallel. Environment variables are process-wide global state,
+// so concurrent modifications from multiple tests can interfere with each other.
+//
+// To prevent this, we use the `#[serial]` attribute from the `serial_test` crate on
+// all test functions. This ensures that tests annotated with `#[serial]` run sequentially,
+// even when the test runner is configured to run tests in parallel (--test-threads=N).
+//
+// Each test function that modifies environment variables:
+// 1. Saves the initial environment state
+// 2. Performs its test with modified environment variables
+// 3. Restores the original environment state when done
+//
+// This approach provides better test isolation than a mutex-based solution because:
+// - It's more explicit - each test is clearly marked as requiring serialization
+// - It's more maintainable - no need to remember to acquire/release locks
+// - It's less error-prone - avoids deadlocks and lock poisoning issues
+
 use secrecy::{ExposeSecret, SecretString};
 use serial_test::serial;
 use std::collections::HashMap;

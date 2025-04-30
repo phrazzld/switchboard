@@ -187,7 +187,7 @@
         1. `ENV_MUTEX` and its usage are completely removed.
         2. `cargo test` passes.
     - **Depends‑on:** [T017]
-- [ ] **T019 · Chore · P3: add comment explaining #[serial] usage in config_test.rs**
+- [x] **T019 · Chore · P3: add comment explaining #[serial] usage in config_test.rs**
     - **Context:** PLAN.md > cr-03 > Steps > 6
     - **Action:**
         1. Add a comment at the top of `tests/config_test.rs` explaining why `#[serial]` is used for env-modifying tests.
