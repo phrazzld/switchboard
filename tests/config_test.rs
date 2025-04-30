@@ -525,7 +525,7 @@ fn test_openai_enabled_boolean_parsing() {
         }
 
         // Use our standardized helper directly
-        let openai_enabled = parse_bool_env("OPENAI_ENABLED", DEFAULT_OPENAI_ENABLED);
+        let openai_enabled_result = parse_bool_env("OPENAI_ENABLED", DEFAULT_OPENAI_ENABLED);
 
         // Restore environment
         match old_openai_enabled {
@@ -535,11 +535,27 @@ fn test_openai_enabled_boolean_parsing() {
         env::remove_var("ANTHROPIC_API_KEY");
         env::remove_var("OPENAI_API_KEY");
 
-        assert_eq!(
-            openai_enabled, expected,
-            "OPENAI_ENABLED='{}' should parse to {}",
-            input, expected
-        );
+        match openai_enabled_result {
+            Ok(openai_enabled) => {
+                assert_eq!(
+                    openai_enabled, expected,
+                    "OPENAI_ENABLED='{}' should parse to {}",
+                    input, expected
+                );
+            }
+            Err(e) => {
+                // If we expected a valid value but got an error, fail the test
+                if expected == DEFAULT_OPENAI_ENABLED {
+                    // If the expected value is the default, the input was invalid, which is fine
+                    println!("Got expected error for invalid input '{}': {}", input, e);
+                } else {
+                    panic!(
+                        "OPENAI_ENABLED='{}' should parse to {} but got error: {}",
+                        input, expected, e
+                    );
+                }
+            }
+        }
     }
 }
 

@@ -120,7 +120,7 @@
         1. `load_config` signature updated.
         2. Code compiles (`cargo check`), potentially with temporary `unwrap()`/`expect()` at call sites.
     - **Depends‑on:** [T011, C001]
-- [ ] **T013 · Refactor · P1: replace panics/expects in load_config with err returns**
+- [x] **T013 · Refactor · P1: replace panics/expects in load_config with err returns**
     - **Context:** PLAN.md > cr-01 > Steps > 4
     - **Action:**
         1. Identify `panic!`, `expect`, `unwrap` calls related to config loading/validation in `load_config`.

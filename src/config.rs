@@ -68,7 +68,7 @@
 use secrecy::SecretString;
 use std::env;
 use std::sync::OnceLock;
-use tracing::{info, warn};
+use tracing::info;
 
 /// Errors that can occur during configuration loading or validation
 #[derive(Debug, thiserror::Error)]
@@ -89,6 +89,10 @@ pub enum ConfigError {
     /// A boolean environment variable has an invalid value
     #[error("Invalid value for boolean environment variable {var}: '{value}'. Expected 'true', 'false', '1', or '0'")]
     InvalidBooleanValue { var: String, value: String },
+
+    /// An environment variable has an empty string value
+    #[error("Environment variable {0} cannot be empty")]
+    EmptyValue(&'static str),
 
     /// A numeric environment variable has an invalid value
     #[error("Failed to parse numeric environment variable {var}: '{value}'")]
@@ -171,34 +175,31 @@ pub const DEFAULT_OPENAI_ENABLED: bool = false;
 /// Reads an environment variable and normalizes its value:
 /// - Treats "true" and "1" (case-insensitive) as `true`
 /// - Treats "false" and "0" (case-insensitive) as `false`
-/// - Logs a warning and returns the default for any other value or if unset
+/// - Returns an error for any other value
+/// - Returns the default if the variable is not set
 ///
 /// # Arguments
 /// * `var_name` - The name of the environment variable to read
-/// * `default` - The default value to use if the variable is unset or invalid
+/// * `default` - The default value to use if the variable is unset
 ///
 /// # Returns
-/// The parsed boolean value
-pub fn parse_bool_env(var_name: &str, default: bool) -> bool {
+/// Result containing the parsed boolean or an error if the value is invalid
+pub fn parse_bool_env(var_name: &str, default: bool) -> Result<bool, ConfigError> {
     match env::var(var_name) {
         Ok(value) => {
             let lowercase_value = value.to_lowercase();
             if lowercase_value == "true" || value == "1" {
-                true
+                Ok(true)
             } else if lowercase_value == "false" || value == "0" {
-                false
+                Ok(false)
             } else {
-                warn!(
-                    var = var_name,
-                    value = %value,
-                    default = default,
-                    "Invalid value for environment variable {}: '{}'. Using default value.",
-                    var_name, value
-                );
-                default
+                Err(ConfigError::InvalidBooleanValue {
+                    var: var_name.to_string(),
+                    value,
+                })
             }
         }
-        Err(_) => default, // Variable not set, use default
+        Err(_) => Ok(default), // Variable not set, use default
     }
 }
 
@@ -330,84 +331,152 @@ pub fn load_config() -> Result<Config, ConfigError> {
     info!("Loading configuration from environment...");
 
     // Load configuration values with sensible defaults
-    let port = env::var("PORT").unwrap_or_else(|_| DEFAULT_PORT.to_string());
+    let port = match env::var("PORT") {
+        Ok(port_str) => {
+            // Validate that it's a valid port number
+            if port_str.parse::<u16>().is_err() {
+                return Err(ConfigError::InvalidNumericValue {
+                    var: "PORT".to_string(),
+                    value: port_str,
+                });
+            }
+            port_str
+        }
+        Err(_) => DEFAULT_PORT.to_string(),
+    };
 
     // API key is mandatory
     let anthropic_api_key = env::var("ANTHROPIC_API_KEY")
         .map_err(|_| ConfigError::MissingRequiredKey("ANTHROPIC_API_KEY"))?;
 
     if anthropic_api_key.is_empty() {
-        return Err(ConfigError::MissingRequiredKey("ANTHROPIC_API_KEY"));
+        return Err(ConfigError::EmptyValue("ANTHROPIC_API_KEY"));
     }
 
-    let anthropic_target_url = env::var("ANTHROPIC_TARGET_URL")
-        .unwrap_or_else(|_| DEFAULT_ANTHROPIC_TARGET_URL.to_string());
+    let anthropic_target_url = match env::var("ANTHROPIC_TARGET_URL") {
+        Ok(url) => {
+            if !url.starts_with("http://") && !url.starts_with("https://") {
+                return Err(ConfigError::InvalidFormat {
+                    var: "ANTHROPIC_TARGET_URL".to_string(),
+                    reason: "URL must start with 'http://' or 'https://'".to_string(),
+                });
+            }
+            url
+        }
+        Err(_) => DEFAULT_ANTHROPIC_TARGET_URL.to_string(),
+    };
 
     // Load OpenAI configuration
     let openai_api_key = env::var("OPENAI_API_KEY").ok();
-    let openai_api_base_url =
-        env::var("OPENAI_API_BASE_URL").unwrap_or_else(|_| DEFAULT_OPENAI_TARGET_URL.to_string());
+    let openai_api_base_url = match env::var("OPENAI_API_BASE_URL") {
+        Ok(url) => {
+            if !url.starts_with("http://") && !url.starts_with("https://") {
+                return Err(ConfigError::InvalidFormat {
+                    var: "OPENAI_API_BASE_URL".to_string(),
+                    reason: "URL must start with 'http://' or 'https://'".to_string(),
+                });
+            }
+            url
+        }
+        Err(_) => DEFAULT_OPENAI_TARGET_URL.to_string(),
+    };
 
     // Parse OPENAI_ENABLED using standardized helper
-    let openai_enabled = parse_bool_env("OPENAI_ENABLED", DEFAULT_OPENAI_ENABLED);
+    let openai_enabled = parse_bool_env("OPENAI_ENABLED", DEFAULT_OPENAI_ENABLED)?;
 
-    let log_stdout_level =
-        env::var("LOG_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_STDOUT_LEVEL.to_string());
-    let log_format = env::var("LOG_FORMAT").unwrap_or_else(|_| DEFAULT_LOG_FORMAT.to_string());
+    let log_stdout_level = match env::var("LOG_LEVEL") {
+        Ok(level) => match level.to_lowercase().as_str() {
+            "trace" | "debug" | "info" | "warn" | "error" => level,
+            _ => {
+                return Err(ConfigError::InvalidFormat {
+                        var: "LOG_LEVEL".to_string(),
+                        reason: format!("Invalid log level '{}'. Expected 'trace', 'debug', 'info', 'warn', or 'error'", level),
+                    });
+            }
+        },
+        Err(_) => DEFAULT_LOG_STDOUT_LEVEL.to_string(),
+    };
+    let log_format = match env::var("LOG_FORMAT") {
+        Ok(format) => match format.to_lowercase().as_str() {
+            "pretty" | "json" => format,
+            _ => {
+                return Err(ConfigError::InvalidFormat {
+                    var: "LOG_FORMAT".to_string(),
+                    reason: format!(
+                        "Invalid log format '{}'. Expected 'pretty' or 'json'",
+                        format
+                    ),
+                });
+            }
+        },
+        Err(_) => DEFAULT_LOG_FORMAT.to_string(),
+    };
 
     // Parse LOG_BODIES using standardized helper
-    let log_bodies = parse_bool_env("LOG_BODIES", DEFAULT_LOG_BODIES);
+    let log_bodies = parse_bool_env("LOG_BODIES", DEFAULT_LOG_BODIES)?;
 
     // Load file logging configuration
     let log_file_path =
         env::var("LOG_FILE_PATH").unwrap_or_else(|_| DEFAULT_LOG_FILE_PATH.to_string());
-    let log_file_level =
-        env::var("LOG_FILE_LEVEL").unwrap_or_else(|_| DEFAULT_LOG_FILE_LEVEL.to_string());
+    let log_file_level = match env::var("LOG_FILE_LEVEL") {
+        Ok(level) => match level.to_lowercase().as_str() {
+            "trace" | "debug" | "info" | "warn" | "error" => level,
+            _ => {
+                return Err(ConfigError::InvalidFormat {
+                        var: "LOG_FILE_LEVEL".to_string(),
+                        reason: format!("Invalid log level '{}'. Expected 'trace', 'debug', 'info', 'warn', or 'error'", level),
+                    });
+            }
+        },
+        Err(_) => DEFAULT_LOG_FILE_LEVEL.to_string(),
+    };
 
     // Parse LOG_MAX_BODY_SIZE with error handling
-    let log_max_body_size = env::var("LOG_MAX_BODY_SIZE")
-        .ok()
-        .and_then(|size_str| {
-            size_str.parse::<usize>().ok().or_else(|| {
-                warn!(
-                    var = "LOG_MAX_BODY_SIZE",
-                    value = %size_str,
-                    default = DEFAULT_LOG_MAX_BODY_SIZE,
-                    "Failed to parse numeric environment variable, using default"
-                );
-                None
-            })
-        })
-        .unwrap_or(DEFAULT_LOG_MAX_BODY_SIZE); // Default if not set or invalid
+    let log_max_body_size = match env::var("LOG_MAX_BODY_SIZE") {
+        Ok(size_str) => match size_str.parse::<usize>() {
+            Ok(size) => size,
+            Err(_) => {
+                return Err(ConfigError::InvalidNumericValue {
+                    var: "LOG_MAX_BODY_SIZE".to_string(),
+                    value: size_str,
+                });
+            }
+        },
+        Err(_) => DEFAULT_LOG_MAX_BODY_SIZE, // Default if not set
+    };
 
     // Parse LOG_DIRECTORY_MODE environment variable
-    let log_directory_mode = env::var("LOG_DIRECTORY_MODE")
-        .map(|mode| match mode.to_lowercase().as_str() {
+    let log_directory_mode = match env::var("LOG_DIRECTORY_MODE") {
+        Ok(mode) => match mode.to_lowercase().as_str() {
             "xdg" => LogDirectoryMode::Xdg,
             "system" => LogDirectoryMode::System,
-            _ => LogDirectoryMode::Default,
-        })
-        .unwrap_or(LogDirectoryMode::Default);
+            "default" => LogDirectoryMode::Default,
+            _ => {
+                return Err(ConfigError::InvalidFormat {
+                    var: "LOG_DIRECTORY_MODE".to_string(),
+                    reason: format!(
+                        "Invalid value '{}'. Expected 'xdg', 'system', or 'default'",
+                        mode
+                    ),
+                });
+            }
+        },
+        Err(_) => LogDirectoryMode::Default, // Default if not set
+    };
 
     // Parse LOG_MAX_AGE_DAYS with error handling
-    let log_max_age_days = env::var("LOG_MAX_AGE_DAYS").ok().and_then(|days_str| {
-        days_str.parse::<u32>().ok().or_else(|| {
-            // Format default value for human-readable log message
-            let default_display = match DEFAULT_LOG_MAX_AGE_DAYS {
-                Some(days) => days.to_string(),
-                None => "no cleanup".to_string(),
-            };
-
-            warn!(
-                var = "LOG_MAX_AGE_DAYS",
-                value = %days_str,
-                default = ?DEFAULT_LOG_MAX_AGE_DAYS,
-                default_display = %default_display,
-                "Failed to parse numeric environment variable, using default"
-            );
-            None
-        })
-    });
+    let log_max_age_days = match env::var("LOG_MAX_AGE_DAYS") {
+        Ok(days_str) => match days_str.parse::<u32>() {
+            Ok(days) => Some(days),
+            Err(_) => {
+                return Err(ConfigError::InvalidNumericValue {
+                    var: "LOG_MAX_AGE_DAYS".to_string(),
+                    value: days_str,
+                });
+            }
+        },
+        Err(_) => DEFAULT_LOG_MAX_AGE_DAYS, // Default if not set
+    };
 
     // Validate OpenAI configuration - if enabled, API key must be provided
     if openai_enabled && openai_api_key.is_none() {
