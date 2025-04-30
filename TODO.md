@@ -19,7 +19,7 @@
         1. `Config` struct definition uses `Secret<String>` for API key fields.
         2. `cargo check` passes (may have downstream errors until dependent tasks complete).
     - **Depends‑on:** [T001]
-- [ ] **T003 · Refactor · P0: update load_config to wrap loaded api keys in secret**
+- [x] **T003 · Refactor · P0: update load_config to wrap loaded api keys in secret**
     - **Context:** PLAN.md > cr-02 > Steps > 3
     - **Action:**
         1. Modify the config loading function (`load_config` or its replacement post-T007) to wrap retrieved API key strings using `Secret::new()` before assigning to `Config` fields.
