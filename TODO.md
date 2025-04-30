@@ -111,7 +111,7 @@
         1. `ConfigError` enum defined with required variants and derives.
         2. Code compiles (`cargo check`).
     - **Depends‑on:** [T010]
-- [ ] **T012 · Refactor · P1: change load_config signature to return result<config, configerror>**
+- [x] **T012 · Refactor · P1: change load_config signature to return result<config, configerror>**
     - **Context:** PLAN.md > cr-01 > Steps > 3
     - **Action:**
         1. Modify `load_config` signature in `src/config.rs` to `pub fn load_config() -> Result<Config, ConfigError>`.
@@ -229,6 +229,7 @@
     - **Depends‑on:** [T020]
 
 ### Clarifications & Assumptions
-- [ ] **C001 · Issue:** Determine strategy for handling `Result<Config, ConfigError>` with potential static config initialization.
+- [x] **C001 · Issue:** Determine strategy for handling `Result<Config, ConfigError>` with potential static config initialization.
     - **Context:** PLAN.md > cr-01 > Steps > 3 (note about adjusting static init)
     - **Blocking?:** yes (Blocks T012 implementation detail)
+    - **Resolution:** Use `OnceLock` in config module, with explicit initialization in `main`. See C001-RESOLUTION.md.
