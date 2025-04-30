@@ -94,7 +94,7 @@
     - **Depends‑on:** [T008]
 
 ## Configuration (Error Handling - cr-01)
-- [ ] **T010 · Chore · P1: add thiserror dependency**
+- [x] **T010 · Chore · P1: add thiserror dependency**
     - **Context:** PLAN.md > cr-01 > Steps > 1
     - **Action:**
         1. Add `thiserror = "1.0"` (or latest compatible) to `[dependencies]` in `Cargo.toml`.
