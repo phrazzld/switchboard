@@ -41,7 +41,10 @@
 //! println!("Listening on port {}", cfg.port);
 //!
 //! // Or access via the global getter after initialization
-//! println!("Listening on port {}", config::get_config().port);
+//! match config::get_config() {
+//!     Ok(config) => println!("Listening on port {}", config.port),
+//!     Err(e) => eprintln!("Configuration error: {}", e),
+//! }
 //! ```
 //!
 //! # Environment Variables
@@ -105,6 +108,12 @@ pub enum ConfigError {
     /// The configuration has already been initialized
     #[error("Configuration has already been initialized")]
     AlreadyInitialized,
+
+    /// The configuration has not been initialized
+    #[error(
+        "Configuration has not been initialized. Call load_config and set_global_config in main."
+    )]
+    NotInitialized,
 }
 
 // Configuration Default Constants
@@ -540,17 +549,15 @@ pub fn set_global_config(config: Config) -> Result<(), ConfigError> {
 
 /// Returns a reference to the global configuration instance.
 ///
-/// # Panics
-/// Panics if the global configuration has not been initialized.
-/// This indicates a programming error (accessing config before initialization in main).
-///
 /// # Returns
-/// A reference to the global configuration instance
+/// * `Ok(&'static Config)` if the configuration has been initialized
+/// * `Err(ConfigError::NotInitialized)` if the configuration has not been initialized
+///
+/// This allows for proper error handling rather than panicking when configuration
+/// is not available. Call sites should handle this error appropriately.
 #[allow(dead_code)] // Will be used in future tasks
-pub fn get_config() -> &'static Config {
-    CONFIG.get().expect(
-        "Configuration has not been initialized. Call load_config and set_global_config in main.",
-    )
+pub fn get_config() -> Result<&'static Config, ConfigError> {
+    CONFIG.get().ok_or(ConfigError::NotInitialized)
 }
 
 #[cfg(test)]
