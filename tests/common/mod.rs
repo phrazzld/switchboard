@@ -1,5 +1,8 @@
 // Common test utilities for integration tests
 
+// Internal modules
+pub mod config_helpers;
+
 use axum::Router;
 use reqwest::Client;
 use secrecy::SecretString;

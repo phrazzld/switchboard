@@ -75,7 +75,7 @@
     - **Depends‑on:** [T004]
 
 ## Test Utilities (`tests/`)
-- [ ] **T007 · Refactor · P1: consolidate test config helpers into one utility returning `Result`**
+- [x] **T007 · Refactor · P1: consolidate test config helpers into one utility returning `Result`**
     - **Context:** cr-03 Non-panicking, flexible test helpers, Step 1
     - **Action:**
         1. Identify existing test helper functions (`create_test_config_with_env` likely in multiple test modules).
