@@ -13,7 +13,7 @@
         3. Code compiles (call sites will be broken until T002).
     - **Depends‑on:** none
 
-- [ ] **T002 · Refactor · P0: update all `get_config` call sites to handle `Result`**
+- [x] **T002 · Refactor · P0: update all `get_config` call sites to handle `Result`**
     - **Context:** cr-01 Eliminate config access panic, Step 2
     - **Action:**
         1. Find all usages of `get_config()` in `src/` and `tests/` (excluding `src/config.rs` itself).
