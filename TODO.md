@@ -131,7 +131,7 @@
         2. Returns `Err(ConfigError::...)` for invalid/missing configuration.
         3. `cargo check` passes.
     - **Depends‑on:** [T012]
-- [ ] **T014 · Refactor · P1: update main.rs to handle load_config result gracefully**
+- [x] **T014 · Refactor · P1: update main.rs to handle load_config result gracefully**
     - **Context:** PLAN.md > cr-01 > Steps > 5
     - **Action:**
         1. Modify `src/main.rs` where `load_config` (or its static accessor) is called.
