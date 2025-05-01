@@ -53,7 +53,7 @@
         3. Inspect logs (stdout/stderr/files) to confirm no raw secrets appear, only `[REDACTED]` or similar placeholders used by `SecretString`.
     - **Depends‑on:** none
 
-- [ ] **T005 · Test · P0: strengthen `test_config_debug_redaction` unit test**
+- [x] **T005 · Test · P0: strengthen `test_config_debug_redaction` unit test**
     - **Context:** cr-02 Bulletproof API key redaction, Step 2
     - **Action:**
         1. Locate or create the `test_config_debug_redaction` unit test in `src/config.rs`.

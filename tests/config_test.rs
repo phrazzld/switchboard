@@ -390,14 +390,19 @@ fn test_edge_case_unusual_path() {
 #[serial]
 #[test]
 fn test_config_debug_redaction() {
-    // Create a Config with dummy API keys
-    let dummy_anthropic_key = "anthropic-key-should-not-appear-in-debug";
-    let dummy_openai_key = "openai-key-should-not-appear-in-debug";
+    // Create a Config with more complex and realistic API keys
+    // Using patterns similar to real API keys but with distinctive test markers
+    let complex_anthropic_key =
+        "sk-ant-api123-DEADBEEF-CAFEBABE-TESTKEY000000000000000000000000001";
+    let complex_openai_key =
+        "sk-oai-TESTKEY000000000000000000000000000000CAFEBABE000000000000DEADBEEF";
+
+    // Create a config instance with these test keys
     let config = Config {
         port: "8080".to_string(),
-        anthropic_api_key: SecretString::new(dummy_anthropic_key.into()),
+        anthropic_api_key: SecretString::new(complex_anthropic_key.into()),
         anthropic_target_url: "https://api.anthropic.com".to_string(),
-        openai_api_key: Some(SecretString::new(dummy_openai_key.into())),
+        openai_api_key: Some(SecretString::new(complex_openai_key.into())),
         openai_api_base_url: "https://api.openai.com".to_string(),
         openai_enabled: true,
         log_stdout_level: "info".to_string(),
@@ -410,22 +415,87 @@ fn test_config_debug_redaction() {
         log_max_age_days: None,
     };
 
-    // Debug format the config
+    // Generate Debug format output of the config
     let debug_output = format!("{:?}", config);
 
-    // Verify the output contains [REDACTED] for API keys
+    // Verify Debug implementation includes the struct name and fields
     assert!(
-        debug_output.contains("[REDACTED]"),
-        "Debug output should contain [REDACTED]"
+        debug_output.contains("Config"),
+        "Debug output should include the struct name"
     );
 
-    // Verify the output does NOT contain the actual API key values
+    // Verify the output contains the appropriate non-secret fields
     assert!(
-        !debug_output.contains(dummy_anthropic_key),
-        "Anthropic API key should not appear in debug output"
+        debug_output.contains("port: \"8080\""),
+        "Debug output should include non-secret fields"
     );
+
+    // Verify the output contains [REDACTED] placeholder for API keys
     assert!(
-        !debug_output.contains(dummy_openai_key),
-        "OpenAI API key should not appear in debug output"
+        debug_output.contains("[REDACTED]"),
+        "Debug output should contain [REDACTED] placeholder for secret fields"
     );
+
+    // Verify the output does NOT contain any part of the API keys
+    // Check for the unique test markers and key prefixes
+    assert!(
+        !debug_output.contains("sk-ant"),
+        "Anthropic API key prefix should not appear in debug output"
+    );
+
+    assert!(
+        !debug_output.contains("sk-oai"),
+        "OpenAI API key prefix should not appear in debug output"
+    );
+
+    assert!(
+        !debug_output.contains("DEADBEEF"),
+        "Test key marker should not appear in debug output"
+    );
+
+    assert!(
+        !debug_output.contains("CAFEBABE"),
+        "Test key marker should not appear in debug output"
+    );
+
+    assert!(
+        !debug_output.contains("TESTKEY"),
+        "Test key marker should not appear in debug output"
+    );
+
+    // Check for any substring of the actual keys (taking 10-char sequences)
+    for i in 0..complex_anthropic_key.len() - 10 {
+        let substring = &complex_anthropic_key[i..i + 10];
+        assert!(
+            !debug_output.contains(substring),
+            "Substring of Anthropic API key should not appear in debug output: {}",
+            substring
+        );
+    }
+
+    for i in 0..complex_openai_key.len() - 10 {
+        let substring = &complex_openai_key[i..i + 10];
+        assert!(
+            !debug_output.contains(substring),
+            "Substring of OpenAI API key should not appear in debug output: {}",
+            substring
+        );
+    }
+
+    // Verify that the SecretString::expose_secret method still works correctly
+    assert_eq!(
+        config.anthropic_api_key.expose_secret(),
+        complex_anthropic_key,
+        "expose_secret() should still return the actual key value"
+    );
+
+    if let Some(ref key) = config.openai_api_key {
+        assert_eq!(
+            key.expose_secret(),
+            complex_openai_key,
+            "expose_secret() should still return the actual key value for Option<SecretString>"
+        );
+    } else {
+        panic!("OpenAI API key should be Some");
+    }
 }
