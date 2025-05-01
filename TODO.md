@@ -27,7 +27,7 @@
         2. Run `cargo check --all-targets` and `cargo test`.
     - **Depends‑on:** [T001]
 
-- [ ] **T003 · Test · P2: add tests for `get_config` uninitialized error**
+- [x] **T003 · Test · P2: add tests for `get_config` uninitialized error**
     - **Context:** cr-01 Eliminate config access panic, Step 3
     - **Action:**
         1. Write a new unit test ensuring `get_config()` returns `Err(ConfigError::NotInitialized)` when called *before* config initialization.

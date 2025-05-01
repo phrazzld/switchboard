@@ -562,5 +562,27 @@ pub fn get_config() -> Result<&'static Config, ConfigError> {
 
 #[cfg(test)]
 mod tests {
-    // Tests have been moved to tests/config_test.rs
+    use super::*;
+
+    #[test]
+    fn test_get_config_uninitialized() {
+        // This test should be run in isolation to ensure CONFIG is not initialized
+        // by other tests. In a real test environment, this would be ensured by
+        // using #[serial] attribute, but since this is a unit test within the same
+        // module as the static CONFIG, we can test it directly.
+
+        // The test simply verifies that get_config returns NotInitialized error
+        // when the CONFIG has not been set.
+        let result = get_config();
+
+        // Verify the result is an Err variant with the correct error type
+        assert!(result.is_err());
+        match result {
+            Err(ConfigError::NotInitialized) => {
+                // This is the expected error variant
+            }
+            Err(e) => panic!("Wrong error variant returned: {:?}", e),
+            Ok(_) => panic!("Expected Err but got Ok"),
+        }
+    }
 }
