@@ -247,6 +247,31 @@ pub enum LogDirectoryMode {
 ///
 /// Holds all the configuration values needed by the application,
 /// loaded from environment variables with sensible defaults.
+///
+/// # SECURITY WARNING
+///
+/// This struct contains sensitive API keys and secrets that are automatically redacted
+/// when using Debug formatting (`{:?}`). You MUST NEVER use any other formatting method
+/// like `Display` (`{}`) as this would leak secret values.
+///
+/// Always use Debug formatting:
+/// ```no_run
+/// # use switchboard::config::Config;
+/// # let config = Config::default();
+/// // CORRECT - Uses Debug formatting which redacts secrets
+/// println!("Config: {:?}", config);
+/// ```
+///
+/// NEVER use Display formatting, as it could leak secrets:
+/// ```no_run,ignore
+/// # use switchboard::config::Config;
+/// # let config = Config::default();
+/// // INCORRECT - Would leak API keys and secrets
+/// // println!("Config: {}", config); // Do not do this!
+/// ```
+///
+/// When you need to access secret values, use the `expose_secret()` method but
+/// never log or display these exposed values.
 #[derive(Debug, Clone)]
 pub struct Config {
     /// HTTP port to listen on

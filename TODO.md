@@ -38,7 +38,7 @@
     - **Depends‑on:** [T002]
 
 ## Configuration Logging & Security (`src/config.rs`, codebase-wide logging)
-- [ ] **T004 · Chore · P0: audit and enforce safe `Config` logging**
+- [x] **T004 · Chore · P0: audit and enforce safe `Config` logging**
     - **Context:** cr-02 Bulletproof API key redaction, Step 1
     - **Action:**
         1. Audit all code locations (including `Debug` derives, `log::*` macros, `println!`, etc.) where the `Config` struct or its fields might be formatted to string.
