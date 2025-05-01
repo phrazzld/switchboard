@@ -60,5 +60,28 @@ Test utilities create Config instances with dummy secrets, but they are not dire
    - Examples of correct and incorrect usage
    - Warning about `expose_secret()` usage
 
+### Clippy Lint Investigation
+I investigated the feasibility of creating a custom clippy lint to detect unsafe formatting of `Config`:
+
+1. **Technical Approach**: A clippy lint would need to:
+   - Detect instances where `Config` is used with non-Debug formatting
+   - Identify format strings/macros that use `{}` instead of `{:?}` with `Config`
+   - Associate the formatting with specific types (Config in this case)
+
+2. **Implementation Feasibility**:
+   - Custom clippy lints require creating a separate crate that depends on the clippy_utils crate
+   - It would need to analyze the AST (Abstract Syntax Tree) to detect formatting patterns
+   - Detecting format string contents is complex and potentially error-prone
+
+3. **Decision**:
+   - The doc comment warning is a more practical solution for this codebase size
+   - The existing test `test_config_debug_redaction` already verifies the redaction behavior
+   - A clippy lint would be a significant development effort compared to the value provided
+
+4. **Alternative Approach**:
+   - Consider adding a private constructor and making fields private in a future refactoring
+   - This would enforce access only through safe accessors (rather than relying on documentation)
+   - But this is a larger change that would affect many call sites
+
 ### Conclusion
 The codebase is correctly handling Config values with appropriate redaction. The added doc comment warning will help future developers maintain this security practice. I found no instances where Config values were incorrectly logged without proper redaction of secrets.

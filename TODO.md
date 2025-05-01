@@ -64,7 +64,7 @@
         2. The test passes.
     - **Depends‑on:** [T004]
 
-- [ ] **T006 · Chore · P2: add doc comment warning for `Config` formatting**
+- [x] **T006 · Chore · P2: add doc comment warning for `Config` formatting**
     - **Context:** cr-02 Bulletproof API key redaction, Step 3
     - **Action:**
         1. Add a prominent doc comment (`///`) to the `Config` struct definition warning developers against using non-`Debug` formatters (like `Display`) due to secret leakage risk.
