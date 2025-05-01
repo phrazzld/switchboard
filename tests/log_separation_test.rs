@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -9,8 +10,11 @@ use switchboard::{
 /// Creates a test config with a specific log filename
 fn create_test_config(log_filename: &str) -> Config {
     Config {
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),

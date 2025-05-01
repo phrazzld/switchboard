@@ -4,6 +4,7 @@
 use bytes::Bytes;
 use hyper::{HeaderMap, Method, Uri};
 use reqwest::StatusCode;
+use secrecy::SecretString;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use switchboard::config::Config;
@@ -73,8 +74,11 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
         LogMode::StdoutOnly => {
             let config = Arc::new(Config {
                 port: "8080".to_string(),
-                anthropic_api_key: "test".to_string(),
+                anthropic_api_key: SecretString::new("test".to_string().into()),
                 anthropic_target_url: "https://example.com".to_string(),
+                openai_api_key: None,
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 log_stdout_level: "info".to_string(),
                 log_format: "json".to_string(),
                 log_bodies: true,
@@ -95,8 +99,11 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
         LogMode::FileOnly => {
             let config = Arc::new(Config {
                 port: "8080".to_string(),
-                anthropic_api_key: "test".to_string(),
+                anthropic_api_key: SecretString::new("test".to_string().into()),
                 anthropic_target_url: "https://example.com".to_string(),
+                openai_api_key: None,
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 log_stdout_level: "off".to_string(), // Disable stdout logging
                 log_format: "json".to_string(),
                 log_bodies: true,
@@ -120,8 +127,11 @@ fn run_benchmark(mode: LogMode, iterations: usize, body: &Bytes) -> Duration {
         LogMode::DualOutput => {
             let config = Arc::new(Config {
                 port: "8080".to_string(),
-                anthropic_api_key: "test".to_string(),
+                anthropic_api_key: SecretString::new("test".to_string().into()),
                 anthropic_target_url: "https://example.com".to_string(),
+                openai_api_key: None,
+                openai_api_base_url: "https://api.openai.com".to_string(),
+                openai_enabled: false,
                 log_stdout_level: "info".to_string(),
                 log_format: "json".to_string(),
                 log_bodies: true,
@@ -213,8 +223,11 @@ fn test_nonblocking_io() {
     // Set up file logging
     let config = Arc::new(Config {
         port: "8080".to_string(),
-        anthropic_api_key: "test".to_string(),
+        anthropic_api_key: SecretString::new("test".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: None,
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "off".to_string(), // Disable stdout to simplify output
         log_format: "json".to_string(),
         log_bodies: true,

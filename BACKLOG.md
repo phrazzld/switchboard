@@ -4,6 +4,24 @@
 
 ## High Priority
 
+- integrate `ward` pre-commit hook
+  - published at `phrazzld/ward`
+- ✅ integrate `glance ./` post-commit hook async
+
+### Code Review Followups
+
+- **[Refactor]**: Fix Logger Module Structure Complexity
+  - **Complexity**: Medium
+  - **Rationale**: The logger was refactored from a single file into 5 modules, adding structural complexity without clear justification. The `validate_log_path` function duplicates validation logic already in `LogPathResolver::resolve`.
+  - **Expected Outcome**: Simplify the logger structure, remove redundant `validate_log_path` function, and consider consolidating modules back into a single well-organized file.
+  - **Dependencies**: None.
+
+- **[Refactor]**: Consolidate Test Helper Functions  
+  - **Complexity**: Low
+  - **Rationale**: Test setup logic (`create_test_config_with_env` / `test_load_config_with_env`) is duplicated across three files, making maintenance error-prone.
+  - **Expected Outcome**: Move helper functions into `tests/common/mod.rs` and update all test files to use these shared helpers.
+  - **Dependencies**: None.
+
 ### Core Functionality & Provider Integration
 
 - **[Feature]**: Implement OpenAI API Integration Adapter
@@ -57,6 +75,20 @@
 ---
 
 ## Medium Priority
+
+### Code Review Followups
+
+- **[Cleanup]**: Remove Unnecessary `allow(dead_code)` Attributes
+  - **Complexity**: Low
+  - **Rationale**: Several `#[allow(dead_code)]` attributes suppress compiler warnings about unused code, potentially hiding actual dead code or masking incomplete refactoring.
+  - **Expected Outcome**: Remove these attributes and properly address any resulting compiler warnings.
+  - **Dependencies**: None.
+
+- **[Fix]**: Standardize Configuration Logging in `init_tracing`
+  - **Complexity**: Low
+  - **Rationale**: The logging when initializing the logger is inconsistent depending on whether a legacy path was detected, and omits OpenAI configuration details.
+  - **Expected Outcome**: Standardize log messages to include a consistent set of fields (ensuring sensitive data is never logged).
+  - **Dependencies**: None.
 
 ### Logging & Observability
 
@@ -121,6 +153,50 @@
 ---
 
 ## Low Priority
+
+### Code Review Followups
+
+- **[Cleanup]**: Remove Misleading README Examples
+  - **Complexity**: Low
+  - **Rationale**: The README still contains commented-out examples related to OpenAI usage that could mislead users.
+  - **Expected Outcome**: Remove all commented-out OpenAI-specific usage examples from the README and reintroduce them only when the feature is functional.
+  - **Dependencies**: None.
+
+- **[Enhancement]**: Optimize Test Isolation Approach
+  - **Complexity**: Medium
+  - **Rationale**: Using `#[serial]` on all tests modifying environment variables is correct but could unnecessarily slow down the test suite.
+  - **Expected Outcome**: Consider future improvements like using unique environment variable names per test or injecting config directly to allow more parallelism.
+  - **Dependencies**: None.
+
+- **[Cleanup]**: Fix Cargo.toml Bench Definition
+  - **Complexity**: Low
+  - **Rationale**: The `logging_benchmarks` definition in Cargo.toml incorrectly has `harness = false` specified, which is redundant since it uses Criterion.
+  - **Expected Outcome**: Remove the redundant line from the configuration.
+  - **Dependencies**: None.
+
+- **[Refactor]**: Make Module `fs_utils` Private
+  - **Complexity**: Low
+  - **Rationale**: The `fs_utils` module is declared public but appears to be used only internally by the logger module.
+  - **Expected Outcome**: Change it to a private module to properly encapsulate internal implementation details.
+  - **Dependencies**: None.
+
+- **[Cleanup]**: Organize Plan Files
+  - **Complexity**: Low
+  - **Rationale**: Project root is cluttered with planning-related files.
+  - **Expected Outcome**: Move all `PLAN-*.md` files into a dedicated `docs/planning/` subdirectory.
+  - **Dependencies**: None.
+
+- **[Cleanup]**: Fix Missing Newlines in Markdown Files
+  - **Complexity**: Low
+  - **Rationale**: Several markdown files are missing the final newline character, which can cause issues with some tools.
+  - **Expected Outcome**: Add a newline to the end of each affected file.
+  - **Dependencies**: None.
+
+- **[Enhancement]**: Improve OpenAI Adapter Placeholder
+  - **Complexity**: Low
+  - **Rationale**: The empty `openai_adapter.rs` module exists but could benefit from a clear comment.
+  - **Expected Outcome**: Add a `// TODO: Implement per PLAN-2` comment to clarify intent.
+  - **Dependencies**: None.
 
 ### Logging & Observability
 

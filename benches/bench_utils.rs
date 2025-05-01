@@ -1,3 +1,4 @@
+use secrecy::SecretString;
 use std::sync::Arc;
 use std::time::Duration;
 use switchboard::config::Config;
@@ -41,9 +42,12 @@ pub fn setup_logging(
         LoggingMode::StdoutOnly => {
             // Create config with stdout only (set file level to OFF)
             let config = Arc::new(Config {
-                port: "0".to_string(),                     // Not used in benchmarks
-                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                port: "0".to_string(), // Not used in benchmarks
+                anthropic_api_key: SecretString::new("test-key".to_string().into()), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                openai_api_key: None,                                    // Not used in benchmarks
+                openai_api_base_url: "https://api.openai.com".to_string(), // Not used in benchmarks
+                openai_enabled: false,                                   // Not used in benchmarks
                 log_stdout_level: "debug".to_string(),
                 log_format: "json".to_string(), // JSON format for consistency
                 log_bodies: true,
@@ -64,11 +68,14 @@ pub fn setup_logging(
         LoggingMode::FileOnly => {
             // Create config with file only (set stdout level to OFF)
             let config = Arc::new(Config {
-                port: "0".to_string(),                     // Not used in benchmarks
-                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                port: "0".to_string(), // Not used in benchmarks
+                anthropic_api_key: SecretString::new("test-key".to_string().into()), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
-                log_stdout_level: "off".to_string(),       // Disable stdout logging
-                log_format: "json".to_string(),            // Not relevant when stdout disabled
+                openai_api_key: None,                                    // Not used in benchmarks
+                openai_api_base_url: "https://api.openai.com".to_string(), // Not used in benchmarks
+                openai_enabled: false,                                   // Not used in benchmarks
+                log_stdout_level: "off".to_string(),                     // Disable stdout logging
+                log_format: "json".to_string(), // Not relevant when stdout disabled
                 log_bodies: true,
                 log_file_path,
                 log_file_level: "debug".to_string(),
@@ -87,9 +94,12 @@ pub fn setup_logging(
         LoggingMode::DualOutput => {
             // Create config with both outputs enabled
             let config = Arc::new(Config {
-                port: "0".to_string(),                     // Not used in benchmarks
-                anthropic_api_key: "test-key".to_string(), // Not used in benchmarks
+                port: "0".to_string(), // Not used in benchmarks
+                anthropic_api_key: SecretString::new("test-key".to_string().into()), // Not used in benchmarks
                 anthropic_target_url: "https://example.com".to_string(), // Not used in benchmarks
+                openai_api_key: None,                                    // Not used in benchmarks
+                openai_api_base_url: "https://api.openai.com".to_string(), // Not used in benchmarks
+                openai_enabled: false,                                   // Not used in benchmarks
                 log_stdout_level: "debug".to_string(),
                 log_format: "json".to_string(), // JSON format for consistency
                 log_bodies: true,

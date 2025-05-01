@@ -22,7 +22,12 @@ This document outlines the development practices and tooling setup for contribut
    pre-commit install --install-hooks
    ```
 
-3. Build the project
+3. (Optional) Install post-commit hook for running glance asynchronously
+   ```bash
+   ./tools/install_post_commit_hook.sh
+   ```
+
+4. Build the project
    ```bash
    cargo build
    ```
@@ -65,6 +70,13 @@ Switchboard uses pre-commit hooks to ensure code quality and consistency. The fo
 - Enforces [Conventional Commits](https://www.conventionalcommits.org/) format
 - Runs at the commit-msg stage
 - Uses `@commitlint/config-conventional` rules
+
+### Post-Commit Hook (Optional)
+
+- Runs `glance ./` asynchronously after each successful commit
+- Creates comprehensive documentation of the codebase structure
+- Logs execution details to `.git/hooks/logs/glance-post-commit.log` 
+- Completely non-blocking - continues running in the background after commit completes
 
 #### Example Commit Message
 

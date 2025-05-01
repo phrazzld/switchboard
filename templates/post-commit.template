@@ -1,16 +1,65 @@
 #!/bin/sh
-# Template for .git/hooks/post-commit
-# Runs 'glance ./' asynchronously after a successful commit.
+# Post-commit hook for running glance asynchronously after each commit
+# This creates a comprehensive codebase summary without blocking the developer's workflow
 
-# Check if glance command exists
+# -----------------------------------------------------------------------------
+# Configuration
+# -----------------------------------------------------------------------------
+LOG_DIR=".git/hooks/logs"
+LOG_FILE="$LOG_DIR/glance-post-commit.log"
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+
+# -----------------------------------------------------------------------------
+# Check if glance is available
+# -----------------------------------------------------------------------------
 if ! command -v glance > /dev/null 2>&1; then
     echo "post-commit hook: Warning: 'glance' command not found. Skipping execution." >&2
     exit 0
 fi
 
-echo "post-commit hook: Running 'glance ./' in background..."
+# -----------------------------------------------------------------------------
+# Prepare logging directories
+# -----------------------------------------------------------------------------
+mkdir -p "$LOG_DIR" 2>/dev/null
 
-# Execute glance asynchronously, detaching completely
-( glance ./ & ) > /dev/null 2>&1 &
+# -----------------------------------------------------------------------------
+# Function to run glance asynchronously with proper logging
+# -----------------------------------------------------------------------------
+run_glance_async() {
+    # Create unique timestamp-based ID for this run
+    RUN_ID=$(date +%Y%m%d%H%M%S)
+    
+    # Run glance in the background with proper detachment
+    # We use nohup to ensure the process continues even if the terminal closes
+    # Redirect all output to a timestamped log file
+    (
+        echo "[$TIMESTAMP] Starting glance run $RUN_ID" >> "$LOG_FILE" 2>&1
+        echo "[$TIMESTAMP] Executing: glance ./" >> "$LOG_FILE" 2>&1
+        
+        # Get the start time
+        START_TIME=$(date +%s)
+        
+        # Execute glance and capture its output
+        if nohup glance ./ >> "$LOG_FILE" 2>&1; then
+            END_TIME=$(date +%s)
+            DURATION=$((END_TIME - START_TIME))
+            echo "[$TIMESTAMP] Glance completed successfully in $DURATION seconds (run $RUN_ID)" >> "$LOG_FILE" 2>&1
+        else
+            END_TIME=$(date +%s)
+            DURATION=$((END_TIME - START_TIME))
+            echo "[$TIMESTAMP] Glance failed with error code $? after $DURATION seconds (run $RUN_ID)" >> "$LOG_FILE" 2>&1
+        fi
+    ) > /dev/null 2>&1 &
+
+    # Disown the process to fully detach it
+    disown
+    
+    echo "post-commit hook: Running 'glance ./' in background (ID: $RUN_ID, logs: $LOG_FILE)"
+}
+
+# -----------------------------------------------------------------------------
+# Execute glance asynchronously
+# -----------------------------------------------------------------------------
+run_glance_async
 
 exit 0

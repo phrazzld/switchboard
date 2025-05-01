@@ -33,12 +33,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Starting switchboard...");
 
     // Load configuration from environment variables and .env file
-    // This returns a &'static Config
-    let config = config::load_config();
+    // This returns a Result<Config, ConfigError>
+    let config = match config::load_config() {
+        Ok(cfg) => {
+            // Store the loaded config globally for access throughout the application
+            if let Err(e) = config::set_global_config(cfg.clone()) {
+                // This should not happen in normal operation
+                eprintln!("FATAL: Failed to set global configuration: {}", e);
+                std::process::exit(1);
+            }
+            cfg
+        }
+        Err(e) => {
+            // Log the specific error and exit with a non-zero status code
+            eprintln!("FATAL: Configuration error: {}", e);
+            std::process::exit(1);
+        }
+    };
 
     // Initialize tracing for structured logging with dual output
     // Store the worker guard to keep non-blocking file writer alive
-    let _guard = logger::init_tracing(config).map_err(|e| {
+    let _guard = logger::init_tracing(&config).map_err(|e| {
         eprintln!("Failed to initialize logging: {}", e);
         e
     })?;
@@ -48,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check if we should just clean logs and exit
     if matches.get_flag("clean-logs") {
         info!("Running log cleanup due to --clean-logs flag");
-        let result = log_cleanup::cleanup_logs(config);
+        let result = log_cleanup::cleanup_logs(&config);
         info!(
             files_removed = result.files_removed,
             bytes_removed = result.bytes_removed,
@@ -61,7 +76,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(max_age) = config.log_max_age_days {
         if max_age > 0 {
             info!(max_age, "Performing automatic log cleanup at startup");
-            let result = log_cleanup::cleanup_logs(config);
+            let result = log_cleanup::cleanup_logs(&config);
             info!(
                 files_removed = result.files_removed,
                 bytes_removed = result.bytes_removed,
@@ -85,9 +100,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("HTTP client created with rustls TLS support");
 
-    // Create a clone of the static config that we can own and wrap in Arc
-    let config_owned = config.clone();
-    let config_arc = Arc::new(config_owned);
+    // Create an Arc-wrapped config for sharing across components
+    let config_arc = Arc::new(config);
 
     // Create the router with the HTTP client and config
     // Clone the Arc to preserve ownership for later use

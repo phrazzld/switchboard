@@ -13,13 +13,15 @@ path = "src/lib.rs"
 name = "switchboard"
 path = "src/main.rs"
 
-[[bin]]
+[[bench]]
 name = "manual_benchmark"
 path = "benches/manual_benchmark.rs"
+harness = false  # Custom benchmark without Criterion harness
 
-[[bin]]
+[[bench]]
 name = "simple_benchmark"
 path = "benches/simple_benchmark.rs"
+harness = false  # Custom benchmark without Criterion harness
 
 [[bench]]
 name = "logging_benchmarks"
@@ -35,6 +37,8 @@ axum = { version = "0.6.20", features = ["http2", "json", "macros"] }
 reqwest = { version = "0.11.20", features = ["json", "stream", "rustls-tls"], default-features = false }
 serde = { version = "1.0.188", features = ["derive"] }
 serde_json = "1.0.107"
+async-openai = { version = "0.28.1", features = ["rustls"], default-features = false }
+secrecy = "0.10.3"  # For redacting sensitive data in logs and debug output
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter", "json"] }
 tracing-appender = "0.2.2"
@@ -65,3 +69,4 @@ uuid = { version = "1.4.1", features = ["v4"] }  # Match the version used in mai
 tempfile = "3.8"
 chrono = "0.4.31"  # For date formatting in tests
 criterion = { version = "0.5", features = ["html_reports", "async_tokio"] }  # For benchmarking
+serial_test = "2.0.0"  # For running tests that modify env vars in sequence

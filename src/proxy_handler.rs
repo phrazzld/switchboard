@@ -12,6 +12,7 @@ use bytes::Bytes;
 use futures_util::StreamExt;
 use hyper::{header, HeaderMap, Request, Uri};
 use reqwest::{header::HeaderValue as ReqHeaderValue, Client};
+use secrecy::ExposeSecret;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -235,7 +236,7 @@ pub async fn proxy_handler(
     }
 
     // Set the Anthropic API key as x-api-key header
-    match ReqHeaderValue::from_str(&config.anthropic_api_key) {
+    match ReqHeaderValue::from_str(config.anthropic_api_key.expose_secret()) {
         Ok(api_key_value) => {
             // Add the API key header
             forward_headers.insert(header::HeaderName::from_static("x-api-key"), api_key_value);

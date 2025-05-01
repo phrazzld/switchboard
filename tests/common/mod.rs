@@ -1,7 +1,11 @@
 // Common test utilities for integration tests
 
+// Internal modules
+pub mod config_helpers;
+
 use axum::Router;
 use reqwest::Client;
+use secrecy::SecretString;
 use std::fs;
 use std::io;
 use std::io::{BufRead, BufReader};
@@ -69,14 +73,17 @@ pub async fn setup_test_environment() -> TestSetup {
     // Use dummy values for fields that are suitable for testing
     let config = Config {
         port: "0".to_string(), // Use 0 to let OS assign a random port if needed
-        anthropic_api_key: "test-api-key".to_string(), // Dummy API key for testing
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()), // Dummy API key for testing
         anthropic_target_url: mock_server.uri(), // Point to the mock server
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())), // Dummy OpenAI API key
+        openai_api_base_url: "https://api.openai.com".to_string(), // Default OpenAI URL
+        openai_enabled: false,                                     // Disabled by default
         log_stdout_level: "debug".to_string(), // Use debug level for more verbose test logs
-        log_format: "pretty".to_string(), // Use pretty format for readability in tests
-        log_bodies: true,      // Enable body logging for verbose testing
+        log_format: "pretty".to_string(),      // Use pretty format for readability in tests
+        log_bodies: true,                      // Enable body logging for verbose testing
         log_file_path: "./test-switchboard.log".to_string(), // Test-specific log file
-        log_file_level: "trace".to_string(), // Most verbose for file logs in tests
-        log_max_body_size: 20480, // Default size for tests
+        log_file_level: "trace".to_string(),   // Most verbose for file logs in tests
+        log_max_body_size: 20480,              // Default size for tests
         log_directory_mode: switchboard::config::LogDirectoryMode::Default, // Use automatic detection for tests
         log_max_age_days: None,
     };
@@ -127,8 +134,11 @@ pub fn setup_test_logging(test_name: &str) -> TestLoggingSetup {
     // Create a test-specific configuration
     let config = Config {
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),
         log_bodies: true,
@@ -176,8 +186,11 @@ pub fn generate_test_log_path(test_name: &str) -> PathBuf {
     // Create a dummy config for the resolver
     let config = Config {
         port: "0".to_string(),
-        anthropic_api_key: "test-api-key".to_string(),
+        anthropic_api_key: SecretString::new("test-api-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "debug".to_string(),
         log_format: "pretty".to_string(),
         log_bodies: true,
@@ -229,8 +242,11 @@ pub fn verify_log_directory() -> bool {
     // Create a dummy config with LogDirectoryMode::Default
     let config = Config {
         port: "0".to_string(),
-        anthropic_api_key: "test-key".to_string(),
+        anthropic_api_key: SecretString::new("test-key".to_string().into()),
         anthropic_target_url: "https://example.com".to_string(),
+        openai_api_key: Some(SecretString::new("test-openai-api-key".to_string().into())),
+        openai_api_base_url: "https://api.openai.com".to_string(),
+        openai_enabled: false,
         log_stdout_level: "info".to_string(),
         log_format: "pretty".to_string(),
         log_bodies: true,
