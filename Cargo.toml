@@ -13,13 +13,15 @@ path = "src/lib.rs"
 name = "switchboard"
 path = "src/main.rs"
 
-[[bin]]
+[[bench]]
 name = "manual_benchmark"
 path = "benches/manual_benchmark.rs"
+harness = false  # Custom benchmark without Criterion harness
 
-[[bin]]
+[[bench]]
 name = "simple_benchmark"
 path = "benches/simple_benchmark.rs"
+harness = false  # Custom benchmark without Criterion harness
 
 [[bench]]
 name = "logging_benchmarks"

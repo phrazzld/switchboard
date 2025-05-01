@@ -1,5 +1,16 @@
 # Todo
 
+## Build & Structure (bs-01)
+- [x] **T023 · Fix · P2: fix benchmark file build target warnings**
+    - **Context:** N/A - Found during routine testing
+    - **Action:**
+        1. Resolve warnings about benchmark files being present in multiple build targets
+        2. Ensure benchmarks still work correctly after the fix
+    - **Done‑when:**
+        1. No warnings appear when running `cargo clippy` or other Cargo commands
+        2. Benchmarks still function properly with `cargo bench`
+    - **Depends‑on:** none
+
 ## Configuration (API Key Redaction - cr-02)
 - [x] **T001 · Chore · P0: add secrecy dependency**
     - **Context:** PLAN.md > cr-02 > Steps > 1
@@ -146,7 +157,7 @@
         1. Run application with `OPENAI_ENABLED=true` and `OPENAI_API_KEY` unset.
         2. Verify specific error log message (e.g., "OpenAI integration enabled but OPENAI_API_KEY environment variable is not set") and exit code 1.
     - **Depends‑on:** [T013]
-- [ ] **T015 · Test · P1: update tests for config loading result/error variants**
+- [x] **T015 · Test · P1: update tests for config loading result/error variants**
     - **Context:** PLAN.md > cr-01 > Steps > 6
     - **Action:**
         1. Review tests in `tests/config_test.rs` and others relying on config loading.
